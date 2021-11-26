@@ -80,7 +80,10 @@ void ABattleMobaCTF::BeginPlay()
 	UGameplayStatics::GetAllActorsOfClass(GetWorld(), ABattleMobaCharacter::StaticClass(), GiveGoldActors);
 
 	//		Run GoldTimerFunction every 1 second after 20 seconds the game has started
-	this->GetWorldTimerManager().SetTimer(GoldTimer, this, &ABattleMobaCTF::GoldTimerFunction, 1.0f, true, 20.0f);
+	this->GetWorldTimerManager().SetTimer(GoldTimer, this, &ABattleMobaCTF::GoldTimerFunction, 1.0f, true, 50.0f);
+
+	//		Init FlagTimer to run on begin play so it will always run until game finishes
+	this->GetWorldTimerManager().SetTimer(FlagTimer, this, &ABattleMobaCTF::TimerFunction, ControllingSpeed, false, 30.0f);
 }
 
 void ABattleMobaCTF::OnOverlapBegin(AActor* OverlappedActor, AActor* OtherActor)
@@ -90,10 +93,8 @@ void ABattleMobaCTF::OnOverlapBegin(AActor* OverlappedActor, AActor* OtherActor)
 		ABattleMobaCharacter* pb = Cast<ABattleMobaCharacter>(OtherActor);
 		if (pb)
 		{
-			//	set CTFentering to true to add integer of a team in the sphere
+			//		set CTFentering to true to add integer of a team in the sphere
 			pb->CTFentering = true;
-
-			this->GetWorldTimerManager().SetTimer(FlagTimer, this, &ABattleMobaCTF::TimerFunction, ControllingSpeed, true, 0.0f);
 		}
 	}
 }
@@ -157,6 +158,9 @@ void ABattleMobaCTF::TimerFunction()
 	this->GetOverlappingActors(this->OverlappedPlayer, ABattleMobaCharacter::StaticClass());
 	int arrLength = this->OverlappedPlayer.Num();
 
+	RadiantControl = 0;
+	DireControl = 0;
+
 	for (uint8 i = 0; i < arrLength; ++i)
 	{
 		ActivePlayer = Cast<ABattleMobaCharacter>(this->OverlappedPlayer[i]);
@@ -192,16 +196,18 @@ void ABattleMobaCTF::TimerFunction()
 			}
 		}
 	}
+	this->GetWorldTimerManager().SetTimer(FlagTimer, this, &ABattleMobaCTF::TimerFunction, ControllingSpeed, false, ControllingSpeed);
 }
 
 void ABattleMobaCTF::GoldTimerFunction()
 {
 	if (isCompleted)
 	{
-		if (this->GetWorldTimerManager().IsTimerActive(FlagTimer))
+		/*if (this->GetWorldTimerManager().IsTimerActive(FlagTimer))
 		{
 			this->GetWorldTimerManager().ClearTimer(FlagTimer);
-		}
+		}*/
+
 		int arrLength = this->GiveGoldActors.Num();
 
 		//		for every player of the controller team will gain chi orbs for every second when the Control Flag progress reaches 100
