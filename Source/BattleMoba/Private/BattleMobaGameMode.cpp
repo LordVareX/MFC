@@ -460,57 +460,57 @@ void ABattleMobaGameMode::EndRecord() {
 #endif
 }
 
-void ABattleMobaGameMode::PostLogin(APlayerController* NewPlayer)
-{
-	Super::PostLogin(NewPlayer);
-
-	newPlayer = NewPlayer;
-
-	//set mesh array into temp array
-	Chars = CharSelections;
-
-	if (HasAuthority())
-	{
-		GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Blue, FString::Printf(TEXT("Player Added : %s"), *newPlayer->GetFName().ToString()));
-
-		//newPlayer = NewPlayer;
-		ABattleMobaPC* MobaPC = Cast<ABattleMobaPC>(newPlayer);
-
-		if (MobaPC)
-		{
-			Players.Add(MobaPC);
-
-			ABattleMobaPlayerState* PS = Cast <ABattleMobaPlayerState>(MobaPC->PlayerState);
-			if (PS)
-			{
-				GState = Cast<ABattleMobaGameState>(UGameplayStatics::GetGameState(this));
-				if (GState)
-				{
-					PS->Pi = Players.Num() - 1;
-
-					//Random unique number for character mesh array
-					if (Chars.Num() > 0)
-					{
-						CharIndex = FMath::RandRange(0, Chars.Num() - 1);
-						//PS->CharMesh = Chars[CharIndex];
-						GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Yellow, FString::Printf(TEXT("Player Index : %d"), Players.Num() - 1));
-						if ((PS->Pi) < 4)
-						{
-							GState->TeamA.Add(PS->GetPlayerName());
-							SpawnBasedOnTeam("Radiant", CharSelections[CharIndex]);
-						}
-						else
-						{
-							GState->TeamB.Add(PS->GetPlayerName());
-							SpawnBasedOnTeam("Dire", CharSelections[CharIndex]);
-						}
-						Chars.RemoveAtSwap(CharIndex);
-					}
-				}
-			}
-		}
-	}
-}
+//void ABattleMobaGameMode::PostLogin(APlayerController* NewPlayer)
+//{
+//	Super::PostLogin(NewPlayer);
+//
+//	newPlayer = NewPlayer;
+//
+//	//set mesh array into temp array
+//	Chars = CharSelections;
+//
+//	if (HasAuthority())
+//	{
+//		GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Blue, FString::Printf(TEXT("Player Added : %s"), *newPlayer->GetFName().ToString()));
+//
+//		//newPlayer = NewPlayer;
+//		ABattleMobaPC* MobaPC = Cast<ABattleMobaPC>(newPlayer);
+//
+//		if (MobaPC)
+//		{
+//			Players.Add(MobaPC);
+//
+//			ABattleMobaPlayerState* PS = Cast <ABattleMobaPlayerState>(MobaPC->PlayerState);
+//			if (PS)
+//			{
+//				GState = Cast<ABattleMobaGameState>(UGameplayStatics::GetGameState(this));
+//				if (GState)
+//				{
+//					PS->Pi = Players.Num() - 1;
+//
+//					//Random unique number for character mesh array
+//					if (Chars.Num() > 0)
+//					{
+//						CharIndex = FMath::RandRange(0, Chars.Num() - 1);
+//						//PS->CharMesh = Chars[CharIndex];
+//						GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Yellow, FString::Printf(TEXT("Player Index : %d"), Players.Num() - 1));
+//						if ((PS->Pi) < 4)
+//						{
+//							GState->TeamA.Add(PS->GetPlayerName());
+//							SpawnBasedOnTeam("Radiant", CharSelections[CharIndex]);
+//						}
+//						else
+//						{
+//							GState->TeamB.Add(PS->GetPlayerName());
+//							SpawnBasedOnTeam("Dire", CharSelections[CharIndex]);
+//						}
+//						Chars.RemoveAtSwap(CharIndex);
+//					}
+//				}
+//			}
+//		}
+//	}
+//}
 
 /*AActor* ABattleMobaGameMode::ChoosePlayerStart_Implementation(AController* Player)
 {
@@ -611,8 +611,56 @@ FString ABattleMobaGameMode::InitNewPlayer(APlayerController* NewPlayerControlle
 	//		}
 	//	}
 	//}
+#if WITH_EDITOR
+	newPlayer = NewPlayerController;
 
-//#if WITH_GAMELIFT
+	//set mesh array into temp array
+	Chars = CharSelections;
+
+	if (HasAuthority())
+	{
+		GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Blue, FString::Printf(TEXT("Player Added : %s"), *newPlayer->GetFName().ToString()));
+
+		//newPlayer = NewPlayer;
+		ABattleMobaPC* MobaPC = Cast<ABattleMobaPC>(newPlayer);
+
+		if (MobaPC)
+		{
+			Players.Add(MobaPC);
+
+			ABattleMobaPlayerState* PS = Cast <ABattleMobaPlayerState>(MobaPC->PlayerState);
+			if (PS)
+			{
+				GState = Cast<ABattleMobaGameState>(UGameplayStatics::GetGameState(this));
+				if (GState)
+				{
+					PS->Pi = Players.Num() - 1;
+
+					//Random unique number for character mesh array
+					if (Chars.Num() > 0)
+					{
+						CharIndex = FMath::RandRange(0, Chars.Num() - 1);
+						//PS->CharMesh = Chars[CharIndex];
+						GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Yellow, FString::Printf(TEXT("Player Index : %d"), Players.Num() - 1));
+						if ((PS->Pi) < 4)
+						{
+							GState->TeamA.Add(PS->GetPlayerName());
+							SpawnBasedOnTeam("Radiant", CharSelections[CharIndex]);
+						}
+						else
+						{
+							GState->TeamB.Add(PS->GetPlayerName());
+							SpawnBasedOnTeam("Dire", CharSelections[CharIndex]);
+						}
+						Chars.RemoveAtSwap(CharIndex);
+					}
+				}
+			}
+		}
+	}
+#endif
+
+#if WITH_GAMELIFT
 	//const FString& PlayerSessionId = UGameplayStatics::ParseOption(Options, "PlayerSessionId");
 	//const FString& PlayerId = UGameplayStatics::ParseOption(Options, "PlayerId");
 	//Possess a pawn
@@ -720,7 +768,7 @@ FString ABattleMobaGameMode::InitNewPlayer(APlayerController* NewPlayerControlle
 	}
 	//});
 	//this->GetWorldTimerManager().SetTimer(handle, TimerDelegate, 0.01f, false);
-//#endif
+#endif
 	return InitializedString;
 }
 
