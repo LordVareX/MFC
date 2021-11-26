@@ -336,8 +336,11 @@ protected:
 	UPROPERTY(VisibleAnywhere, ReplicatedUsing = OnRep_Health, BlueprintReadWrite, Category = "Status")
 		float Health;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Status")
+	UPROPERTY(EditDefaultsOnly, Replicated, BlueprintReadWrite, Category = "Status")
 		float MaxHealth;
+
+	UPROPERTY(EditDefaultsOnly, Replicated, BlueprintReadWrite, Category = "Status")
+		float Defense;
 
 	UFUNCTION()
 		void OnRep_Health();
@@ -411,6 +414,8 @@ protected:
 	// APawn interface
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
+	virtual void PossessedBy(AController * NewController) override;
+
 	virtual void BeginPlay() override;
 	// End of APawn interface
 
@@ -423,6 +428,9 @@ protected:
 	void AddSwipeVectorToRotationInput();
 
 	virtual float TakeDamage(float Damage, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser) override;
+
+	UFUNCTION(Reliable, Server, WithValidation, Category = "Movement")
+	void ServerSetMaxWalkSpeed(float Val);
 
 	UFUNCTION(BlueprintImplementableEvent, Category = "Setup")
 		void FinishSetupBeginPlay();

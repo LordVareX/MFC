@@ -460,87 +460,57 @@ void ABattleMobaGameMode::EndRecord() {
 #endif
 }
 
-//void ABattleMobaGameMode::PostLogin(APlayerController* NewPlayer)
-//{
-//	Super::PostLogin(NewPlayer);
-//
-//	newPlayer = NewPlayer;
-//
-//	if (HasAuthority())
-//	{
-//		GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Blue, FString::Printf(TEXT("Player Added : %s"), *newPlayer->GetFName().ToString()));
-//
-//		//newPlayer = NewPlayer;
-//		ABattleMobaPC* MobaPC = Cast<ABattleMobaPC>(newPlayer);
-//
-//		if (MobaPC)
-//		{
-//			Players.Add(MobaPC);
-//
-//			ABattleMobaPlayerState* PS = Cast <ABattleMobaPlayerState>(MobaPC->PlayerState);
-//			if (PS)
-//			{
-//				GState = Cast<ABattleMobaGameState>(UGameplayStatics::GetGameState(this));
-//				if (GState)
-//				{
-//					PS->Pi = Players.Num() - 1;
-//					/*int32 SCase = FMath::RandRange(1, 8);
-//					switch (SCase)
-//					{
-//					case 1:
-//						GState->ArrayPlayerID.Add("b55fb4bb-62ff-449f-a9c9-0aed93722d90");
-//						break;
-//					case 2:
-//						GState->ArrayPlayerID.Add("eaa33eb7-7a25-4c38-ba6d-b317811f6333");
-//						break;
-//					case 3:
-//						GState->ArrayPlayerID.Add("18c52495-1103-48a2-b36c-54aa3086aebd");
-//						break;
-//					case 4:
-//						GState->ArrayPlayerID.Add("9504bc24-3f47-462f-b4e7-d8eaf1699776");
-//						break;
-//					case 5:
-//						GState->ArrayPlayerID.Add("6e018078-108e-451e-82ea-b8ae7febe9ff");
-//						break;
-//					case 6:
-//						GState->ArrayPlayerID.Add("394f2669-b6bc-424a-9c96-53cb12550585");
-//						break;
-//					case 7:
-//						GState->ArrayPlayerID.Add("e88029e5-330a-4de2-8f8d-effeadfb6f81");
-//						break;
-//					case 8:
-//						GState->ArrayPlayerID.Add("b5d2c7aa-3a9e-4dcf-972c-d7000862789f");
-//						break;
-//					}*/
-//				
-//					//GState->ArrayPlayerID.Add("b55fb4bb-62ff-449f-a9c9-0aed93722d90");
-//					//PS->SetPlayerIndex(PS->Pi);
-//					Chars = CharSelections;
-//
-//					//Random unique number for character mesh array
-//					if (Chars.IsValidIndex(0))
-//					{
-//						CharIndex = FMath::RandRange(0, Chars.Num() - 1);
-//						//PS->CharMesh = Chars[CharIndex];
-//						//Chars.RemoveAtSwap(CharIndex);
-//						GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Yellow, FString::Printf(TEXT("Player Index : %d"), Players.Num() - 1));
-//					}
-//					if ((PS->Pi) < 4)
-//					{
-//						GState->TeamA.Add(PS->GetPlayerName());
-//						SpawnBasedOnTeam("Radiant", Chars[CharIndex]);
-//					}
-//					else
-//					{
-//						GState->TeamB.Add(PS->GetPlayerName());
-//						SpawnBasedOnTeam("Dire", Chars[CharIndex]);
-//					}
-//					Chars.RemoveAtSwap(CharIndex);
-//				}
-//			}
-//		}
-//	}
-//}
+void ABattleMobaGameMode::PostLogin(APlayerController* NewPlayer)
+{
+	Super::PostLogin(NewPlayer);
+
+	newPlayer = NewPlayer;
+
+	//set mesh array into temp array
+	Chars = CharSelections;
+
+	if (HasAuthority())
+	{
+		GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Blue, FString::Printf(TEXT("Player Added : %s"), *newPlayer->GetFName().ToString()));
+
+		//newPlayer = NewPlayer;
+		ABattleMobaPC* MobaPC = Cast<ABattleMobaPC>(newPlayer);
+
+		if (MobaPC)
+		{
+			Players.Add(MobaPC);
+
+			ABattleMobaPlayerState* PS = Cast <ABattleMobaPlayerState>(MobaPC->PlayerState);
+			if (PS)
+			{
+				GState = Cast<ABattleMobaGameState>(UGameplayStatics::GetGameState(this));
+				if (GState)
+				{
+					PS->Pi = Players.Num() - 1;
+
+					//Random unique number for character mesh array
+					if (Chars.Num() > 0)
+					{
+						CharIndex = FMath::RandRange(0, Chars.Num() - 1);
+						//PS->CharMesh = Chars[CharIndex];
+						GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Yellow, FString::Printf(TEXT("Player Index : %d"), Players.Num() - 1));
+						if ((PS->Pi) < 4)
+						{
+							GState->TeamA.Add(PS->GetPlayerName());
+							SpawnBasedOnTeam("Radiant", CharSelections[CharIndex]);
+						}
+						else
+						{
+							GState->TeamB.Add(PS->GetPlayerName());
+							SpawnBasedOnTeam("Dire", CharSelections[CharIndex]);
+						}
+						Chars.RemoveAtSwap(CharIndex);
+					}
+				}
+			}
+		}
+	}
+}
 
 /*AActor* ABattleMobaGameMode::ChoosePlayerStart_Implementation(AController* Player)
 {

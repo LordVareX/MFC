@@ -70,6 +70,8 @@ void ABattleMobaCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>&
 	DOREPLIFETIME(ABattleMobaCharacter, ArrDamagedEnemy);
 	DOREPLIFETIME(ABattleMobaCharacter, bApplyHitTrace);
 	DOREPLIFETIME(ABattleMobaCharacter, comboCount);
+	DOREPLIFETIME(ABattleMobaCharacter, MaxHealth);
+	DOREPLIFETIME(ABattleMobaCharacter, Defense);
 }
 
 ABattleMobaCharacter::ABattleMobaCharacter()
@@ -402,6 +404,12 @@ void ABattleMobaCharacter::SetupPlayerInputComponent(class UInputComponent* Play
 	PlayerInputComponent->BindAction("TestCam", IE_Released, this, &ABattleMobaCharacter::OnCameraShake);
 }
 
+void ABattleMobaCharacter::PossessedBy(AController* NewController)
+{
+	Super::PossessedBy(NewController);
+	GetMesh()->bOnlyAllowAutonomousTickPose = false;
+}
+
 void ABattleMobaCharacter::BeginPlay()
 {
 	Super::BeginPlay();
@@ -477,6 +485,15 @@ float ABattleMobaCharacter::TakeDamage(float Damage, FDamageEvent const & Damage
 	return 0.0f;
 }
 
+bool ABattleMobaCharacter::ServerSetMaxWalkSpeed_Validate(float Val)
+{
+	return true;
+}
+
+void ABattleMobaCharacter::ServerSetMaxWalkSpeed_Implementation(float Val)
+{
+	GetCharacterMovement()->MaxWalkSpeed = Val;
+}
 
 void ABattleMobaCharacter::OnConstruction(const FTransform & Transform)
 {
@@ -488,6 +505,8 @@ void ABattleMobaCharacter::RefreshPlayerData()
 	if (PS)
 	{
 		ActionTable = PS->ActionTable;
+		MaxHealth = PS->MaxHealth;
+		Defense = PS->Defense;
 
 		FString Context;
 		for (auto& name : ActionTable->GetRowNames())
