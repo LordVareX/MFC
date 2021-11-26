@@ -1698,24 +1698,25 @@ void ABattleMobaCharacter::ControlFlagServer_Implementation(ABattleMobaCTF* cf)
 	if (cf->RadiantControl > 0 && cf->DireControl == 0)
 	{
 		CTFteam = "Radiant";
-		ControlFlagMulticast(cf, CTFteam);
+		cf->ControllingSpeed = cf->ConstantSpeed - (cf->SpeedMultiplier * float(cf->RadiantControl));
+		GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Emerald, FString::Printf(TEXT("Capture Speed RADIANT: %f"), cf->ControllingSpeed));
 	}
 
 	else if (cf->DireControl > 0 && cf->RadiantControl == 0)
 	{
 		CTFteam = "Dire";
-		ControlFlagMulticast(cf, CTFteam);
+		cf->ControllingSpeed = cf->ConstantSpeed - (cf->SpeedMultiplier * float(cf->DireControl));
+		GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Emerald, FString::Printf(TEXT("Capture Speed DIRE: %f"), cf->ControllingSpeed));
 	}
 
 	else
 	{
 		CTFteam = "";
-		ControlFlagMulticast(cf, CTFteam);
-
 	}
 
-	cf->RadiantControl = 0;
-	cf->DireControl = 0;
+	ControlFlagMulticast(cf, CTFteam);
+	//cf->RadiantControl = 0;
+	//cf->DireControl = 0;
 	//GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("Current CTF Team is %s"), ((*CTFteam.ToString()))));
 }
 
