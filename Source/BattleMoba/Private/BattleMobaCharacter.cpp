@@ -485,6 +485,34 @@ float ABattleMobaCharacter::TakeDamage(float Damage, FDamageEvent const & Damage
 	return 0.0f;
 }
 
+bool ABattleMobaCharacter::ServerSetBlendspace_Validate(ABattleMobaPlayerState* PS)
+{
+	return true;
+}
+
+void ABattleMobaCharacter::ServerSetBlendspace_Implementation(ABattleMobaPlayerState* PS)
+{
+	MultiSetBlendspace(PS);
+}
+
+bool ABattleMobaCharacter::MultiSetBlendspace_Validate(ABattleMobaPlayerState* PS)
+{
+	return true;
+}
+
+void ABattleMobaCharacter::MultiSetBlendspace_Implementation(ABattleMobaPlayerState* PS)
+{
+	if (PS)
+	{
+		UBattleMobaAnimInstance* animinstance = Cast<UBattleMobaAnimInstance>(this->GetMesh()->GetAnimInstance());
+		if (animinstance)
+		{
+			//Get int to enum
+			animinstance->AnimStyle = static_cast<EStyle>(PS->CurrentStyle);
+		}
+	}
+}
+
 bool ABattleMobaCharacter::ServerSetMaxWalkSpeed_Validate(float Val)
 {
 	return true;
@@ -504,10 +532,15 @@ void ABattleMobaCharacter::RefreshPlayerData()
 	ABattleMobaPlayerState* PS = Cast<ABattleMobaPlayerState>(GetPlayerState());
 	if (PS)
 	{
+		if (IsLocallyControlled())
+		{
+			ServerSetBlendspace(PS);
+		}
+
 		ActionTable = PS->ActionTable;
 		MaxHealth = PS->MaxHealth;
 		Defense = PS->Defense;
-
+		
 		FString Context;
 		for (auto& name : ActionTable->GetRowNames())
 		{
@@ -522,6 +555,7 @@ void ABattleMobaCharacter::RefreshPlayerData()
 
 	this->GetMesh()->SetSkeletalMesh(CharMesh, false);
 	AnimInsta = Cast<UBattleMobaAnimInstance>(this->GetMesh()->GetAnimInstance());
+	
 
 	FTimerHandle handle;
 	FTimerDelegate TimerDelegate;
@@ -2359,36 +2393,36 @@ void ABattleMobaCharacter::MoveRight(float Value)
 	}
 }
 
-void ABattleMobaCharacter::ChooseBattleStyle(int style)
-{
-	//		silat moveset
-	if (style == 1)
-	{
-		this->ActionTable = SltActionTable;
-		this->switchBox = false;
-		this->switchShao = false;
-		this->MaxHealth = 750.0f;
-		this->Defence = 110.0f;
-
-	}
-
-	//		boxing moveset
-	else if (style == 2)
-	{
-		this->ActionTable = BoxActionTable;
-		this->switchBox = true;
-		this->switchShao = false;
-		this->MaxHealth = 450.0f;
-		this->Defence = 70.0f;
-	}
-
-	//		shaolin moveset
-	else if (style == 3)
-	{
-		this->ActionTable = ShaActionTable;
-		this->switchBox = false;
-		this->switchShao = true;
-		this->MaxHealth = 1100.0f;
-		this->Defence = 180.0f;
-	}
-}
+//void ABattleMobaCharacter::ChooseBattleStyle(int style)
+//{
+//	//		silat moveset
+//	if (style == 1)
+//	{
+//		this->ActionTable = SltActionTable;
+//		this->switchBox = false;
+//		this->switchShao = false;
+//		this->MaxHealth = 750.0f;
+//		this->Defence = 110.0f;
+//
+//	}
+//
+//	//		boxing moveset
+//	else if (style == 2)
+//	{
+//		this->ActionTable = BoxActionTable;
+//		this->switchBox = true;
+//		this->switchShao = false;
+//		this->MaxHealth = 450.0f;
+//		this->Defence = 70.0f;
+//	}
+//
+//	//		shaolin moveset
+//	else if (style == 3)
+//	{
+//		this->ActionTable = ShaActionTable;
+//		this->switchBox = false;
+//		this->switchShao = true;
+//		this->MaxHealth = 1100.0f;
+//		this->Defence = 180.0f;
+//	}
+//}

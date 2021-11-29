@@ -53,6 +53,9 @@ public:
 		int32 Pi = 0;
 
 	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadWrite, Category = "Status")
+		int32 CurrentStyle = 0;
+
+	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadWrite, Category = "Status")
 		int Kill = 0;
 
 	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadWrite, Category = "Status")
