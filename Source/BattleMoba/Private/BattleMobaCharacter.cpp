@@ -407,7 +407,7 @@ void ABattleMobaCharacter::SetupPlayerInputComponent(class UInputComponent* Play
 void ABattleMobaCharacter::PossessedBy(AController* NewController)
 {
 	Super::PossessedBy(NewController);
-	GetMesh()->bOnlyAllowAutonomousTickPose = false;
+	//GetMesh()->bOnlyAllowAutonomousTickPose = false;
 }
 
 void ABattleMobaCharacter::BeginPlay()
