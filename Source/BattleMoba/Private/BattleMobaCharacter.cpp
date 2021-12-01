@@ -539,7 +539,7 @@ void ABattleMobaCharacter::RefreshPlayerData()
 
 		ActionTable = PS->ActionTable;
 		MaxHealth = PS->MaxHealth;
-		Defense = PS->Defense;
+		Defence = PS->Defense;
 		
 		FString Context;
 		for (auto& name : ActionTable->GetRowNames())

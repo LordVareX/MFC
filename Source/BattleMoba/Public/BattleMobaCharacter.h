@@ -381,7 +381,7 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Replicated, Category = "ControlFlag")
 		FName CTFteam = "";
 
-	UPROPERTY(VisibleAnywhere, Category = "Rotate")
+	UPROPERTY(EditAnywhere, Category = "Rotate")
 		float RotateRadius = 100.0f;
 
 	UPROPERTY(Replicated, VisibleAnywhere, Category = "Rotate")
