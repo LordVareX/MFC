@@ -21,6 +21,15 @@ enum class EInputType : uint8
 	Hold
 };
 
+//Style Type
+UENUM(BlueprintType)
+enum class EStyle : uint8
+{
+	Boxing,
+	Silat,
+	Shaolin
+};
+
 UENUM(BlueprintType)
 enum class EFormula : uint8
 {

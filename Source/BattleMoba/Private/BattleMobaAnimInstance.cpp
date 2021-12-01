@@ -11,8 +11,7 @@ void UBattleMobaAnimInstance::GetLifetimeReplicatedProps(TArray<FLifetimePropert
 	DOREPLIFETIME(UBattleMobaAnimInstance, bMoving);
 	DOREPLIFETIME(UBattleMobaAnimInstance, CanMove);
 	DOREPLIFETIME(UBattleMobaAnimInstance, canAttack);
-	DOREPLIFETIME(UBattleMobaAnimInstance, isBox);
-	DOREPLIFETIME(UBattleMobaAnimInstance, isShao);
+	DOREPLIFETIME(UBattleMobaAnimInstance, AnimStyle);
 }
 
 UBattleMobaAnimInstance::UBattleMobaAnimInstance()

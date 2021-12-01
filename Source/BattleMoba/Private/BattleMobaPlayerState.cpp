@@ -10,6 +10,7 @@ void ABattleMobaPlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	DOREPLIFETIME(ABattleMobaPlayerState, Pi);
+	DOREPLIFETIME(ABattleMobaPlayerState, CurrentStyle);
 	DOREPLIFETIME(ABattleMobaPlayerState, Kill);
 	DOREPLIFETIME(ABattleMobaPlayerState, Death);
 	DOREPLIFETIME(ABattleMobaPlayerState, Assist);

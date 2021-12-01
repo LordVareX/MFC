@@ -384,7 +384,7 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Replicated, Category = "ControlFlag")
 		FName CTFteam = "";
 
-	UPROPERTY(VisibleAnywhere, Category = "Rotate")
+	UPROPERTY(EditAnywhere, Category = "Rotate")
 		float RotateRadius = 100.0f;
 
 	UPROPERTY(Replicated, VisibleAnywhere, Category = "Rotate")
@@ -431,6 +431,12 @@ protected:
 	void AddSwipeVectorToRotationInput();
 
 	virtual float TakeDamage(float Damage, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser) override;
+
+	UFUNCTION(Reliable, Server, WithValidation, Category = "Movement")
+		void ServerSetBlendspace(ABattleMobaPlayerState* PS);
+
+	UFUNCTION(Reliable, NetMulticast, WithValidation, Category = "Movement")
+		void MultiSetBlendspace(ABattleMobaPlayerState* PS);
 
 	UFUNCTION(Reliable, Server, WithValidation, Category = "Movement")
 	void ServerSetMaxWalkSpeed(float Val);
@@ -565,7 +571,4 @@ public:
 	//Get skills from input touch combo
 	UFUNCTION(BlueprintCallable, Category = "ActionSkill")
 		void GetButtonSkillAction(FKey Currkeys, FString ButtonName, bool& cooldown, float& CooldownVal);
-
-	UFUNCTION(BlueprintCallable, Category = "BattleStyle")
-		void ChooseBattleStyle(int style);
 };

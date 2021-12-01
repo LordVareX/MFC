@@ -100,8 +100,8 @@ private:
 	UPROPERTY()
 		UTextBlock* ErrorTextBlock;
 
-	UPROPERTY()
-		UTextBlock* MatchmakingEventTextBlock;
+	/*UPROPERTY()
+		UTextBlock* MatchmakingEventTextBlock;*/
 
 	UPROPERTY()
 		UTextBlock* UsernameTextBlock;

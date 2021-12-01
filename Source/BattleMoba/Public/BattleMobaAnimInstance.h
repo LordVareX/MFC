@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "Animation/AnimInstance.h"
 #include "Net/UnrealNetwork.h"
+#include "InputLibrary.h"
 #include "BattleMobaAnimInstance.generated.h"
 
 /**
@@ -38,15 +39,10 @@ public:
 	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadWrite)
 		float Speed = 0.0f;
 
-
+	UPROPERTY(Replicated, BlueprintReadWrite)
+		EStyle AnimStyle;
 
 protected:
-
-	UPROPERTY(Replicated, BlueprintReadWrite)
-		bool isBox = false;
-
-	UPROPERTY(Replicated, BlueprintReadWrite)
-		bool isShao = false;
 
 	APawn* Owner;
 
