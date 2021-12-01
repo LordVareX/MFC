@@ -51,7 +51,6 @@ void ABattleMobaCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>&
 	DOREPLIFETIME(ABattleMobaCharacter, BoneName);
 	DOREPLIFETIME(ABattleMobaCharacter, HitLocation);
 	DOREPLIFETIME(ABattleMobaCharacter, AttackSection);
-	DOREPLIFETIME(ABattleMobaCharacter, TargetHead);
 	DOREPLIFETIME(ABattleMobaCharacter, DamageDealers);
 	DOREPLIFETIME(ABattleMobaCharacter, Rotate);
 	DOREPLIFETIME(ABattleMobaCharacter, AttackerLocation);
@@ -72,6 +71,8 @@ void ABattleMobaCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>&
 	DOREPLIFETIME(ABattleMobaCharacter, comboCount);
 	DOREPLIFETIME(ABattleMobaCharacter, MaxHealth);
 	DOREPLIFETIME(ABattleMobaCharacter, Defense);
+	DOREPLIFETIME(ABattleMobaCharacter, StunDuration);
+	DOREPLIFETIME(ABattleMobaCharacter, StunImpulse);
 }
 
 ABattleMobaCharacter::ABattleMobaCharacter()
@@ -351,7 +352,7 @@ void ABattleMobaCharacter::OnRep_Health()
 	UUserWidget* HPWidget = Cast<UUserWidget>(W_DamageOutput->GetUserWidgetObject());
 	if (HPWidget)
 	{
-		GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Blue, FString::Printf(TEXT("Player %s with %s Widget"), *GetDebugName(this), *HPWidget->GetFName().ToString()));
+		//GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Blue, FString::Printf(TEXT("Player %s with %s Widget"), *GetDebugName(this), *HPWidget->GetFName().ToString()));
 		const FName hptext = FName(TEXT("HealthText"));
 		UTextBlock* HealthText = (UTextBlock*)(HPWidget->WidgetTree->FindWidget(hptext));
 
@@ -431,12 +432,16 @@ float ABattleMobaCharacter::TakeDamage(float Damage, FDamageEvent const & Damage
 			}
 			this->DamageDealers.Emplace(ps);
 
-			ServerSpawnEffect(damageChar, this);
-
-
 			if (damageChar->OnSpecialAttack == true)
 			{
-				HitReactionClient(this, Damage, this->HitReactionMoveset, "NormalHit01");
+				FVector DirectionDiff = UKismetMathLibrary::GetDirectionUnitVector(damageChar->GetActorLocation(), this->GetActorLocation());
+				FVector MakeVector = FVector(DirectionDiff.X, DirectionDiff.Y, DirectionDiff.Z + 0.2);
+				FVector StunVector = MakeVector * damageChar->StunImpulse;
+
+				GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Black, FString::Printf(TEXT("Attacker StunImpulse: %f"), damageChar->StunImpulse));
+
+				MulticastRotateHitActor(this, damageChar);
+				HitReactionClient(this, Damage, this->HitReactionMoveset, "NormalHit01", damageChar->StunDuration, StunVector, true);
 			}
 
 			else if (damageChar->OnSpecialAttack == false)
@@ -454,28 +459,28 @@ float ABattleMobaCharacter::TakeDamage(float Damage, FDamageEvent const & Damage
 				// right
 				if (UKismetMathLibrary::InRange_FloatFloat(RotDifference.Yaw, -135.0f, -45.0f, true, true))
 				{
-					HitReactionClient(this, Damage, this->RightHitMoveset, HitSection);
+					HitReactionClient(this, Damage, this->RightHitMoveset, HitSection, 0.0f, FVector(0, 0, 0), false);
 					GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Yellow, FString::Printf(TEXT("Hit from RIGHT")));
 				}
 
 				// front
 				else if (UKismetMathLibrary::InRange_FloatFloat(RotDifference.Yaw, -45.0f, 45.0f, true, true))
 				{
-					HitReactionClient(this, Damage, this->FrontHitMoveset, HitSection);
+					HitReactionClient(this, Damage, this->FrontHitMoveset, HitSection, 0.0f, FVector(0, 0, 0), false);
 					GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Yellow, FString::Printf(TEXT("Hit from FRONT")));
 				}
 
 				//	left
 				else if (UKismetMathLibrary::InRange_FloatFloat(RotDifference.Yaw, 45.0f, 135.0f, true, true))
 				{
-					HitReactionClient(this, Damage, this->LeftHitMoveset, HitSection);
+					HitReactionClient(this, Damage, this->LeftHitMoveset, HitSection, 0.0f, FVector(0, 0, 0), false);
 					GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Yellow, FString::Printf(TEXT("Hit from LEFT")));
 				}
 
 				//	back
 				else
 				{
-					HitReactionClient(this, Damage, this->BackHitMoveset, HitSection);
+					HitReactionClient(this, Damage, this->BackHitMoveset, HitSection, 0.0f, FVector(0, 0, 0), false);
 					GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Yellow, FString::Printf(TEXT("Hit from BACK")));
 				}
 
@@ -569,7 +574,7 @@ void ABattleMobaCharacter::CheckSwipeType(EInputType Type, FVector2D Location, T
 				//if current Location is on the left side of screen, set swipe mechanic to move the player, else set to rotate the camera
 				if (UInputLibrary::PointOnLeftHalfOfScreen(Location))
 				{
-					GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Blue, FString::Printf(TEXT("Move")));
+					//GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Blue, FString::Printf(TEXT("Move")));
 
 					TouchStart = Location;
 					MoveTouchIndex = TouchIndex;
@@ -585,7 +590,7 @@ void ABattleMobaCharacter::CheckSwipeType(EInputType Type, FVector2D Location, T
 				//if current Location is on the left side of screen, set swipe mechanic to move the player, else set to rotate the camera
 				if (UInputLibrary::PointOnLeftHalfOfScreen(Location))
 				{
-					GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Blue, FString::Printf(TEXT("Move")));
+					//GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Blue, FString::Printf(TEXT("Move")));
 
 					TouchStart = Location;
 					MoveTouchIndex = TouchIndex;
@@ -605,7 +610,7 @@ void ABattleMobaCharacter::CheckSwipeType(EInputType Type, FVector2D Location, T
 				//if current Location is on the left side of screen, set swipe mechanic to move the player, else set to rotate the camera
 				if (UInputLibrary::PointOnLeftHalfOfScreen(Location))
 				{
-					GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Blue, FString::Printf(TEXT("Move")));
+					//GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Blue, FString::Printf(TEXT("Move")));
 
 					TouchEnd = Location;
 					MoveTouchIndex = TouchIndex;
@@ -620,7 +625,7 @@ void ABattleMobaCharacter::CheckSwipeType(EInputType Type, FVector2D Location, T
 				//if current Location is on the left side of screen, set swipe mechanic to move the player, else set to rotate the camera
 				if (UInputLibrary::PointOnLeftHalfOfScreen(Location))
 				{
-					GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Blue, FString::Printf(TEXT("Move")));
+					//GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Blue, FString::Printf(TEXT("Move")));
 
 					TouchEnd = Location;
 					MoveTouchIndex = TouchIndex;
@@ -744,7 +749,7 @@ void ABattleMobaCharacter::AddSwipeVectorToMovementInput()
 	//rotate a vector from YawRotation
 	const FVector Direction = YawRotation.RotateVector(WorldDirection);
 
-	GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Blue, FString::Printf(TEXT("Enable move")));
+	//GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Blue, FString::Printf(TEXT("Enable move")));
 
 	//Move character based on world direction
 	AddMovementInput(Direction, -1.0f);
@@ -866,28 +871,28 @@ void ABattleMobaCharacter::HideHPBar()
 	}
 }
 
-bool ABattleMobaCharacter::HitReactionServer_Validate(AActor * HitActor, float DamageReceived, UAnimMontage* HitMoveset, FName MontageSection)
+bool ABattleMobaCharacter::HitReactionServer_Validate(AActor * HitActor, float DamageReceived, UAnimMontage* HitMoveset, FName MontageSection, float StunTime, FVector KnockbackVector, bool isKnockback)
 {
 	return true;
 }
 
-void ABattleMobaCharacter::HitReactionServer_Implementation(AActor* HitActor, float DamageReceived, UAnimMontage* HitMoveset, FName MontageSection)
+void ABattleMobaCharacter::HitReactionServer_Implementation(AActor* HitActor, float DamageReceived, UAnimMontage* HitMoveset, FName MontageSection, float StunTime, FVector KnockbackVector, bool isKnockback)
 {
 	if (this->GetLocalRole() == ROLE_Authority)
 	{
 		if (HitActor == this)
 		{
-			HitReactionClient(HitActor, DamageReceived, HitMoveset, MontageSection);
+			HitReactionClient(HitActor, DamageReceived, HitMoveset, MontageSection, StunTime, KnockbackVector, isKnockback);
 		}
 	}
 }
 
-bool ABattleMobaCharacter::HitReactionClient_Validate(AActor* HitActor, float DamageReceived, UAnimMontage* HitMoveset, FName MontageSection)
+bool ABattleMobaCharacter::HitReactionClient_Validate(AActor* HitActor, float DamageReceived, UAnimMontage* HitMoveset, FName MontageSection, float StunTime, FVector KnockbackVector, bool isKnockback)
 {
 	return true;
 }
 
-void ABattleMobaCharacter::HitReactionClient_Implementation(AActor* HitActor, float DamageReceived, UAnimMontage* HitMoveset, FName MontageSection)
+void ABattleMobaCharacter::HitReactionClient_Implementation(AActor* HitActor, float DamageReceived, UAnimMontage* HitMoveset, FName MontageSection, float StunTime, FVector KnockbackVector, bool isKnockback)
 {
 	if (HitActor == this)
 	{
@@ -954,25 +959,91 @@ void ABattleMobaCharacter::HitReactionClient_Implementation(AActor* HitActor, fl
 					{
 						//Start Respawn Timer Count
 						gm->StartRespawnTimer(ps);
-
 						this->GetWorld()->GetTimerManager().SetTimer(this->RespawnTimer, this, &ABattleMobaCharacter::RespawnCharacter, 3.0f, false);
 					}
 				}
+
+				//		Hit reaction for players who have hp > 0
+				else
+				{
+					GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Blue, FString::Printf(TEXT("Knock back? %s"), isKnockback ? TEXT("true") : TEXT("false")));
+					GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Yellow, FString::Printf(TEXT("Stun Time: %f"), StunTime));
+					//		when attacker is on Special Attack skills
+					if (isKnockback)
+					{
+						FTimerHandle delay;
+						FTimerDelegate delayDel;
+
+						FOnMontageEnded MontageEndedDelegate;
+
+						//		stun enemy, does not allow movement and input skill
+						if (GetMesh()->SkeletalMesh != nullptr)
+						{
+							if (this->AnimInsta)
+							{
+								this->AnimInsta->CanMove = false;
+							}
+						}
+						//		play hit reaction of special attack
+						this->GetMesh()->GetAnimInstance()->Montage_Play(HitMoveset, 1.0f, EMontagePlayReturnType::MontageLength, 0.0f, true);
+						this->GetMesh()->GetAnimInstance()->Montage_JumpToSection(MontageSection);
+
+						//		trigger knockback on enemy
+						this->LaunchCharacter(KnockbackVector, false, false);
+
+						/*int32 sectionIndex = GetCurrentMontage()->GetSectionIndex(MontageSection);
+						float sectionLength = GetCurrentMontage()->GetSectionLength(sectionIndex);*/
+
+						delayDel.BindLambda([this, HitMoveset]()
+						{
+							this->GetMesh()->GetAnimInstance()->Montage_JumpToSection("GetUp");
+							FName activeSection = this->AnimInsta->Montage_GetCurrentSection(HitMoveset);
+							GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Magenta, FString::Printf(TEXT("Current section is %s"), *activeSection.ToString()));
+						});
+
+						this->GetWorldTimerManager().SetTimer(delay, delayDel, StunTime, false);
+
+						//		when montage finished playing, trigger function OnHRMontageEnd - enable movement
+						MontageEndedDelegate.BindUObject(this, &ABattleMobaCharacter::OnHRMontageEnd);
+						this->GetMesh()->GetAnimInstance()->Montage_SetEndDelegate(MontageEndedDelegate, HitMoveset);
+						
+					}
+
+					//		simple directional hit reaction
+					else
+					{
+						FOnMontageEnded MontageEndedDelegate;
+
+						//		disable movement and input skill
+						if (GetMesh()->SkeletalMesh != nullptr)
+						{
+							if (this->AnimInsta)
+							{
+								this->AnimInsta->CanMove = false;
+							}
+						}
+
+						//		play hit reaction of directional hit reaction
+						this->GetMesh()->GetAnimInstance()->Montage_Play(HitMoveset, 1.0f, EMontagePlayReturnType::MontageLength, 0.0f, true);
+						this->GetMesh()->GetAnimInstance()->Montage_JumpToSection(MontageSection);
+
+						//		when montage finished playing, trigger function OnHRMontageEnd - enable movement
+						MontageEndedDelegate.BindUObject(this, &ABattleMobaCharacter::OnHRMontageEnd);
+						this->GetMesh()->GetAnimInstance()->Montage_SetEndDelegate(MontageEndedDelegate, HitMoveset);
+
+					}
+					
+
+					/**		Play hit reaction animation on hit*/
+					//UAnimMontage* CurrentMontage = this->GetMesh()->GetAnimInstance()->GetCurrentActiveMontage();
+					//this->GetMesh()->GetAnimInstance()->Montage_Stop(0.001f, CurrentMontage);
+					//PlayAnimMontage(HitMoveset, 1.0f, MontageSection);
+					
+					
+				}
+
 				this->Health = Temp;
 				this->IsHit = false;
-
-				///**		Force player to face Attacker*/
-				//FRotator PlayerRot = UKismetMathLibrary::FindLookAtRotation(this->GetActorLocation(), AttackerLocation);
-				//FRotator NewRot = FMath::RInterpTo(this->GetActorRotation(), PlayerRot, GetWorld()->GetDeltaSeconds(), 200.0f);
-				//FRotator NewRot2 = FRotator(this->GetActorRotation().Pitch, NewRot.Yaw, this->GetActorRotation().Roll);
-				//this->SetActorRotation(NewRot2);
-
-				/**		Play hit reaction animation on hit*/
-				//UAnimMontage* CurrentMontage = this->GetMesh()->GetAnimInstance()->GetCurrentActiveMontage();
-				//this->GetMesh()->GetAnimInstance()->Montage_Stop(0.001f, CurrentMontage);
-				//PlayAnimMontage(HitMoveset, 1.0f, MontageSection);
-				this->GetMesh()->GetAnimInstance()->Montage_Play(HitMoveset, 1.0f, EMontagePlayReturnType::MontageLength, 0.0f, true);
-				this->GetMesh()->GetAnimInstance()->Montage_JumpToSection(MontageSection);
 
 				OnRep_Health();
 
@@ -981,56 +1052,25 @@ void ABattleMobaCharacter::HitReactionClient_Implementation(AActor* HitActor, fl
 				{
 					this->GetWorldTimerManager().ClearTimer(this->DealerTimer);
 
-					if (this->IsLocallyControlled())
-					{
-						SetActiveSocket(NAME_None);
-					}
 				}
 				this->GetWorldTimerManager().SetTimer(this->DealerTimer, this, &ABattleMobaCharacter::ClearDamageDealers, 5.0f, true);
+				
 			}
 		}
 	}
 	UpdateHUD();
 }
 
-bool ABattleMobaCharacter::StunPlayerServer_Validate(bool checkStun)
+void ABattleMobaCharacter::OnHRMontageEnd(UAnimMontage * animMontage, bool bInterrupted)
 {
-	return true;
-}
-
-void ABattleMobaCharacter::StunPlayerServer_Implementation(bool checkStun)
-{
-	if (this->GetLocalRole() == ROLE_Authority)
+	if (this->GetMesh()->SkeletalMesh != nullptr)
 	{
-		StunPlayerClient(checkStun);
-	}
-
-}
-
-bool ABattleMobaCharacter::StunPlayerClient_Validate(bool checkStun)
-{
-	return true;
-}
-
-void ABattleMobaCharacter::StunPlayerClient_Implementation(bool checkStun)
-{
-	/**		called in stun hit reaction montage AnimBP*/
-	this->IsStunned = checkStun;
-
-	if (this->IsStunned == true)
-	{
-		FTimerDelegate TimerDel;
-		FTimerHandle handle;
-
-		TimerDel.BindLambda([this]()
+		if (this->AnimInsta != nullptr)
 		{
-			this->IsStunned = false;
-		});
-
-		this->GetWorldTimerManager().SetTimer(handle, TimerDel, 3.0f, false);
+			this->AnimInsta->CanMove = true;
+		}
 	}
 }
-
 
 bool ABattleMobaCharacter::ServerRotateHitActor_Validate(AActor * HitActor, AActor * Attacker)
 {
@@ -1063,62 +1103,6 @@ void ABattleMobaCharacter::MulticastRotateHitActor_Implementation(AActor * HitAc
 	HitActor->SetActorRotation(FinalRot);
 }
 
-bool ABattleMobaCharacter::ServerSpawnEffect_Validate(ABattleMobaCharacter * EmitActor, ABattleMobaCharacter* HitActor)
-{
-	return true;
-}
-
-void ABattleMobaCharacter::ServerSpawnEffect_Implementation(ABattleMobaCharacter * EmitActor, ABattleMobaCharacter* HitActor)
-{
-	if (this->GetLocalRole() == ROLE_Authority)
-	{
-		if (HitActor == this)
-		{
-			MulticastSpawnEffect(EmitActor, HitActor);
-		}
-	}
-}
-
-bool ABattleMobaCharacter::MulticastSpawnEffect_Validate(ABattleMobaCharacter * EmitActor, ABattleMobaCharacter* HitActor)
-{
-	return true;
-}
-
-void ABattleMobaCharacter::MulticastSpawnEffect_Implementation(ABattleMobaCharacter * EmitActor, ABattleMobaCharacter* HitActor)
-{
-	if (EmitActor->HitEffect != nullptr)
-	{
-		//GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Orange, FString::Printf(TEXT("Particle Effect Spawned")));
-
-		UGameplayStatics::SpawnEmitterAtLocation(EmitActor->GetWorld(), EmitActor->HitEffect, EmitActor->GetMesh()->GetSocketLocation(EmitActor->ActiveSocket), FRotator::ZeroRotator, false);
-	}
-}
-
-bool ABattleMobaCharacter::SetActiveSocket_Validate(FName SocketName)
-{
-	return true;
-}
-void ABattleMobaCharacter::SetActiveSocket_Implementation(FName SocketName)
-{
-	if (this->GetLocalRole() == ROLE_Authority)
-	{
-		MulticastSetActiveSocket(SocketName);
-	}
-}
-
-bool ABattleMobaCharacter::MulticastSetActiveSocket_Validate(FName SocketName)
-{
-	return true;
-}
-
-void ABattleMobaCharacter::MulticastSetActiveSocket_Implementation(FName SocketName)
-{
-	if (SocketName != NAME_None)
-	{
-		this->ActiveSocket = SocketName;
-	}
-}
-
 void ABattleMobaCharacter::ClearDamageDealers()
 {
 	if (this->DamageDealers.IsValidIndex(0))
@@ -1147,7 +1131,7 @@ void ABattleMobaCharacter::GetButtonSkillAction(FKey Currkeys, FString ButtonNam
 					{
 						if (row->keys == Currkeys || row->ButtonName == ButtonName)
 						{
-							//if current skill is using cooldown
+							//		SpecialAttack01 & SpecialAttack02
 							if (row->IsUsingCD && !row->UseTranslate)
 							{
 								//GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Blue, FString::Printf(TEXT("row->isOnCD: %s"), row->isOnCD ? TEXT("true") : TEXT("false")));
@@ -1156,7 +1140,6 @@ void ABattleMobaCharacter::GetButtonSkillAction(FKey Currkeys, FString ButtonNam
 								if (row->isOnCD == true)
 								{
 									//GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("Current %s skill is on cooldown!!"), ((*name.ToString()))));
-									GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("Current %s skill is on cooldown!!"), ((*name.ToString()))));
 									cooldown = row->isOnCD;
 									break;
 								}
@@ -1164,10 +1147,10 @@ void ABattleMobaCharacter::GetButtonSkillAction(FKey Currkeys, FString ButtonNam
 								{
 									cooldown = row->isOnCD;
 									row->isOnCD = true;
-									//GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("Current key is %s"), ((*row->keys.ToString()))));
+									GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Emerald, FString::Printf(TEXT("Current key is %s"), ((*row->keys.ToString()))));
 									if (row->SkillMoveset != nullptr)
 									{
-										TargetHead = row->TargetIsHead;
+										
 										if (this->IsLocallyControlled())
 										{
 											DetectNearestTarget(EResult::Cooldown, *row);
@@ -1198,13 +1181,12 @@ void ABattleMobaCharacter::GetButtonSkillAction(FKey Currkeys, FString ButtonNam
 								}
 							}
 
-							/**		current skill uses translation*/
+							//		Dash
 							else if (row->IsUsingCD && row->UseTranslate)
 							{
 								if (row->isOnCD == true)
 								{
 									//GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("Current %s skill is on cooldown!!"), ((*name.ToString()))));
-									GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("Current %s skill is on cooldown!!"), ((*name.ToString()))));
 									cooldown = row->isOnCD;
 									break;
 								}
@@ -1251,7 +1233,6 @@ void ABattleMobaCharacter::GetButtonSkillAction(FKey Currkeys, FString ButtonNam
 								//GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("Current key is %s"), ((*row->keys.ToString()))));
 								if (row->SkillMoveset != nullptr)
 								{
-									TargetHead = row->TargetIsHead;
 									if (this->IsLocallyControlled())
 									{
 										DetectNearestTarget(EResult::Section, *row);
@@ -1499,7 +1480,7 @@ void ABattleMobaCharacter::RotateNearestTarget_Implementation(AActor* Target, ER
 			inst->bMoving = true;
 			inst->Speed = FromOriginToTarget.Size();
 
-			GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Green, FString::Printf(TEXT("Hit Speed: %f"), inst->Speed));
+			//GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Green, FString::Printf(TEXT("Hit Speed: %f"), inst->Speed));
 
 			//rotate and move the component towards target
 			UKismetSystemLibrary::MoveComponentTo(this->GetCapsuleComponent(), Target->GetActorLocation() + FromOriginToTarget, RotateTo, true, true, 0.1f, true, EMoveComponentAction::Type::Move, LatentInfo);
@@ -1699,14 +1680,14 @@ void ABattleMobaCharacter::ControlFlagServer_Implementation(ABattleMobaCTF* cf)
 	{
 		CTFteam = "Radiant";
 		cf->ControllingSpeed = cf->ConstantSpeed - (cf->SpeedMultiplier * float(cf->RadiantControl));
-		GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Emerald, FString::Printf(TEXT("Capture Speed RADIANT: %f"), cf->ControllingSpeed));
+		//GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Emerald, FString::Printf(TEXT("Capture Speed RADIANT: %f"), cf->ControllingSpeed));
 	}
 
 	else if (cf->DireControl > 0 && cf->RadiantControl == 0)
 	{
 		CTFteam = "Dire";
 		cf->ControllingSpeed = cf->ConstantSpeed - (cf->SpeedMultiplier * float(cf->DireControl));
-		GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Emerald, FString::Printf(TEXT("Capture Speed DIRE: %f"), cf->ControllingSpeed));
+		//GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Emerald, FString::Printf(TEXT("Capture Speed DIRE: %f"), cf->ControllingSpeed));
 	}
 
 	else
@@ -1920,6 +1901,8 @@ void ABattleMobaCharacter::MulticastExecuteAction_Implementation(FActionSkill Se
 			this->LeftHitMoveset = SelectedRow.LeftHitMoveset;
 			this->RightHitMoveset = SelectedRow.RightHitMoveset;
 			this->HitEffect = SelectedRow.HitImpact;
+			this->StunDuration = SelectedRow.StunTime;
+			this->StunImpulse = SelectedRow.StunImpulse;
 		}
 	}
 }
@@ -2002,7 +1985,7 @@ void ABattleMobaCharacter::AttackTrace_Implementation(bool traceStart, int activ
 			{
 
 				HitResult(hitResult);
-				GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Green, FString::Printf(TEXT("You are hitting: %s"), *hitResult.Actor->GetName()));
+				//GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Green, FString::Printf(TEXT("You are hitting: %s"), *hitResult.Actor->GetName()));
 
 			}
 		}
@@ -2054,8 +2037,7 @@ void ABattleMobaCharacter::HitResult_Implementation(FHitResult hit)
 
 	else if (IsValid(DamagedTower))
 	{
-		GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Yellow, FString::Printf(TEXT("DamagedTower = %s"), IsValid(DamagedTower) ? TEXT("True") : TEXT("False")));
-		//GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Yellow, FString::Printf(TEXT("You are hitting: %s"), *UKismetSystemLibrary::GetDisplayName(DamagedTower)));
+		//GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Yellow, FString::Printf(TEXT("DamagedTower = %s"), IsValid(DamagedTower) ? TEXT("True") : TEXT("False")));
 		if (DamagedTower->TeamName != this->TeamName && DamagedTower == hit.Actor && !(ArrDamagedEnemy.Contains(DamagedTower)) && DamagedTower->isDestroyed == false)
 		{
 			ArrDamagedEnemy.Add(DamagedTower);

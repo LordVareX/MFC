@@ -86,6 +86,13 @@ struct FActionSkill : public FTableRowBase
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Damage")
 		int MaxDamage = 0;
 
+	//Knockback vector on stun
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "StatusEffect")
+		float StunImpulse = 0.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "StatusEffect")
+		float StunTime = 0.0f;
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Effect")
 		UParticleSystem* HitImpact;
 
@@ -104,10 +111,6 @@ struct FActionSkill : public FTableRowBase
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Anim")
 		UAnimMontage* RightHitMoveset;
-
-	//Check if target hit is head
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Target")
-		bool TargetIsHead = false;
 
 	//For array comparison
 	bool operator ==(const FActionSkill &other) const

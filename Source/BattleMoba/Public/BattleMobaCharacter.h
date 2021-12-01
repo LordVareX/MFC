@@ -208,6 +208,7 @@ protected:
 	/** Input call camera shake */
 	void OnCameraShake();
 
+	void OnHRMontageEnd(UAnimMontage* animMontage, bool bInterrupted);
 
 protected:
 
@@ -288,6 +289,12 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "HitReaction")
 		UAnimMontage* LeftHitMoveset;
 
+	UPROPERTY(VisibleAnywhere, Replicated, Category = "HitReaction")
+		float StunDuration;
+
+	UPROPERTY(VisibleAnywhere, Replicated, Category = "HitReaction")
+		float StunImpulse;
+
 	//TimerHandle for removing damage dealer array
 	FTimerHandle DealerTimer;
 
@@ -347,10 +354,6 @@ protected:
 
 	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadWrite, Category = "Status")
 		float Stamina;
-
-	//Damage to be dealt from the action
-	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadWrite, Category = "Target")
-		bool TargetHead = false;
 
 	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadWrite, Category = "ActionSkill")
 		FName AttackSection = "NormalAttack01";
@@ -470,34 +473,16 @@ protected:
 		void DoDamage(AActor* HitActor);
 
 	UFUNCTION(Reliable, Server, WithValidation, Category = "ReceiveDamage")
-		void HitReactionServer(AActor* HitActor, float DamageReceived, UAnimMontage* HitMoveset, FName MontageSection);
+		void HitReactionServer(AActor* HitActor, float DamageReceived, UAnimMontage* HitMoveset, FName MontageSection, float StunTime, FVector KnockbackVector, bool isKnockback);
 
 	UFUNCTION(Reliable, NetMulticast, WithValidation, Category = "ReceiveDamage")
-		void HitReactionClient(AActor* HitActor, float DamageReceived, UAnimMontage* HitMoveset, FName MontageSection);
-
-	UFUNCTION(Reliable, Server, WithValidation, BlueprintCallable, Category = "HitReaction")
-		void StunPlayerServer(bool checkStun);
-
-	UFUNCTION(Reliable, NetMulticast, WithValidation, BlueprintCallable, Category = "HitReaction")
-		void StunPlayerClient(bool checkStun);
+		void HitReactionClient(AActor* HitActor, float DamageReceived, UAnimMontage* HitMoveset, FName MontageSection, float StunTime, FVector KnockbackVector, bool isKnockback);
 
 	UFUNCTION(Reliable, Server, WithValidation, BlueprintCallable, Category = "HitReaction")
 		void ServerRotateHitActor(AActor* HitActor, AActor* Attacker);
 
 	UFUNCTION(Reliable, NetMulticast, WithValidation, BlueprintCallable, Category = "HitReaction")
 		void MulticastRotateHitActor(AActor* HitActor, AActor* Attacker);
-
-	UFUNCTION(Reliable, Server, WithValidation, BlueprintCallable, Category = "HitReaction")
-		void ServerSpawnEffect(ABattleMobaCharacter* EmitActor, ABattleMobaCharacter* HitActor);
-
-	UFUNCTION(Reliable, NetMulticast, WithValidation, BlueprintCallable, Category = "HitReaction")
-		void MulticastSpawnEffect(ABattleMobaCharacter* EmitActor, ABattleMobaCharacter* HitActor);
-
-	UFUNCTION(Reliable, Server, WithValidation, BlueprintCallable, Category = "HitReaction")
-		void SetActiveSocket(FName SocketName);
-
-	UFUNCTION(Reliable, NetMulticast, WithValidation, Category = "HitReaction")
-		void MulticastSetActiveSocket(FName SocketName);
 
 
 	UFUNCTION()
