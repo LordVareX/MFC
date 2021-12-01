@@ -41,9 +41,9 @@ void UMainMenuWidget::NativeConstruct() {
 	WebBrowser = (UWebBrowser*)GetWidgetFromName(TEXT("WebBrowser_Login"));
 
 	MatchmakingButton = (UButton*)GetWidgetFromName(TEXT("Button_Matchmaking"));
-	FScriptDelegate MatchmakingDelegate;
+	/*FScriptDelegate MatchmakingDelegate;
 	MatchmakingDelegate.BindUFunction(this, "OnMatchmakingButtonClicked");
-	MatchmakingButton->OnClicked.Add(MatchmakingDelegate);
+	MatchmakingButton->OnClicked.Add(MatchmakingDelegate);*/
 
 	WinsTextBlock = (UTextBlock*)GetWidgetFromName(TEXT("TextBlock_Wins"));
 
@@ -51,7 +51,7 @@ void UMainMenuWidget::NativeConstruct() {
 
 	PingTextBlock = (UTextBlock*)GetWidgetFromName(TEXT("TextBlock_Ping"));
 
-	MatchmakingEventTextBlock = (UTextBlock*)GetWidgetFromName(TEXT("TextBlock_MatchmakingEvent"));
+	//MatchmakingEventTextBlock = (UTextBlock*)GetWidgetFromName(TEXT("TextBlock_MatchmakingEvent"));
 
 	UsernameTextBlock = (UTextBlock*)GetWidgetFromName(TEXT("TextBlock_Username"));
 
@@ -236,7 +236,7 @@ void UMainMenuWidget::OnGetPlayerDataResponseReceived(FHttpRequestPtr Request, F
 					KillTextBlock->SetVisibility(ESlateVisibility::Visible);
 					DeathTextBlock->SetVisibility(ESlateVisibility::Visible);
 					AssistTextBlock->SetVisibility(ESlateVisibility::Visible);
-					MatchmakingEventTextBlock->SetVisibility(ESlateVisibility::Visible);
+					//MatchmakingEventTextBlock->SetVisibility(ESlateVisibility::Visible);
 					UsernameTextBlock->SetVisibility(ESlateVisibility::Visible);
 
 					UGameInstance* GameInstance = GetGameInstance();
@@ -277,7 +277,7 @@ void UMainMenuWidget::SetAveragePlayerLatency() {
 }
 
 void UMainMenuWidget::OnMatchmakingButtonClicked() {
-	MatchmakingButton->SetIsEnabled(false);
+	//MatchmakingButton->SetIsEnabled(false);
 
 	FString AccessToken;
 	FString MatchmakingTicketId;
@@ -311,19 +311,19 @@ void UMainMenuWidget::OnMatchmakingButtonClicked() {
 				StopMatchmakingRequest->ProcessRequest();
 			}
 			else {
-				UTextBlock* ButtonTextBlock = (UTextBlock*)MatchmakingButton->GetChildAt(0);
-				ButtonTextBlock->SetText(FText::FromString("Join Game"));
-				MatchmakingEventTextBlock->SetText(FText::FromString(""));
+				//UTextBlock* ButtonTextBlock = (UTextBlock*)MatchmakingButton->GetChildAt(0);
+				//ButtonTextBlock->SetText(FText::FromString("Join Game"));
+				//MatchmakingEventTextBlock->SetText(FText::FromString(""));
 
-				MatchmakingButton->SetIsEnabled(true);
+				//MatchmakingButton->SetIsEnabled(true);
 			}
 		}
 		else {
-			UTextBlock* ButtonTextBlock = (UTextBlock*)MatchmakingButton->GetChildAt(0);
-			ButtonTextBlock->SetText(FText::FromString("Join Game"));
-			MatchmakingEventTextBlock->SetText(FText::FromString(""));
+			//UTextBlock* ButtonTextBlock = (UTextBlock*)MatchmakingButton->GetChildAt(0);
+			//ButtonTextBlock->SetText(FText::FromString("Join Game"));
+			//MatchmakingEventTextBlock->SetText(FText::FromString(""));
 
-			MatchmakingButton->SetIsEnabled(true);
+			//MatchmakingButton->SetIsEnabled(true);
 		}
 	}
 	else {
@@ -347,11 +347,11 @@ void UMainMenuWidget::OnMatchmakingButtonClicked() {
 				StartMatchmakingRequest->ProcessRequest();
 			}
 			else {
-				MatchmakingButton->SetIsEnabled(true);
+				//MatchmakingButton->SetIsEnabled(true);
 			}
 		}
 		else {
-			MatchmakingButton->SetIsEnabled(true);
+			//MatchmakingButton->SetIsEnabled(true);
 		}
 	}
 }
@@ -373,15 +373,15 @@ void UMainMenuWidget::OnStartMatchmakingResponseReceived(FHttpRequestPtr Request
 						GetWorld()->GetTimerManager().SetTimer(PollMatchmakingHandle, this, &UMainMenuWidget::PollMatchmaking, 1.0f, true, 1.0f);
 						SearchingForGame = true;
 
-						UTextBlock* ButtonTextBlock = (UTextBlock*)MatchmakingButton->GetChildAt(0);
+						/*UTextBlock* ButtonTextBlock = (UTextBlock*)MatchmakingButton->GetChildAt(0);
 						ButtonTextBlock->SetText(FText::FromString("Cancel Matchmaking"));
-						MatchmakingEventTextBlock->SetText(FText::FromString("Currently looking for a match"));
+						//MatchmakingEventTextBlock->SetText(FText::FromString("Currently looking for a match"));*/
 					}
 				}
 			}
 		}
 	}
-	MatchmakingButton->SetIsEnabled(true);
+	//MatchmakingButton->SetIsEnabled(true);
 }
 
 void UMainMenuWidget::OnStopMatchmakingResponseReceived(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful) {
@@ -393,11 +393,11 @@ void UMainMenuWidget::OnStopMatchmakingResponseReceived(FHttpRequestPtr Request,
 		}
 	}
 
-	UTextBlock* ButtonTextBlock = (UTextBlock*)MatchmakingButton->GetChildAt(0);
-	ButtonTextBlock->SetText(FText::FromString("Join Game"));
-	MatchmakingEventTextBlock->SetText(FText::FromString(""));
+	//UTextBlock* ButtonTextBlock = (UTextBlock*)MatchmakingButton->GetChildAt(0);
+	//ButtonTextBlock->SetText(FText::FromString("Join Game"));
+	//MatchmakingEventTextBlock->SetText(FText::FromString(""));
 
-	MatchmakingButton->SetIsEnabled(true);
+	//MatchmakingButton->SetIsEnabled(true);
 }
 
 void UMainMenuWidget::PollMatchmaking() {
@@ -454,8 +454,8 @@ void UMainMenuWidget::OnPollMatchmakingResponseReceived(FHttpRequestPtr Request,
 					}
 
 					if (TicketType.Equals("MatchmakingSucceeded")) {
-						MatchmakingButton->SetIsEnabled(false);
-						MatchmakingEventTextBlock->SetText(FText::FromString("Successfully found a match. Now connecting to the server..."));
+						//MatchmakingButton->SetIsEnabled(false);
+						//MatchmakingEventTextBlock->SetText(FText::FromString("Successfully found a match. Now connecting to the server..."));
 
 						TSharedPtr<FJsonObject> GameSessionInfo = Ticket->GetObjectField("GameSessionInfo")->GetObjectField("M");
 						FString IpAddress = GameSessionInfo->GetObjectField("IpAddress")->GetStringField("S");
@@ -473,9 +473,9 @@ void UMainMenuWidget::OnPollMatchmakingResponseReceived(FHttpRequestPtr Request,
 						UGameplayStatics::OpenLevel(GetWorld(), FName(*LevelName), false, Options);
 					}
 					else {
-						UTextBlock* ButtonTextBlock = (UTextBlock*)MatchmakingButton->GetChildAt(0);
-						ButtonTextBlock->SetText(FText::FromString("Join Game"));
-						MatchmakingEventTextBlock->SetText(FText::FromString(TicketType + ". Please try again"));
+						//UTextBlock* ButtonTextBlock = (UTextBlock*)MatchmakingButton->GetChildAt(0);
+						//ButtonTextBlock->SetText(FText::FromString("Join Game"));
+						//MatchmakingEventTextBlock->SetText(FText::FromString(TicketType + ". Please try again"));
 					}
 				}
 			}
@@ -536,14 +536,14 @@ void UMainMenuWidget::OnCreateNameButtonClickedResponseReceived(FHttpRequestPtr 
 					}*/
 
 					WebBrowser->SetVisibility(ESlateVisibility::Hidden);
-					MatchmakingButton->SetVisibility(ESlateVisibility::Visible);
+					//MatchmakingButton->SetVisibility(ESlateVisibility::Visible);
 					WinsTextBlock->SetVisibility(ESlateVisibility::Visible);
 					LossesTextBlock->SetVisibility(ESlateVisibility::Visible);
 					PingTextBlock->SetVisibility(ESlateVisibility::Visible);
 					KillTextBlock->SetVisibility(ESlateVisibility::Visible);
 					DeathTextBlock->SetVisibility(ESlateVisibility::Visible);
 					AssistTextBlock->SetVisibility(ESlateVisibility::Visible);
-					MatchmakingEventTextBlock->SetVisibility(ESlateVisibility::Visible);
+					//MatchmakingEventTextBlock->SetVisibility(ESlateVisibility::Visible);
 					UsernameTextBlock->SetVisibility(ESlateVisibility::Visible);
 
 					UGameInstance* GameInstance = GetGameInstance();

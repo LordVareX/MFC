@@ -109,7 +109,7 @@ void UBattleMobaGameInstance::OnRetrieveNewTokensResponseReceived(FHttpRequestPt
 void UBattleMobaGameInstance::GetResponseTime() {
 	TSharedRef<IHttpRequest> GetResponseTimeRequest = HttpModule->CreateRequest();
 	GetResponseTimeRequest->OnProcessRequestComplete().BindUObject(this, &UBattleMobaGameInstance::OnGetResponseTimeResponseReceived);
-	GetResponseTimeRequest->SetURL("https://gamelift." + RegionCode + ".amazonaws.com");
+	GetResponseTimeRequest->SetURL("https://gamelift.ap-southeast-1.amazonaws.com");
 	GetResponseTimeRequest->SetVerb("GET");
 	GetResponseTimeRequest->ProcessRequest();
 }
