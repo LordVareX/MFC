@@ -3,7 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Components/PrimitiveComponent.h"
+#include "Components/PrimitiveComponent.h" 
 #include "InputLibrary.h"
 #include "GameFramework/Character.h"
 #include "BattleMobaAnimInstance.h"
@@ -466,16 +466,16 @@ protected:
 		void HideHPBar();
 
 	UFUNCTION(Reliable, Server, WithValidation, BlueprintCallable, Category = "HitReaction")
-		void AttackTrace(bool traceStart, int activeAttack);
+		void AttackTrace(bool traceStart, int activeAttack, UParticleSystem* ImpactEffect);
 
 	UFUNCTION(Reliable, Server, WithValidation, Category = "HitReaction")
-		void HitResult(FHitResult hit);
+		void HitResult(FHitResult hit, UParticleSystem* ImpactEffect);
 
 	//Skill sent to server
 	UFUNCTION(Reliable, Server, WithValidation, BlueprintCallable, Category = "HitReaction")
 		void FireTrace(UBoxComponent* Col1, UBoxComponent* Col2, UBoxComponent* Col3, UBoxComponent* Col4, UBoxComponent* Col5, UBoxComponent* Col6);
 
-	UFUNCTION(Reliable, Server, WithValidation, Category = "HitReaction")
+	UFUNCTION(Reliable, Server, WithValidation, BlueprintCallable, Category = "HitReaction")
 		void DoDamage(AActor* HitActor);
 
 	UFUNCTION(Reliable, Server, WithValidation, Category = "ReceiveDamage")
