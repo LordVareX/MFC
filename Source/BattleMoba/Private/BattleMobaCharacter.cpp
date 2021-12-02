@@ -1942,12 +1942,12 @@ void ABattleMobaCharacter::MulticastExecuteAction_Implementation(FActionSkill Se
 }
 
 
-bool ABattleMobaCharacter::AttackTrace_Validate(bool traceStart, int activeAttack)
+bool ABattleMobaCharacter::AttackTrace_Validate(bool traceStart, int activeAttack, UParticleSystem* ImpactEffect)
 {
 	return true;
 }
 
-void ABattleMobaCharacter::AttackTrace_Implementation(bool traceStart, int activeAttack)
+void ABattleMobaCharacter::AttackTrace_Implementation(bool traceStart, int activeAttack, UParticleSystem* ImpactEffect)
 {
 	//GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Red, FString::Printf(TEXT("Start Tracing? %s"), traceStart ? TEXT("True") : TEXT("False")));
 
@@ -1960,6 +1960,8 @@ void ABattleMobaCharacter::AttackTrace_Implementation(bool traceStart, int activ
 
 		TArray< TEnumAsByte<EObjectTypeQuery> > ObjectTypes;
 		ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECC_PhysicsBody));
+		ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECC_Pawn));
+		ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECC_Destructible));
 
 		TArray<class AActor*> IgnoreActors;
 		IgnoreActors.Add(this);
@@ -2012,13 +2014,11 @@ void ABattleMobaCharacter::AttackTrace_Implementation(bool traceStart, int activ
 			endTrace = startTrace + (GetActorForwardVector() * TraceDistance);
 
 			//bool bHit = GetWorld()->LineTraceSingleByObjectType(hitResult, startTrace, endTrace, FCollisionObjectQueryParams(ECC_TO_BITFIELD(ECC_Attack)), FCollisionQueryParams(TEXT("IKTrace"), false, this));
-			bool bHit = UKismetSystemLibrary::LineTraceSingleForObjects(GetWorld(), startTrace, endTrace, ObjectTypes, true, IgnoreActors, EDrawDebugTrace::ForDuration, hitResult, true, FColor::Red, FColor::Green, -1.0f);
-
+			bool bHit = UKismetSystemLibrary::LineTraceSingleForObjects(GetWorld(), startTrace, endTrace, ObjectTypes, true, IgnoreActors, EDrawDebugTrace::ForDuration, hitResult, true, FColor::Red, FColor::Green, 3.0f);
 
 			if (bHit)
 			{
-
-				HitResult(hitResult);
+				HitResult(hitResult, HitEffect);
 				//GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Green, FString::Printf(TEXT("You are hitting: %s"), *hitResult.Actor->GetName()));
 
 			}
@@ -2031,12 +2031,12 @@ void ABattleMobaCharacter::AttackTrace_Implementation(bool traceStart, int activ
 	}
 }
 
-bool ABattleMobaCharacter::HitResult_Validate(FHitResult hit)
+bool ABattleMobaCharacter::HitResult_Validate(FHitResult hit, UParticleSystem* ImpactEffect)
 {
 	return true;
 }
 
-void ABattleMobaCharacter::HitResult_Implementation(FHitResult hit)
+void ABattleMobaCharacter::HitResult_Implementation(FHitResult hit, UParticleSystem* ImpactEffect)
 {
 	ABattleMobaCharacter* DamagedEnemy = Cast<ABattleMobaCharacter>(hit.Actor);
 	ADestructibleTower* DamagedTower = Cast<ADestructibleTower>(hit.Actor);
@@ -2055,7 +2055,7 @@ void ABattleMobaCharacter::HitResult_Implementation(FHitResult hit)
 				}
 			}
 
-			else
+			else if (DamagedEnemy->AnimInsta->Montage_IsPlaying(DamagedEnemy->CounterMoveset) == false)
 			{
 				/**		set the hitActor hit movesets from the same row of skill moveset the attacker used*/
 				DamagedEnemy->HitReactionMoveset = this->HitReactionMoveset;
@@ -2066,6 +2066,36 @@ void ABattleMobaCharacter::HitResult_Implementation(FHitResult hit)
 				ArrDamagedEnemy.Add(DamagedEnemy);
 				DoDamage(DamagedEnemy);
 			}
+
+			//		get nearest bone location from hit impact
+			TArray<FName> ArrSockets = DamagedEnemy->GetMesh()->GetAllSocketNames();
+
+			FName HitBone = NAME_None;
+			float PreviousHitDistance = 0.0f;
+
+			for (auto& socketIndex : ArrSockets)
+			{
+				//		get vector length of socket location and impact
+				float vectorDiff = (DamagedEnemy->GetMesh()->GetSocketLocation(socketIndex) - hit.ImpactPoint).Size();
+
+				if (vectorDiff < PreviousHitDistance)
+				{
+					//		set latest distance to vector diff and hitbone to the current array element
+					PreviousHitDistance = vectorDiff;
+					HitBone = socketIndex;
+				}
+			}
+
+			GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Red, FString::Printf(TEXT("Closest bone: "), *HitBone.ToString()));
+			if (IsValid(ImpactEffect))
+			{
+				GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Purple, FString::Printf(TEXT("ImpactEffect: "), *ImpactEffect->GetName()));
+				//		spawn particle on closest bone location to hit impact
+				UGameplayStatics::SpawnEmitterAtLocation(this->GetWorld(), ImpactEffect, DamagedEnemy->GetMesh()->GetSocketLocation(HitBone), FRotator::ZeroRotator, false);
+			}
+			
+
+			//UGameplayStatics::PlaySoundAtLocation()
 		}
 	}
 
@@ -2076,6 +2106,12 @@ void ABattleMobaCharacter::HitResult_Implementation(FHitResult hit)
 		{
 			ArrDamagedEnemy.Add(DamagedTower);
 			TowerReceiveDamage(DamagedTower, this->BaseDamage);
+
+			if (IsValid(ImpactEffect))
+			{
+				UGameplayStatics::SpawnEmitterAtLocation(this->GetWorld(), ImpactEffect, hit.ImpactPoint, FRotator::ZeroRotator, false);
+			}
+			
 		}
 	}
 }
