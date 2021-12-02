@@ -8,14 +8,14 @@
 
 class USkeletalMesh;
 /**
- * 
+ *
  */
 UCLASS()
 class BATTLEMOBA_API ABattleMobaPlayerState : public APlayerState
 {
 	GENERATED_BODY()
 
-	void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const;
+		void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const;
 
 public:
 	UPROPERTY()
@@ -44,10 +44,16 @@ public:
 		FName TeamName;
 
 	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadWrite, Category = "Status")
+		FName StyleName;
+
+	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadWrite, Category = "Status")
 		FString Username;
 
 	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadWrite, Category = "Status")
 		FString AWSPlayerId;
+
+	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadWrite, Category = "Status")
+		FString AWSPlayerSessionId;
 
 	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadWrite, Category = "Status")
 		int32 Pi = 0;

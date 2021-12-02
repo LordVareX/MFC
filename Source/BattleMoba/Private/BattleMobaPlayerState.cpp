@@ -16,6 +16,7 @@ void ABattleMobaPlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty
 	DOREPLIFETIME(ABattleMobaPlayerState, Assist);
 	DOREPLIFETIME(ABattleMobaPlayerState, Username);
 	DOREPLIFETIME(ABattleMobaPlayerState, AWSPlayerId);
+	DOREPLIFETIME(ABattleMobaPlayerState, AWSPlayerSessionId);
 	DOREPLIFETIME(ABattleMobaPlayerState, TeamName);
 	DOREPLIFETIME(ABattleMobaPlayerState, Team);
 	DOREPLIFETIME(ABattleMobaPlayerState, CharMesh);
@@ -26,6 +27,7 @@ void ABattleMobaPlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty
 	DOREPLIFETIME(ABattleMobaPlayerState, RespawnHandle);
 	DOREPLIFETIME(ABattleMobaPlayerState, MaxHealth);
 	DOREPLIFETIME(ABattleMobaPlayerState, Defense);
+	DOREPLIFETIME(ABattleMobaPlayerState, StyleName);
 }
 
 bool ABattleMobaPlayerState::SetPlayerIndex_Validate(int32 PlayerIndex)
