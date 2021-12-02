@@ -321,26 +321,12 @@ ABattleMobaCharacter::ABattleMobaCharacter()
 	W_DamageOutput->SetGenerateOverlapEvents(false);
 
 	TraceDistance = 20.0f;
+	
+	static ConstructorHelpers::FObjectFinder<UAnimMontage> FindCounterMoveset(TEXT("AnimMontage'/Game/Anims/Slt/Montage/Slt_AS_Counter.Slt_AS_Counter'"));
 
-	static ConstructorHelpers::FObjectFinder<UDataTable> FindSltDT(TEXT("DataTable'/Game/Storage/DT_Slt.DT_Slt'"));
-
-	if (FindSltDT.Object)
+	if (FindCounterMoveset.Object)
 	{
-		this->SltActionTable = FindSltDT.Object;
-	}
-
-	static ConstructorHelpers::FObjectFinder<UDataTable> FindBoxDT(TEXT("DataTable'/Game/Storage/DT_Box.DT_Box'"));
-
-	if (FindBoxDT.Object)
-	{
-		this->BoxActionTable = FindBoxDT.Object;
-	}
-
-	static ConstructorHelpers::FObjectFinder<UDataTable> FindShaDT(TEXT("DataTable'/Game/Storage/DT_Shao.DT_Shao'"));
-
-	if (FindShaDT.Object)
-	{
-		this->ShaActionTable = FindShaDT.Object;
+		this->CounterMoveset = FindCounterMoveset.Object;
 	}
 }
 
@@ -1000,14 +986,14 @@ void ABattleMobaCharacter::HitReactionClient_Implementation(AActor* HitActor, fl
 				//		Hit reaction for players who have hp > 0
 				else
 				{
+					FTimerHandle delay;
+					FTimerDelegate delayDel;
+
 					GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Blue, FString::Printf(TEXT("Knock back? %s"), isKnockback ? TEXT("true") : TEXT("false")));
 					GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Yellow, FString::Printf(TEXT("Stun Time: %f"), StunTime));
 					//		when attacker is on Special Attack skills
 					if (isKnockback)
 					{
-						FTimerHandle delay;
-						FTimerDelegate delayDel;
-
 						FOnMontageEnded MontageEndedDelegate;
 
 						//		stun enemy, does not allow movement and input skill
@@ -1056,6 +1042,10 @@ void ABattleMobaCharacter::HitReactionClient_Implementation(AActor* HitActor, fl
 								this->AnimInsta->CanMove = false;
 							}
 						}
+						//		cancel stun timer, stop montage.. leave nullptr to stop any active montage
+						this->GetWorldTimerManager().ClearTimer(delay);
+						this->GetMesh()->GetAnimInstance()->Montage_Stop(0.1f, nullptr);
+						
 
 						//		play hit reaction of directional hit reaction
 						this->GetMesh()->GetAnimInstance()->Montage_Play(HitMoveset, 1.0f, EMontagePlayReturnType::MontageLength, 0.0f, true);
@@ -1852,12 +1842,6 @@ void ABattleMobaCharacter::MulticastExecuteAction_Implementation(FActionSkill Se
 				//if current montage consumes cooldown properties
 				if (SelectedRow.IsUsingCD)
 				{
-					/**		set the counter moveset to skillmoveset*/
-					if (!this->CounterMoveset)
-					{
-						this->CounterMoveset = SelectedRow.SkillMoveset;
-					}
-
 					///GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("Play montage: %s"), *SelectedRow.SkillMoveset->GetName()));
 					//GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("ISUSINGCD")));
 
@@ -2112,9 +2096,104 @@ void ABattleMobaCharacter::HitResult_Implementation(FHitResult hit, UParticleSys
 
 			if (IsValid(ImpactEffect))
 			{
-				UGameplayStatics::SpawnEmitterAtLocation(this->GetWorld(), ImpactEffect, hit.ImpactPoint, FRotator::ZeroRotator, false);
+				UGameplayStatics::SpawnEmitterAtLocation(this->GetWorld(), ImpactEffect, this->GetMesh()->GetSocketLocation(AttachTo), FRotator::ZeroRotator, false);
 			}
 			
+			if (IsValid(HitSound))
+			{
+				GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Purple, FString::Printf(TEXT("Hit Sound: "), *HitSound->GetName()));
+				UGameplayStatics::PlaySoundAtLocation(this->GetWorld(), HitSound, this->GetActorLocation());
+			}
+		}
+	}
+}
+
+bool ABattleMobaCharacter::SpecialAttackTrace_Validate(FVector BoxSize, FVector Offset, UParticleSystem* ImpactEffect, FName AttachTo, USoundBase* HitSound)
+{
+	return true;
+}
+
+void ABattleMobaCharacter::SpecialAttackTrace_Implementation(FVector BoxSize, FVector Offset, UParticleSystem* ImpactEffect, FName AttachTo, USoundBase* HitSound)
+{
+	//		initialize hit results
+	TArray<FHitResult> hitResults;
+
+	//		start and end locations
+	FVector Start = this->GetActorLocation();
+	FVector End = FVector(this->GetActorLocation().X + 0.1f, this->GetActorLocation().Y + 0.1f, this->GetActorLocation().Z + 0.1f);
+
+	TArray<class AActor*> IgnoreActors;
+	IgnoreActors.Add(this);
+
+	TArray< TEnumAsByte<EObjectTypeQuery> > ObjectTypes;
+	ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECC_PhysicsBody));
+	ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECC_Pawn));
+	ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECC_Destructible));
+	
+	//		check if something got hit in the sweep, red on false, green on true Col1->GetComponentLocation() + (GetActorForwardVector() * TraceDistance
+	bool bHit = UKismetSystemLibrary::BoxTraceMultiForObjects(this->GetWorld(), Start, End, BoxSize, this->GetActorRotation(), ObjectTypes, true, IgnoreActors, EDrawDebugTrace::ForDuration, hitResults, true, FColor::Red, FColor::Green, 2.0f);
+
+	if (bHit)
+	{
+		for (auto& Hit : hitResults)
+		{
+			ABattleMobaCharacter* pc = Cast<ABattleMobaCharacter>(Hit.Actor);
+			ADestructibleTower* tower = Cast<ADestructibleTower>(Hit.Actor);
+
+			if (pc != nullptr)
+			{
+				if (pc->InRagdoll == false && pc->TeamName != this->TeamName)
+				{
+					if (pc->AnimInsta->Montage_IsPlaying(pc->CounterMoveset))
+					{
+						if (pc->IsLocallyControlled())
+						{
+							ServerRotateHitActor(pc, this);
+							ServerCounterAttack(pc);
+						}
+					}
+
+					else if (pc->AnimInsta->Montage_IsPlaying(pc->CounterMoveset) == false)
+					{
+						/**		set the hitActor hit movesets from the same row of skill moveset the attacker used*/
+						pc->HitReactionMoveset = this->HitReactionMoveset;
+
+						//		apply damage on enemy
+						DoDamage(pc);
+					}
+
+					if (IsValid(ImpactEffect))
+					{
+						UGameplayStatics::SpawnEmitterAtLocation(this->GetWorld(), ImpactEffect, this->GetActorLocation(), FRotator::ZeroRotator, false);
+					}
+
+					if (IsValid(HitSound))
+					{
+						GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Purple, FString::Printf(TEXT("Hit Sound: "), *HitSound->GetName()));
+						UGameplayStatics::PlaySoundAtLocation(this->GetWorld(), HitSound, this->GetActorLocation());
+					}
+				}
+			}
+
+			else if (tower != nullptr && pc == nullptr)
+			{
+				if (tower->TeamName != this->TeamName && tower->isDestroyed == false)
+				{
+					//		apply damage on tower
+					TowerReceiveDamage(tower, this->BaseDamage);
+
+					if (IsValid(ImpactEffect))
+					{
+						UGameplayStatics::SpawnEmitterAtLocation(this->GetWorld(), ImpactEffect, this->GetActorLocation(), FRotator::ZeroRotator, false);
+					}
+
+					if (IsValid(HitSound))
+					{
+						GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Purple, FString::Printf(TEXT("Hit Sound: "), *HitSound->GetName()));
+						UGameplayStatics::PlaySoundAtLocation(this->GetWorld(), HitSound, this->GetActorLocation());
+					}
+				}
+			}
 		}
 	}
 }
@@ -2414,36 +2493,3 @@ void ABattleMobaCharacter::MoveRight(float Value)
 	}
 }
 
-//void ABattleMobaCharacter::ChooseBattleStyle(int style)
-//{
-//	//		silat moveset
-//	if (style == 1)
-//	{
-//		this->ActionTable = SltActionTable;
-//		this->switchBox = false;
-//		this->switchShao = false;
-//		this->MaxHealth = 750.0f;
-//		this->Defence = 110.0f;
-//
-//	}
-//
-//	//		boxing moveset
-//	else if (style == 2)
-//	{
-//		this->ActionTable = BoxActionTable;
-//		this->switchBox = true;
-//		this->switchShao = false;
-//		this->MaxHealth = 450.0f;
-//		this->Defence = 70.0f;
-//	}
-//
-//	//		shaolin moveset
-//	else if (style == 3)
-//	{
-//		this->ActionTable = ShaActionTable;
-//		this->switchBox = false;
-//		this->switchShao = true;
-//		this->MaxHealth = 1100.0f;
-//		this->Defence = 180.0f;
-//	}
-//}
