@@ -8,7 +8,7 @@
 #include "BattleMobaGameInstance.generated.h"
 
 /**
- * 
+ *
  */
 UCLASS()
 class BATTLEMOBA_API UBattleMobaGameInstance : public UGameInstance
@@ -41,6 +41,12 @@ public:
 		FTimerHandle GetResponseTimeHandle;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+		FString GameSessionId;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+		FString PlayerSessionId;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 		FString PlayerId;// = "b55fb4bb-62ff-449f-a9c9-0aed93722d90";
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
@@ -68,5 +74,5 @@ private:
 
 	void OnRetrieveNewTokensResponseReceived(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful);
 	void OnGetResponseTimeResponseReceived(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful);
-	
+
 };

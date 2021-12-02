@@ -7,79 +7,79 @@
 #include "Runtime/Online/HTTP/Public/Http.h"
 #include "BattleMobaGameMode.generated.h"
 
-UENUM()
-enum class EUpdateReason : uint8
-{
-	NO_UPDATE_RECEIVED,
-	BACKFILL_INITIATED,
-	MATCHMAKING_DATA_UPDATED,
-	BACKFILL_FAILED,
-	BACKFILL_TIMED_OUT,
-	BACKFILL_CANCELLED,
-	BACKFILL_COMPLETED
-};
-
-USTRUCT()
-struct FStartGameSessionState
-{
-	GENERATED_BODY();
-
-	UPROPERTY()
-		bool Status;
-
-	UPROPERTY()
-		FString MatchmakingConfigurationArn;
-
-	TMap<FString, Aws::GameLift::Server::Model::Player> PlayerIdToPlayer;
-
-	FStartGameSessionState() {
-		Status = false;
-	}
-};
-
-USTRUCT()
-struct FUpdateGameSessionState
-{
-	GENERATED_BODY();
-
-	UPROPERTY()
-		EUpdateReason Reason;
-
-	TMap<FString, Aws::GameLift::Server::Model::Player> PlayerIdToPlayer;
-
-	FUpdateGameSessionState() {
-		Reason = EUpdateReason::NO_UPDATE_RECEIVED;
-	}
-};
-
-USTRUCT()
-struct FProcessTerminateState
-{
-	GENERATED_BODY();
-
-	UPROPERTY()
-		bool Status;
-
-	long TerminationTime;
-
-	FProcessTerminateState() {
-		Status = false;
-		TerminationTime = 0L;
-	}
-};
-
-USTRUCT()
-struct FHealthCheckState
-{
-	GENERATED_BODY();
-
-	UPROPERTY()
-		bool Status;
-
-	FHealthCheckState() {
-		Status = false;
-	}
-};
+//UENUM()
+//enum class EUpdateReason : uint8
+//{
+//	NO_UPDATE_RECEIVED,
+//	BACKFILL_INITIATED,
+//	MATCHMAKING_DATA_UPDATED,
+//	BACKFILL_FAILED,
+//	BACKFILL_TIMED_OUT,
+//	BACKFILL_CANCELLED,
+//	BACKFILL_COMPLETED
+//};
+//
+//USTRUCT()
+//struct FStartGameSessionState
+//{
+//	GENERATED_BODY();
+//
+//	UPROPERTY()
+//		bool Status;
+//
+//	UPROPERTY()
+//		FString MatchmakingConfigurationArn;
+//
+//	TMap<FString, Aws::GameLift::Server::Model::Player> PlayerIdToPlayer;
+//
+//	FStartGameSessionState() {
+//		Status = false;
+//	}
+//};
+//
+//USTRUCT()
+//struct FUpdateGameSessionState
+//{
+//	GENERATED_BODY();
+//
+//	UPROPERTY()
+//		EUpdateReason Reason;
+//
+//	TMap<FString, Aws::GameLift::Server::Model::Player> PlayerIdToPlayer;
+//
+//	FUpdateGameSessionState() {
+//		Reason = EUpdateReason::NO_UPDATE_RECEIVED;
+//	}
+//};
+//
+//USTRUCT()
+//struct FProcessTerminateState
+//{
+//	GENERATED_BODY();
+//
+//	UPROPERTY()
+//		bool Status;
+//
+//	long TerminationTime;
+//
+//	FProcessTerminateState() {
+//		Status = false;
+//		TerminationTime = 0L;
+//	}
+//};
+//
+//USTRUCT()
+//struct FHealthCheckState
+//{
+//	GENERATED_BODY();
+//
+//	UPROPERTY()
+//		bool Status;
+//
+//	FHealthCheckState() {
+//		Status = false;
+//	}
+//};
 
 class ABattleMobaCharacter;
 class ABattleMobaGameState;
@@ -120,7 +120,7 @@ protected:
 
 	virtual void BeginPlay() override;
 
-	virtual FString InitNewPlayer(APlayerController* NewPlayerController, const FUniqueNetIdRepl& UniqueId, const FString& Options, const FString& Portal) override;
+	//virtual FString InitNewPlayer(APlayerController* NewPlayerController, const FUniqueNetIdRepl& UniqueId, const FString& Options, const FString& Portal) override;
 
 	UFUNCTION()
 		void StartClock();
@@ -153,14 +153,14 @@ public:
 	UPROPERTY()
 		FTimerHandle PickAWinningTeamHandle;
 
-	UPROPERTY()
-		FTimerHandle HandleProcessTerminationHandle;
+	//UPROPERTY()
+	//	FTimerHandle HandleProcessTerminationHandle;
 
-	UPROPERTY()
-		FTimerHandle HandleGameSessionUpdateHandle;
+	//UPROPERTY()
+	//	FTimerHandle HandleGameSessionUpdateHandle;
 
-	UPROPERTY()
-		FTimerHandle SuspendBackfillHandle;
+	//UPROPERTY()
+	//	FTimerHandle SuspendBackfillHandle;
 
 	UPROPERTY()
 		FTimerHandle ClockTimer;
@@ -174,9 +174,9 @@ public:
 public:
 	ABattleMobaGameMode();
 
-	virtual void PreLogin(const FString& Options, const FString& Address, const FUniqueNetIdRepl& UniqueId, FString& ErrorMessage) override;
+	//virtual void PreLogin(const FString& Options, const FString& Address, const FUniqueNetIdRepl& UniqueId, FString& ErrorMessage) override;
 
-	virtual void Logout(AController* Exiting) override;
+	//virtual void Logout(AController* Exiting) override;
 
 	//virtual AActor* ChoosePlayerStart_Implementation(AController* Player) override;
 
@@ -192,25 +192,28 @@ public:
 	void RespawnTimerCount(FTimerHandle* RespawnHandle, ABattleMobaPlayerState* ps);
 
 
-	//virtual void PostLogin(APlayerController* NewPlayer) override;
+	virtual void PostLogin(APlayerController* NewPlayer) override;
 
 	UFUNCTION()
 		void EndRecord();
 
+	UFUNCTION(BlueprintImplementableEvent, Category = "Players")
+		void UpdateLobby();
+
 private:
 	FHttpModule* HttpModule;
 
-	UPROPERTY()
-		FStartGameSessionState StartGameSessionState;
+	//UPROPERTY()
+	//	FStartGameSessionState StartGameSessionState;
 
-	UPROPERTY()
-		FUpdateGameSessionState UpdateGameSessionState;
+	//UPROPERTY()
+	//	FUpdateGameSessionState UpdateGameSessionState;
 
-	UPROPERTY()
-		FProcessTerminateState ProcessTerminateState;
+	//UPROPERTY()
+	//	FProcessTerminateState ProcessTerminateState;
 
-	UPROPERTY()
-		FHealthCheckState HealthCheckState;
+	//UPROPERTY()
+	//	FHealthCheckState HealthCheckState;
 
 	UPROPERTY()
 		FString ApiUrl;
@@ -227,8 +230,8 @@ private:
 	UPROPERTY()
 		bool GameSessionActivated;
 
-	UPROPERTY()
-		FString LatestBackfillTicketId;
+	//UPROPERTY()
+	//	FString LatestBackfillTicketId;
 
 	UPROPERTY()
 		bool WaitingForPlayersToJoin;
@@ -247,18 +250,18 @@ private:
 	UFUNCTION()
 		void PickAWinningTeam();
 
-	UFUNCTION()
-		void HandleProcessTermination();
+	//UFUNCTION()
+	//	void HandleProcessTermination();
 
-	UFUNCTION()
-		void HandleGameSessionUpdate();
+	//UFUNCTION()
+	//	void HandleGameSessionUpdate();
 
-	UFUNCTION()
-		void SuspendBackfill();
+	//UFUNCTION()
+	//	void SuspendBackfill();
 
 
 
-	FString CreateBackfillRequest(FString GameSessionArn, FString MatchmakingConfigurationArn, TMap<FString, Aws::GameLift::Server::Model::Player> Players);
-	bool StopBackfillRequest(FString GameSessionArn, FString MatchmakingConfigurationArn, FString TicketId);
+	//FString CreateBackfillRequest(FString GameSessionArn, FString MatchmakingConfigurationArn, TMap<FString, Aws::GameLift::Server::Model::Player> Players);
+	//bool StopBackfillRequest(FString GameSessionArn, FString MatchmakingConfigurationArn, FString TicketId);
 	void OnRecordMatchResultResponseReceived(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful);
 };

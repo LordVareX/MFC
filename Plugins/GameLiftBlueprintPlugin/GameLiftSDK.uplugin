@@ -37,6 +37,18 @@
 				"Android",
 				"IOS"
 			]
+		},
+		{
+			"Name": "GameLiftServerSDK",
+			"Type": "Runtime",
+			"LoadingPhase": "PreDefault",
+			"WhitelistPlatforms": [
+				"Win64",
+				"Linux",
+				"Mac",
+				"Android",
+				"IOS"
+			]
 		}
 	]
 }
