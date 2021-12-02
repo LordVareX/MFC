@@ -466,10 +466,10 @@ protected:
 		void HideHPBar();
 
 	UFUNCTION(Reliable, Server, WithValidation, BlueprintCallable, Category = "HitReaction")
-		void AttackTrace(bool traceStart, int activeAttack, UParticleSystem* ImpactEffect);
+		void AttackTrace(bool traceStart, int activeAttack, UParticleSystem* ImpactEffect, FName AttachTo, USoundBase* HitSound);
 
 	UFUNCTION(Reliable, Server, WithValidation, Category = "HitReaction")
-		void HitResult(FHitResult hit, UParticleSystem* ImpactEffect);
+		void HitResult(FHitResult hit, UParticleSystem* ImpactEffect, FName AttachTo, USoundBase* HitSound);
 
 	//Skill sent to server
 	UFUNCTION(Reliable, Server, WithValidation, BlueprintCallable, Category = "HitReaction")

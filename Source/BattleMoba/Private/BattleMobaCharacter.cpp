@@ -1942,12 +1942,12 @@ void ABattleMobaCharacter::MulticastExecuteAction_Implementation(FActionSkill Se
 }
 
 
-bool ABattleMobaCharacter::AttackTrace_Validate(bool traceStart, int activeAttack, UParticleSystem* ImpactEffect)
+bool ABattleMobaCharacter::AttackTrace_Validate(bool traceStart, int activeAttack, UParticleSystem* ImpactEffect, FName AttachTo, USoundBase* HitSound)
 {
 	return true;
 }
 
-void ABattleMobaCharacter::AttackTrace_Implementation(bool traceStart, int activeAttack, UParticleSystem* ImpactEffect)
+void ABattleMobaCharacter::AttackTrace_Implementation(bool traceStart, int activeAttack, UParticleSystem* ImpactEffect, FName AttachTo, USoundBase* HitSound)
 {
 	//GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Red, FString::Printf(TEXT("Start Tracing? %s"), traceStart ? TEXT("True") : TEXT("False")));
 
@@ -2018,7 +2018,7 @@ void ABattleMobaCharacter::AttackTrace_Implementation(bool traceStart, int activ
 
 			if (bHit)
 			{
-				HitResult(hitResult, HitEffect);
+				HitResult(hitResult, HitEffect, AttachTo, HitSound);
 				//GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Green, FString::Printf(TEXT("You are hitting: %s"), *hitResult.Actor->GetName()));
 			}
 		}
@@ -2030,12 +2030,12 @@ void ABattleMobaCharacter::AttackTrace_Implementation(bool traceStart, int activ
 	}
 }
 
-bool ABattleMobaCharacter::HitResult_Validate(FHitResult hit, UParticleSystem* ImpactEffect)
+bool ABattleMobaCharacter::HitResult_Validate(FHitResult hit, UParticleSystem* ImpactEffect, FName AttachTo, USoundBase* HitSound)
 {
 	return true;
 }
 
-void ABattleMobaCharacter::HitResult_Implementation(FHitResult hit, UParticleSystem* ImpactEffect)
+void ABattleMobaCharacter::HitResult_Implementation(FHitResult hit, UParticleSystem* ImpactEffect, FName AttachTo, USoundBase* HitSound)
 {
 	ABattleMobaCharacter* DamagedEnemy = Cast<ABattleMobaCharacter>(hit.Actor);
 	ADestructibleTower* DamagedTower = Cast<ADestructibleTower>(hit.Actor);
@@ -2086,12 +2086,18 @@ void ABattleMobaCharacter::HitResult_Implementation(FHitResult hit, UParticleSys
 			//}
 
 			//GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Red, FString::Printf(TEXT("Closest bone: "), *HitBone.ToString()));
-			//if (IsValid(ImpactEffect))
-			//{
-			//	GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Purple, FString::Printf(TEXT("ImpactEffect: "), *ImpactEffect->GetName()));
-			//	//		spawn particle on closest bone location to hit impact
-			//	UGameplayStatics::SpawnEmitterAtLocation(this->GetWorld(), ImpactEffect, DamagedEnemy->GetMesh()->GetSocketLocation(HitBone), FRotator::ZeroRotator, false);
-			//}
+			if (IsValid(ImpactEffect))
+			{
+				GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Purple, FString::Printf(TEXT("Impact Effect: "), *ImpactEffect->GetName()));
+				//		spawn particle on closest bone location to hit impact
+				UGameplayStatics::SpawnEmitterAtLocation(this->GetWorld(), ImpactEffect, this->GetMesh()->GetSocketLocation(AttachTo), FRotator::ZeroRotator, false);
+			}
+
+			if (IsValid(HitSound))
+			{
+				GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Purple, FString::Printf(TEXT("Hit Sound: "), *HitSound->GetName()));
+				UGameplayStatics::PlaySoundAtLocation(this->GetWorld(), HitSound, this->GetActorLocation());
+			}
 			
 		}
 	}
