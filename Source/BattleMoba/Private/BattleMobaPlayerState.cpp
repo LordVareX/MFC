@@ -28,6 +28,10 @@ void ABattleMobaPlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty
 	DOREPLIFETIME(ABattleMobaPlayerState, MaxHealth);
 	DOREPLIFETIME(ABattleMobaPlayerState, Defense);
 	DOREPLIFETIME(ABattleMobaPlayerState, StyleName);
+	DOREPLIFETIME(ABattleMobaPlayerState, FrontHitMoveset);
+	DOREPLIFETIME(ABattleMobaPlayerState, BackHitMoveset);
+	DOREPLIFETIME(ABattleMobaPlayerState, RightHitMoveset);
+	DOREPLIFETIME(ABattleMobaPlayerState, LeftHitMoveset);
 }
 
 bool ABattleMobaPlayerState::SetPlayerIndex_Validate(int32 PlayerIndex)

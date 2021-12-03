@@ -173,11 +173,6 @@ public:
 	UPROPERTY(VisibleAnywhere, Replicated, Category = "ControlFlag")
 		TArray<AActor*> ActorsToGetGold;
 
-	UPROPERTY(BlueprintReadWrite, Category = "BattleStyle")
-		bool switchBox = false;
-
-	UPROPERTY(BlueprintReadWrite, Category = "BattleStyle")
-		bool switchShao = false;
 
 protected:
 
@@ -264,15 +259,6 @@ protected:
 	//Assign data table from bp 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 		class UDataTable* ActionTable;
-
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Battle Style")
-		class UDataTable* SltActionTable;
-
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Battle Style")
-		class UDataTable* BoxActionTable;
-
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Battle Style")
-		class UDataTable* ShaActionTable;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "HitReaction")
 		UAnimMontage* HitReactionMoveset;
@@ -465,11 +451,17 @@ protected:
 	UFUNCTION(BlueprintCallable, Category = "HUDSetup")
 		void HideHPBar();
 
+	//		Attack line traces from active colliders
 	UFUNCTION(Reliable, Server, WithValidation, BlueprintCallable, Category = "HitReaction")
-		void AttackTrace(bool traceStart, int activeAttack, UParticleSystem* ImpactEffect);
+		void AttackTrace(bool traceStart, int activeAttack, UParticleSystem* ImpactEffect, FName AttachTo, USoundBase* HitSound);
 
+	//		Result of hit line traces
 	UFUNCTION(Reliable, Server, WithValidation, Category = "HitReaction")
-		void HitResult(FHitResult hit, UParticleSystem* ImpactEffect);
+		void HitResult(FHitResult hit, UParticleSystem* ImpactEffect, FName AttachTo, USoundBase* HitSound);
+
+	//		Attack sphere trace for area of damage
+	UFUNCTION(Reliable, Server, WithValidation, BlueprintCallable, Category = "HitReaction")
+		void SpecialAttackTrace(FVector BoxSize, FVector Offset, UParticleSystem* ImpactEffect, FName AttachTo, USoundBase* HitSound);
 
 	//Skill sent to server
 	UFUNCTION(Reliable, Server, WithValidation, BlueprintCallable, Category = "HitReaction")
