@@ -2073,31 +2073,15 @@ void ABattleMobaCharacter::HitResult_Implementation(FHitResult hit, UParticleSys
 				DoDamage(DamagedEnemy);
 			}
 
-			////		get nearest bone location from hit impact
-			//TArray<FName> ArrSockets = DamagedEnemy->GetMesh()->GetAllSocketNames();
-
-			//FName HitBone = NAME_None;
-			//float PreviousHitDistance = 0.0f;
-
-			//for (auto& socketIndex : ArrSockets)
-			//{
-			//	//		get vector length of socket location and impact
-			//	float vectorDiff = (DamagedEnemy->GetMesh()->GetSocketLocation(socketIndex) - hit.ImpactPoint).Size();
-
-			//	if (vectorDiff < PreviousHitDistance)
-			//	{
-			//		//		set latest distance to vector diff and hitbone to the current array element
-			//		PreviousHitDistance = vectorDiff;
-			//		HitBone = socketIndex;
-			//	}
-			//}
-
 			//GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Red, FString::Printf(TEXT("Closest bone: "), *HitBone.ToString()));
 			if (IsValid(ImpactEffect))
 			{
-				GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Purple, FString::Printf(TEXT("Impact Effect: "), *ImpactEffect->GetName()));
-				//		spawn particle on closest bone location to hit impact
-				UGameplayStatics::SpawnEmitterAtLocation(this->GetWorld(), ImpactEffect, this->GetMesh()->GetSocketLocation(AttachTo), FRotator::ZeroRotator, false);
+				if (AttachTo != NAME_None)
+				{
+					GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Purple, FString::Printf(TEXT("Impact Effect: "), *ImpactEffect->GetName()));
+					//		spawn particle on closest bone location to hit impact
+					UGameplayStatics::SpawnEmitterAtLocation(this->GetWorld(), ImpactEffect, this->GetMesh()->GetSocketLocation(AttachTo), FRotator::ZeroRotator, false);
+				}
 			}
 
 			if (IsValid(HitSound))
@@ -2109,7 +2093,7 @@ void ABattleMobaCharacter::HitResult_Implementation(FHitResult hit, UParticleSys
 		}
 	}
 
-	else if (IsValid(DamagedTower))
+	else if (IsValid(DamagedTower) && !IsValid(DamagedEnemy))
 	{
 		//GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Yellow, FString::Printf(TEXT("DamagedTower = %s"), IsValid(DamagedTower) ? TEXT("True") : TEXT("False")));
 		if (DamagedTower->TeamName != this->TeamName && DamagedTower == hit.Actor && !(ArrDamagedEnemy.Contains(DamagedTower)) && DamagedTower->isDestroyed == false)
@@ -2131,12 +2115,12 @@ void ABattleMobaCharacter::HitResult_Implementation(FHitResult hit, UParticleSys
 	}
 }
 
-bool ABattleMobaCharacter::SpecialAttackTrace_Validate(FVector BoxSize, FVector Offset, UParticleSystem* ImpactEffect, FName AttachTo, USoundBase* HitSound)
+bool ABattleMobaCharacter::SpecialAttackTrace_Validate(FVector BoxSize, FVector Offset, UParticleSystem* ImpactEffect, FName DamageSocket, FName ParticleSocket, USoundBase* HitSound)
 {
 	return true;
 }
 
-void ABattleMobaCharacter::SpecialAttackTrace_Implementation(FVector BoxSize, FVector Offset, UParticleSystem* ImpactEffect, FName AttachTo, USoundBase* HitSound)
+void ABattleMobaCharacter::SpecialAttackTrace_Implementation(FVector BoxSize, FVector Offset, UParticleSystem* ImpactEffect, FName DamageSocket, FName ParticleSocket, USoundBase* HitSound)
 {
 	//		initialize hit results
 	TArray<FHitResult> hitResults;
@@ -2154,66 +2138,73 @@ void ABattleMobaCharacter::SpecialAttackTrace_Implementation(FVector BoxSize, FV
 	ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECC_Destructible));
 	
 	//		check if something got hit in the sweep, red on false, green on true Col1->GetComponentLocation() + (GetActorForwardVector() * TraceDistance
-	bool bHit = UKismetSystemLibrary::BoxTraceMultiForObjects(this->GetWorld(), Start + Offset, End + Offset, BoxSize, this->GetActorRotation(), ObjectTypes, true, IgnoreActors, EDrawDebugTrace::ForDuration, hitResults, true, FColor::Red, FColor::Green, 2.0f);
-
-	if (bHit)
+	if (DamageSocket != NAME_None)
 	{
-		for (auto& Hit : hitResults)
-		{
-			ABattleMobaCharacter* pc = Cast<ABattleMobaCharacter>(Hit.Actor);
-			ADestructibleTower* tower = Cast<ADestructibleTower>(Hit.Actor);
+		bool bHit = UKismetSystemLibrary::BoxTraceMultiForObjects(this->GetWorld(), this->GetMesh()->GetSocketLocation(DamageSocket), this->GetMesh()->GetSocketLocation(DamageSocket)+ 0.1f, BoxSize, this->GetActorRotation(), ObjectTypes, true, IgnoreActors, EDrawDebugTrace::ForDuration, hitResults, true, FColor::Red, FColor::Green, 2.0f);
 
-			if (pc != nullptr)
+		if (bHit)
+		{
+			for (auto& Hit : hitResults)
 			{
-				if (pc->InRagdoll == false && pc->TeamName != this->TeamName)
+				ABattleMobaCharacter* pc = Cast<ABattleMobaCharacter>(Hit.Actor);
+				ADestructibleTower* tower = Cast<ADestructibleTower>(Hit.Actor);
+
+				if (pc != nullptr)
 				{
-					if (pc->AnimInsta->Montage_IsPlaying(pc->CounterMoveset))
+					if (pc->InRagdoll == false && pc->TeamName != this->TeamName)
 					{
-						if (pc->IsLocallyControlled())
+						if (pc->AnimInsta->Montage_IsPlaying(pc->CounterMoveset))
 						{
-							ServerRotateHitActor(pc, this);
-							ServerCounterAttack(pc);
+							if (pc->IsLocallyControlled())
+							{
+								ServerRotateHitActor(pc, this);
+								ServerCounterAttack(pc);
+							}
+						}
+
+						else if (pc->AnimInsta->Montage_IsPlaying(pc->CounterMoveset) == false)
+						{
+							/**		set the hitActor hit movesets from the same row of skill moveset the attacker used*/
+							pc->HitReactionMoveset = this->HitReactionMoveset;
+
+							//		apply damage on enemy
+							DoDamage(pc);
+						}
+
+						if (IsValid(ImpactEffect))
+						{
+							if (ParticleSocket != NAME_None)
+							{
+								FName bone = ParticleSocket;
+								UGameplayStatics::SpawnEmitterAtLocation(this->GetWorld(), ImpactEffect, this->GetMesh()->GetBoneLocation(bone, EBoneSpaces::WorldSpace), FRotator::ZeroRotator, false);
+							}
+						}
+
+						if (IsValid(HitSound))
+						{
+							GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Purple, FString::Printf(TEXT("Hit Sound: "), *HitSound->GetName()));
+							UGameplayStatics::PlaySoundAtLocation(this->GetWorld(), HitSound, this->GetActorLocation());
 						}
 					}
-
-					else if (pc->AnimInsta->Montage_IsPlaying(pc->CounterMoveset) == false)
-					{
-						/**		set the hitActor hit movesets from the same row of skill moveset the attacker used*/
-						pc->HitReactionMoveset = this->HitReactionMoveset;
-
-						//		apply damage on enemy
-						DoDamage(pc);
-					}
-
-					if (IsValid(ImpactEffect))
-					{
-						UGameplayStatics::SpawnEmitterAtLocation(this->GetWorld(), ImpactEffect, this->GetActorLocation(), FRotator::ZeroRotator, false);
-					}
-
-					if (IsValid(HitSound))
-					{
-						GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Purple, FString::Printf(TEXT("Hit Sound: "), *HitSound->GetName()));
-						UGameplayStatics::PlaySoundAtLocation(this->GetWorld(), HitSound, this->GetActorLocation());
-					}
 				}
-			}
 
-			else if (tower != nullptr && pc == nullptr)
-			{
-				if (tower->TeamName != this->TeamName && tower->isDestroyed == false)
+				else if (tower != nullptr && pc == nullptr)
 				{
-					//		apply damage on tower
-					TowerReceiveDamage(tower, this->BaseDamage);
-
-					if (IsValid(ImpactEffect))
+					if (tower->TeamName != this->TeamName && tower->isDestroyed == false)
 					{
-						UGameplayStatics::SpawnEmitterAtLocation(this->GetWorld(), ImpactEffect, this->GetActorLocation(), FRotator::ZeroRotator, false);
-					}
+						//		apply damage on tower
+						TowerReceiveDamage(tower, this->BaseDamage);
 
-					if (IsValid(HitSound))
-					{
-						GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Purple, FString::Printf(TEXT("Hit Sound: "), *HitSound->GetName()));
-						UGameplayStatics::PlaySoundAtLocation(this->GetWorld(), HitSound, this->GetActorLocation());
+						if (IsValid(ImpactEffect) && IsValid(ImpactEffect))
+						{
+							UGameplayStatics::SpawnEmitterAtLocation(this->GetWorld(), ImpactEffect, this->GetMesh()->GetSocketLocation(ParticleSocket), FRotator::ZeroRotator, false);
+						}
+
+						if (IsValid(HitSound))
+						{
+							GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Purple, FString::Printf(TEXT("Hit Sound: "), *HitSound->GetName()));
+							UGameplayStatics::PlaySoundAtLocation(this->GetWorld(), HitSound, this->GetActorLocation());
+						}
 					}
 				}
 			}

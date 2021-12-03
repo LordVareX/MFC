@@ -461,7 +461,7 @@ protected:
 
 	//		Attack sphere trace for area of damage
 	UFUNCTION(Reliable, Server, WithValidation, BlueprintCallable, Category = "HitReaction")
-		void SpecialAttackTrace(FVector BoxSize, FVector Offset, UParticleSystem* ImpactEffect, FName AttachTo, USoundBase* HitSound);
+		void SpecialAttackTrace(FVector BoxSize, FVector Offset, UParticleSystem* ImpactEffect, FName DamageSocket, FName ParticleSocket, USoundBase* HitSound);
 
 	//Skill sent to server
 	UFUNCTION(Reliable, Server, WithValidation, BlueprintCallable, Category = "HitReaction")
