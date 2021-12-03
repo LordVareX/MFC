@@ -360,10 +360,6 @@ protected:
 	UPROPERTY(VisibleAnywhere, Category = "Anim")
 		class UBattleMobaAnimInstance* AnimInsta;
 
-
-	UPROPERTY(Replicated, EditDefaultsOnly, BlueprintReadWrite, Category = "HitReaction")
-		UParticleSystem* HitEffect;
-
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "HitReaction")
 		FName ActiveSocket;
 

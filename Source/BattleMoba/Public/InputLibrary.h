@@ -102,9 +102,6 @@ struct FActionSkill : public FTableRowBase
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "StatusEffect")
 		float StunTime = 0.0f;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Effect")
-		UParticleSystem* HitImpact;
-
 	//Anim to be played on hit detection
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Anim")
 		UAnimMontage* HitMoveset;

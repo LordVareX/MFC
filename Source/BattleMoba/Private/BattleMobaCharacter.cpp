@@ -57,7 +57,6 @@ void ABattleMobaCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>&
 	DOREPLIFETIME(ABattleMobaCharacter, CharMesh);
 	DOREPLIFETIME(ABattleMobaCharacter, currentTarget);
 	DOREPLIFETIME(ABattleMobaCharacter, CounterMoveset);
-	DOREPLIFETIME(ABattleMobaCharacter, HitEffect);
 	DOREPLIFETIME(ABattleMobaCharacter, CTFteam);
 	DOREPLIFETIME(ABattleMobaCharacter, CTFentering);
 	DOREPLIFETIME(ABattleMobaCharacter, ActorsToGetGold);
@@ -1904,7 +1903,6 @@ void ABattleMobaCharacter::MulticastExecuteAction_Implementation(FActionSkill Se
 			this->BackHitMoveset = SelectedRow.BackHitMoveset;
 			this->LeftHitMoveset = SelectedRow.LeftHitMoveset;
 			this->RightHitMoveset = SelectedRow.RightHitMoveset;
-			this->HitEffect = SelectedRow.HitImpact;
 			this->StunDuration = SelectedRow.StunTime;
 			this->StunImpulse = SelectedRow.StunImpulse;
 		}
@@ -1988,7 +1986,7 @@ void ABattleMobaCharacter::AttackTrace_Implementation(bool traceStart, int activ
 
 			if (bHit)
 			{
-				HitResult(hitResult, HitEffect, AttachTo, HitSound);
+				HitResult(hitResult, ImpactEffect, AttachTo, HitSound);
 				//GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Green, FString::Printf(TEXT("You are hitting: %s"), *hitResult.Actor->GetName()));
 			}
 		}
@@ -2042,6 +2040,7 @@ void ABattleMobaCharacter::HitResult_Implementation(FHitResult hit, UParticleSys
 				if (AttachTo != NAME_None)
 				{
 					GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Purple, FString::Printf(TEXT("Impact Effect: "), *ImpactEffect->GetName()));
+
 					//		spawn particle on closest bone location to hit impact
 					UGameplayStatics::SpawnEmitterAtLocation(this->GetWorld(), ImpactEffect, this->GetMesh()->GetSocketLocation(AttachTo), FRotator::ZeroRotator, false);
 				}
@@ -2099,6 +2098,8 @@ void ABattleMobaCharacter::SpecialAttackTrace_Implementation(FVector BoxSize, FV
 	ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECC_PhysicsBody));
 	ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECC_Pawn));
 	ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECC_Destructible));
+
+	TArray<class AActor*> Victims;
 	
 	//		check if something got hit in the sweep, red on false, green on true Col1->GetComponentLocation() + (GetActorForwardVector() * TraceDistance
 	if (DamageSocket != NAME_None)
@@ -2114,7 +2115,7 @@ void ABattleMobaCharacter::SpecialAttackTrace_Implementation(FVector BoxSize, FV
 
 				if (pc != nullptr)
 				{
-					if (pc->InRagdoll == false && pc->TeamName != this->TeamName)
+					if (pc->InRagdoll == false && pc->TeamName != this->TeamName && !(Victims.Contains(pc)))
 					{
 						if (pc->AnimInsta->Montage_IsPlaying(pc->CounterMoveset))
 						{
@@ -2130,7 +2131,8 @@ void ABattleMobaCharacter::SpecialAttackTrace_Implementation(FVector BoxSize, FV
 							/**		set the hitActor hit movesets from the same row of skill moveset the attacker used*/
 							pc->HitReactionMoveset = this->HitReactionMoveset;
 
-							//		apply damage on enemy
+							//		apply damage once on enemy
+							Victims.Add(pc);
 							DoDamage(pc);
 						}
 
@@ -2153,10 +2155,11 @@ void ABattleMobaCharacter::SpecialAttackTrace_Implementation(FVector BoxSize, FV
 
 				else if (tower != nullptr && pc == nullptr)
 				{
-					if (tower->TeamName != this->TeamName && tower->isDestroyed == false)
+					if (tower->TeamName != this->TeamName && tower->isDestroyed == false && !(Victims.Contains(tower)))
 					{
 						//		apply damage on tower
 						TowerReceiveDamage(tower, this->BaseDamage);
+						Victims.Add(tower);
 
 						if (IsValid(ImpactEffect) && IsValid(ImpactEffect))
 						{
