@@ -2131,7 +2131,7 @@ void ABattleMobaCharacter::SpecialAttackTrace_Implementation(FVector BoxSize, FV
 	ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECC_Destructible));
 	
 	//		check if something got hit in the sweep, red on false, green on true Col1->GetComponentLocation() + (GetActorForwardVector() * TraceDistance
-	bool bHit = UKismetSystemLibrary::BoxTraceMultiForObjects(this->GetWorld(), Start, End, BoxSize, this->GetActorRotation(), ObjectTypes, true, IgnoreActors, EDrawDebugTrace::ForDuration, hitResults, true, FColor::Red, FColor::Green, 2.0f);
+	bool bHit = UKismetSystemLibrary::BoxTraceMultiForObjects(this->GetWorld(), Start + Offset, End + Offset, BoxSize, this->GetActorRotation(), ObjectTypes, true, IgnoreActors, EDrawDebugTrace::ForDuration, hitResults, true, FColor::Red, FColor::Green, 2.0f);
 
 	if (bHit)
 	{
