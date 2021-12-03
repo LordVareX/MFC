@@ -1111,8 +1111,6 @@ void ABattleMobaGameMode::RespawnRequested_Implementation(APlayerController* pla
 					//possess and set new rotation for newly spawned pawn
 					playerController->Possess(pawn);
 					playerController->ClientSetRotation(pawn->GetActorRotation());
-					playerController->bShowMouseCursor = false;
-					playerController->SetInputMode(FInputModeGameOnly());
 				}
 			}
 		}

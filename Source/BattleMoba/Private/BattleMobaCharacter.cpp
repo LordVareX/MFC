@@ -400,14 +400,8 @@ void ABattleMobaCharacter::PossessedBy(AController* NewController)
 void ABattleMobaCharacter::BeginPlay()
 {
 	Super::BeginPlay();
-	ABattleMobaGameState* gs = Cast<ABattleMobaGameState>(UGameplayStatics::GetGameState(this));
-	if (gs)
-	{
-		if (gs->LobbyCheck)
-		{
-			RefreshPlayerData();
-		}
-	}
+	RefreshPlayerData();
+	//SetupStats();
 }
 
 float ABattleMobaCharacter::TakeDamage(float Damage, FDamageEvent const & DamageEvent, AController* EventInstigator, AActor* DamageCauser)
@@ -535,8 +529,8 @@ void ABattleMobaCharacter::RefreshPlayerData()
 		}
 
 		ActionTable = PS->ActionTable;
-		MaxHealth = PS->MaxHealth;
-		Defence = PS->Defense;
+		//MaxHealth = PS->MaxHealth;
+		//Defence = PS->Defense;
 		
 		FString Context;
 		for (auto& name : ActionTable->GetRowNames())
@@ -1373,6 +1367,16 @@ void ABattleMobaCharacter::EnableMovementMode()
 	}
 }
 
+bool ABattleMobaCharacter::ServerSetupStats_Validate()
+{
+	return true;
+}
+
+void ABattleMobaCharacter::ServerSetupStats_Implementation()
+{
+	SetupStats();
+}
+
 bool ABattleMobaCharacter::DetectNearestTarget_Validate(EResult Type, FActionSkill SelectedRow)
 {
 	return true;
@@ -1791,54 +1795,13 @@ bool ABattleMobaCharacter::SetupStats_Validate()
 
 void ABattleMobaCharacter::SetupStats_Implementation()
 {
-	UUserWidget* HPWidget = Cast<UUserWidget>(W_DamageOutput->GetUserWidgetObject());
-	if (HPWidget)
+	ABattleMobaPlayerState* PS = Cast<ABattleMobaPlayerState>(GetPlayerState());
+	if (PS)
 	{
-		//GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Blue, FString::Printf(TEXT("Player %s with %s Widget"), *GetDebugName(this), *HPWidget->GetFName().ToString()));
-		const FName hptext = FName(TEXT("HealthText"));
-		UTextBlock* HealthText = (UTextBlock*)(HPWidget->WidgetTree->FindWidget(hptext));
-
-		const FName hpbar = FName(TEXT("HPBar"));
-		UProgressBar* HealthBar = (UProgressBar*)(HPWidget->WidgetTree->FindWidget(hpbar));
-
-		if (HealthText)
-		{
-			FString TheFloatStr = FString::SanitizeFloat(this->Health);
-
-			HealthText->SetText(FText::FromString(TheFloatStr));
-			HealthBar->SetPercent(FMath::Clamp(this->Health / 100.0f, 0.0f, 1.0f));
-		}
-
-		const FName Styletext = FName(TEXT("StyleText"));
-		UTextBlock* StyleText = (UTextBlock*)(HPWidget->WidgetTree->FindWidget(Styletext));
-
-		if (StyleText)
-		{
-			ABattleMobaPlayerState* ps = Cast<ABattleMobaPlayerState>(this->GetPlayerState());
-			if (ps)
-			{
-				FString TheTeamName = ps->StyleName.ToString();
-				StyleText->SetText(FText::FromString(TheTeamName));
-			}
-		}
-
-		const FName Teamtext = FName(TEXT("TeamName"));
-		UTextBlock* TeamText = (UTextBlock*)(HPWidget->WidgetTree->FindWidget(Teamtext));
-
-		if (TeamText)
-		{
-			FString TheTeamName = TeamName.ToString();
-
-			TeamText->SetText(FText::FromString(TheTeamName));
-		}
-
-		const FName Playertext = FName(TEXT("PlayerName"));
-		UTextBlock* PlayerText = (UTextBlock*)(HPWidget->WidgetTree->FindWidget(Playertext));
-
-		if (PlayerText)
-		{
-			PlayerText->SetText(FText::FromString(PlayerName));
-		}
+		ActionTable = PS->ActionTable;
+		MaxHealth = PS->MaxHealth;
+		Health = MaxHealth;
+		Defence = PS->Defense;
 	}
 }
 

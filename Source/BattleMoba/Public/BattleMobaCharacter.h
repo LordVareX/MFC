@@ -512,6 +512,9 @@ protected:
 	UFUNCTION(BlueprintCallable, Category = "Movement")
 		void EnableMovementMode();
 
+	UFUNCTION(BlueprintCallable, Server, Reliable, WithValidation)
+		void ServerSetupStats();
+
 	UFUNCTION(BlueprintCallable, NetMulticast, Reliable, WithValidation)
 		void SetupStats();
 
