@@ -405,7 +405,10 @@ void ABattleMobaCharacter::BeginPlay()
 	{
 		if (gs->LobbyCheck)
 		{
-			RefreshPlayerData();
+			if (IsLocallyControlled())
+			{
+				RefreshPlayerData();
+			}
 		}
 	}
 }
@@ -1809,7 +1812,7 @@ void ABattleMobaCharacter::SetupStats_Implementation()
 			HealthBar->SetPercent(FMath::Clamp(this->Health / 100.0f, 0.0f, 1.0f));
 		}
 
-		const FName Styletext = FName(TEXT("StyleText"));
+		/*const FName Styletext = FName(TEXT("StyleText"));
 		UTextBlock* StyleText = (UTextBlock*)(HPWidget->WidgetTree->FindWidget(Styletext));
 
 		if (StyleText)
@@ -1838,7 +1841,7 @@ void ABattleMobaCharacter::SetupStats_Implementation()
 		if (PlayerText)
 		{
 			PlayerText->SetText(FText::FromString(PlayerName));
-		}
+		}*/
 	}
 }
 
