@@ -485,102 +485,39 @@ void ABattleMobaGameMode::PostLogin(APlayerController* NewPlayer)
 		{
 			Players.Add(MobaPC);
 
-			if (Players.Num() == 8)
+			ABattleMobaPlayerState* PS = Cast <ABattleMobaPlayerState>(MobaPC->PlayerState);
+			if (PS)
+			{
+				GState = Cast<ABattleMobaGameState>(UGameplayStatics::GetGameState(this));
+				if (GState)
+				{
+					PS->Pi = Players.Num() - 1;
+
+					//Random unique number for character mesh array
+					if (Chars.Num() > 0)
+					{
+						CharIndex = FMath::RandRange(0, Chars.Num() - 1);
+						//PS->CharMesh = Chars[CharIndex];
+						GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Yellow, FString::Printf(TEXT("Player Index : %d"), Players.Num() - 1));
+						if ((PS->Pi) < 4)
+						{
+							GState->TeamA.Add(PS->GetPlayerName());
+							SpawnBasedOnTeam("Radiant", CharSelections[CharIndex]);
+						}
+						else
+						{
+							GState->TeamB.Add(PS->GetPlayerName());
+							SpawnBasedOnTeam("Dire", CharSelections[CharIndex]);
+						}
+						Chars.RemoveAtSwap(CharIndex);
+					}
+				}
+			}
+			if (Players.Num() >= 8)
 			{
 				GetWorldTimerManager().SetTimer(LobbyClockTimer, this, &ABattleMobaGameMode::StartLobbyClock, 1.0f, true);
-				ABattleMobaPlayerState* PS = Cast <ABattleMobaPlayerState>(MobaPC->PlayerState);
-				if (PS)
-				{
-					GState = Cast<ABattleMobaGameState>(UGameplayStatics::GetGameState(this));
-					if (GState)
-					{
-						PS->Pi = Players.Num() - 1;
-
-						//Random unique number for character mesh array
-						if (Chars.Num() > 0)
-						{
-							CharIndex = FMath::RandRange(0, Chars.Num() - 1);
-							//PS->CharMesh = Chars[CharIndex];
-							GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Yellow, FString::Printf(TEXT("Player Index : %d"), Players.Num() - 1));
-							if ((PS->Pi) < 4)
-							{
-								GState->TeamA.Add(PS->GetPlayerName());
-								SpawnBasedOnTeam("Radiant", CharSelections[CharIndex]);
-								UpdateLobby();
-							}
-							else
-							{
-								GState->TeamB.Add(PS->GetPlayerName());
-								SpawnBasedOnTeam("Dire", CharSelections[CharIndex]);
-								UpdateLobby();
-							}
-							Chars.RemoveAtSwap(CharIndex);
-						}
-					}
-				}
+				UpdateLobby();
 			}
-			else
-			{
-				ABattleMobaPlayerState* PS = Cast <ABattleMobaPlayerState>(MobaPC->PlayerState);
-				if (PS)
-				{
-					GState = Cast<ABattleMobaGameState>(UGameplayStatics::GetGameState(this));
-					if (GState)
-					{
-						PS->Pi = Players.Num() - 1;
-
-						//Random unique number for character mesh array
-						if (Chars.Num() > 0)
-						{
-							CharIndex = FMath::RandRange(0, Chars.Num() - 1);
-							//PS->CharMesh = Chars[CharIndex];
-							GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Yellow, FString::Printf(TEXT("Player Index : %d"), Players.Num() - 1));
-							if ((PS->Pi) < 4)
-							{
-								GState->TeamA.Add(PS->GetPlayerName());
-								SpawnBasedOnTeam("Radiant", CharSelections[CharIndex]);
-								UpdateLobby();
-							}
-							else
-							{
-								GState->TeamB.Add(PS->GetPlayerName());
-								SpawnBasedOnTeam("Dire", CharSelections[CharIndex]);
-								UpdateLobby();
-							}
-							Chars.RemoveAtSwap(CharIndex);
-						}
-					}
-				}
-			}
-
-			//ABattleMobaPlayerState* PS = Cast <ABattleMobaPlayerState>(MobaPC->PlayerState);
-			//if (PS)
-			//{
-			//	GState = Cast<ABattleMobaGameState>(UGameplayStatics::GetGameState(this));
-			//	if (GState)
-			//	{
-			//		PS->Pi = Players.Num() - 1;
-
-			//		//Random unique number for character mesh array
-			//		if (Chars.Num() > 0)
-			//		{
-			//			CharIndex = FMath::RandRange(0, Chars.Num() - 1);
-			//			//PS->CharMesh = Chars[CharIndex];
-			//			GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Yellow, FString::Printf(TEXT("Player Index : %d"), Players.Num() - 1));
-			//			if ((PS->Pi) < 4)
-			//			{
-			//				GState->TeamA.Add(PS->GetPlayerName());
-			//				SpawnBasedOnTeam("Radiant", CharSelections[CharIndex]);
-			//			}
-			//			else
-			//			{
-			//				GState->TeamB.Add(PS->GetPlayerName());
-			//				SpawnBasedOnTeam("Dire", CharSelections[CharIndex]);
-			//			}
-			//			Chars.RemoveAtSwap(CharIndex);
-			//		}
-			//	}
-			//}
 		}
 	}
 }
