@@ -312,12 +312,12 @@ ABattleMobaCharacter::ABattleMobaCharacter()
 	W_DamageOutput->SetupAttachment(RootComponent);
 	W_DamageOutput->SetRelativeLocation(FVector(0.000000f, 0.0f, 100.0f));
 	W_DamageOutput->InitWidget();
-	W_DamageOutput->SetVisibility(false);
+	W_DamageOutput->SetIsReplicated(true);
 
 	W_DamageOutput->SetWidgetSpace(EWidgetSpace::Screen);
 	W_DamageOutput->SetDrawSize(FVector2D(500.0f, 500.0f));
 	W_DamageOutput->SetDrawAtDesiredSize(true);
-	//W_DamageOutput->SetVisibility(false);
+	W_DamageOutput->SetVisibility(false);
 	W_DamageOutput->SetGenerateOverlapEvents(false);
 
 	TraceDistance = 20.0f;
@@ -400,8 +400,14 @@ void ABattleMobaCharacter::PossessedBy(AController* NewController)
 void ABattleMobaCharacter::BeginPlay()
 {
 	Super::BeginPlay();
-
-	RefreshPlayerData();
+	ABattleMobaGameState* gs = Cast<ABattleMobaGameState>(UGameplayStatics::GetGameState(this));
+	if (gs)
+	{
+		if (gs->LobbyCheck)
+		{
+			RefreshPlayerData();
+		}
+	}
 }
 
 float ABattleMobaCharacter::TakeDamage(float Damage, FDamageEvent const & DamageEvent, AController* EventInstigator, AActor* DamageCauser)
@@ -870,24 +876,10 @@ void ABattleMobaCharacter::SetupWidget()
 
 void ABattleMobaCharacter::HideHPBar()
 {
-	if (WithinVicinity)
+
+	if (WithinVicinity == true) 
 	{
-		UInputLibrary::SetUIVisibility(W_DamageOutput, this);
-		/*FHit(ForceInit);
-
-		FVector start = this->GetActorLocation();
-		FVector End = UGameplayStatics::GetPlayerCameraManager(this, 0)->GetCameraLocation();
-		FCollisionQueryParams CollisionParams;
-		CollisionParams.AddIgnoredActor(this);
-
-		if (GetWorld()->LineTraceSingleByChannel(Hit, start, End, ECC_Visibility, CollisionParams))
-		{
-			W_DamageOutput->GetUserWidgetObject()->SetVisibility(ESlateVisibility::Hidden);
-		}
-		else
-		{
-			W_DamageOutput->GetUserWidgetObject()->SetVisibility(ESlateVisibility::HitTestInvisible);
-		}*/
+		//UInputLibrary::SetUIVisibility(W_DamageOutput, this);
 	}
 }
 
@@ -1815,6 +1807,37 @@ void ABattleMobaCharacter::SetupStats_Implementation()
 
 			HealthText->SetText(FText::FromString(TheFloatStr));
 			HealthBar->SetPercent(FMath::Clamp(this->Health / 100.0f, 0.0f, 1.0f));
+		}
+
+		const FName Styletext = FName(TEXT("StyleText"));
+		UTextBlock* StyleText = (UTextBlock*)(HPWidget->WidgetTree->FindWidget(Styletext));
+
+		if (StyleText)
+		{
+			ABattleMobaPlayerState* ps = Cast<ABattleMobaPlayerState>(this->GetPlayerState());
+			if (ps)
+			{
+				FString TheTeamName = ps->StyleName.ToString();
+				StyleText->SetText(FText::FromString(TheTeamName));
+			}
+		}
+
+		const FName Teamtext = FName(TEXT("TeamName"));
+		UTextBlock* TeamText = (UTextBlock*)(HPWidget->WidgetTree->FindWidget(Teamtext));
+
+		if (TeamText)
+		{
+			FString TheTeamName = TeamName.ToString();
+
+			TeamText->SetText(FText::FromString(TheTeamName));
+		}
+
+		const FName Playertext = FName(TEXT("PlayerName"));
+		UTextBlock* PlayerText = (UTextBlock*)(HPWidget->WidgetTree->FindWidget(Playertext));
+
+		if (PlayerText)
+		{
+			PlayerText->SetText(FText::FromString(PlayerName));
 		}
 	}
 }
