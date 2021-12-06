@@ -102,21 +102,9 @@ struct FActionSkill : public FTableRowBase
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "StatusEffect")
 		float StunTime = 0.0f;
 
-	//Anim to be played on hit detection
+	//Anim to be played on special attack
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Anim")
 		UAnimMontage* HitMoveset;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Anim")
-		UAnimMontage* FrontHitMoveset;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Anim")
-		UAnimMontage* BackHitMoveset;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Anim")
-		UAnimMontage* LeftHitMoveset;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Anim")
-		UAnimMontage* RightHitMoveset;
 
 	//For array comparison
 	bool operator ==(const FActionSkill &other) const
