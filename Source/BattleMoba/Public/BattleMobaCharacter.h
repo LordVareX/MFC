@@ -543,7 +543,7 @@ public:
 	UFUNCTION(BlueprintImplementableEvent, Category = "HUD")
 		void CreateCPHUD();
 
-	UFUNCTION(Reliable, NetMulticast, WithValidation, Category = "ReceiveDamage")
+	UFUNCTION(Reliable, NetMulticast, WithValidation, BlueprintCallable, Category = "ReceiveDamage")
 		void TowerReceiveDamage(ADestructibleTower* Tower, float DamageApply);
 
 	/*******************SAFEZONE*****************************************/
