@@ -47,9 +47,6 @@ public:
 	UFUNCTION(Reliable, Client, WithValidation, Category = "Respawn")
 		void SetupPawnAttribute();
 
-	UFUNCTION(Reliable, NetMulticast, WithValidation, Category = "Respawn")
-		void StopTimerPawn(ABattleMobaPlayerState* ps);
-
 protected:
 
 	//spectator pi

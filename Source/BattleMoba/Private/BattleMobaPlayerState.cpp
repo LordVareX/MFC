@@ -86,15 +86,13 @@ void ABattleMobaPlayerState::RespawnTimerCount_Implementation(ABattleMobaPlayerS
 {
 	if (ps->RespawnTimeCounter <= 0)
 	{
-		//this->GetWorldTimerManager().ClearTimer(RespawnHandle);
-		MulticastTimerCount(ps->RespawnTimeCounter);
+		this->GetWorldTimerManager().ClearTimer(RespawnHandle);
 		ps->RespawnTimeCounter = 30;
+		MulticastTimerCount(ps->RespawnTimeCounter);
 	}
+	else if (ps->RespawnTimeCounter > 0)
 	{
-		if (ps->RespawnTimeCounter > 0)
-		{
-			ps->RespawnTimeCounter -= 1;
-			MulticastTimerCount(ps->RespawnTimeCounter);
-		}
+		ps->RespawnTimeCounter -= 1;
+		MulticastTimerCount(ps->RespawnTimeCounter);
 	}
 }

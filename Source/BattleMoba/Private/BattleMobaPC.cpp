@@ -73,17 +73,6 @@ int32 ABattleMobaPC::CheckIndexValidity(int32 index, TArray<ABattleMobaPC*> Play
 
 }
 
-bool ABattleMobaPC::StopTimerPawn_Validate(ABattleMobaPlayerState* ps)
-{
-	return true;
-}
-
-void ABattleMobaPC::StopTimerPawn_Implementation(ABattleMobaPlayerState* ps)
-{
-	//ps->DisplayRespawnTime();
-	ps->RespawnTimeCounter = 30;
-}
-
 bool ABattleMobaPC::SpectateNextPlayer_Validate(const TArray<ABattleMobaPC*>& PlayerList, EFormula SwitchMode)
 {
 	return true;

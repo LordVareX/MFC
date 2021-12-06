@@ -962,7 +962,7 @@ void ABattleMobaCharacter::HitReactionClient_Implementation(AActor* HitActor, fl
 					this->GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 					this->GetCharacterMovement()->DisableMovement();
 
-					ps->StartRespawnTimer(ps);
+					//ps->StartRespawnTimer(ps);
 
 					if (GetLocalRole() == ROLE_Authority)
 					{
@@ -1351,8 +1351,6 @@ void ABattleMobaCharacter::RespawnCharacter_Implementation()
 		ABattleMobaPlayerState* PS = Cast<ABattleMobaPlayerState>(PC->PlayerState);
 		if (PS)
 		{
-			/*PS->RespawnTimeCounter -= 1;
-			PS->DisplayRespawnTime();*/
 			PC->RespawnPawn(PS->SpawnTransform);
 			PC->UnPossess();
 		}
