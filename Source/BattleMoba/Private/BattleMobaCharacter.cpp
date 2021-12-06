@@ -1801,6 +1801,10 @@ void ABattleMobaCharacter::SetupStats_Implementation()
 		MaxHealth = PS->MaxHealth;
 		Health = MaxHealth;
 		Defence = PS->Defense;
+		FrontHitMoveset = PS->FrontHitMoveset;
+		BackHitMoveset = PS->BackHitMoveset;
+		LeftHitMoveset = PS->LeftHitMoveset;
+		RightHitMoveset = PS->RightHitMoveset;
 	}
 }
 
@@ -1899,10 +1903,6 @@ void ABattleMobaCharacter::MulticastExecuteAction_Implementation(FActionSkill Se
 			this->MaxDamage = SelectedRow.MaxDamage;
 			this->BaseDamage = float(FMath::RandRange(this->MinDamage, this->MaxDamage));
 			this->HitReactionMoveset = SelectedRow.HitMoveset;
-			this->FrontHitMoveset = SelectedRow.FrontHitMoveset;
-			this->BackHitMoveset = SelectedRow.BackHitMoveset;
-			this->LeftHitMoveset = SelectedRow.LeftHitMoveset;
-			this->RightHitMoveset = SelectedRow.RightHitMoveset;
 			this->StunDuration = SelectedRow.StunTime;
 			this->StunImpulse = SelectedRow.StunImpulse;
 		}
@@ -2026,10 +2026,6 @@ void ABattleMobaCharacter::HitResult_Implementation(FHitResult hit, UParticleSys
 			{
 				/**		set the hitActor hit movesets from the same row of skill moveset the attacker used*/
 				DamagedEnemy->HitReactionMoveset = this->HitReactionMoveset;
-				DamagedEnemy->FrontHitMoveset = this->FrontHitMoveset;
-				DamagedEnemy->BackHitMoveset = this->BackHitMoveset;
-				DamagedEnemy->LeftHitMoveset = this->LeftHitMoveset;
-				DamagedEnemy->RightHitMoveset = this->RightHitMoveset;
 				ArrDamagedEnemy.Add(DamagedEnemy);
 				DoDamage(DamagedEnemy);
 			}
