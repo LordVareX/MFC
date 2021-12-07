@@ -1166,8 +1166,9 @@ void ABattleMobaCharacter::GetButtonSkillAction(FKey Currkeys, FString ButtonNam
 								//if the skill is on cooldown, stop playing the animation, else play the skill animation
 								if (row->isOnCD == true)
 								{
-									//GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("Current %s skill is on cooldown!!"), ((*name.ToString()))));
+									GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("Current %s skill is on cooldown!!"), ((*name.ToString()))));
 									cooldown = row->isOnCD;
+									//row->isOnCD = false;
 									break;
 								}
 								else if (row->isOnCD == false)
@@ -1213,7 +1214,7 @@ void ABattleMobaCharacter::GetButtonSkillAction(FKey Currkeys, FString ButtonNam
 							{
 								if (row->isOnCD == true)
 								{
-									//GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("Current %s skill is on cooldown!!"), ((*name.ToString()))));
+									GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("Current %s skill is on cooldown!!"), ((*name.ToString()))));
 									cooldown = row->isOnCD;
 									break;
 								}
@@ -1838,91 +1839,96 @@ void ABattleMobaCharacter::MulticastExecuteAction_Implementation(FActionSkill Se
 	{
 		if (this->AnimInsta != nullptr && this->IsStunned == false)
 		{
-			//GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Blue, FString::Printf(TEXT("row->isOnCD: %s"), SelectedRow.isOnCD ? TEXT("true") : TEXT("false")));
-
-			/**		Disable movement on Action Skill*/
-			this->AnimInsta->CanMove = false;
-			this->OnSpecialAttack = bSpecialAttack;
-
-			if (bSpecialAttack == true)
+			if (this->AnimInsta->CanMove == true)
 			{
-				//if current montage consumes cooldown properties
-				if (SelectedRow.IsUsingCD)
+				//GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Blue, FString::Printf(TEXT("row->isOnCD: %s"), SelectedRow.isOnCD ? TEXT("true") : TEXT("false")));
+
+				/**		Disable movement on Action Skill*/
+				this->AnimInsta->CanMove = false;
+				this->OnSpecialAttack = bSpecialAttack;
+
+				if (bSpecialAttack == true)
 				{
-					///GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("Play montage: %s"), *SelectedRow.SkillMoveset->GetName()));
-					//GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("ISUSINGCD")));
-
-					PlayAnimMontage(SelectedRow.SkillMoveset, 1.0f, MontageSection);
-				}
-			}
-
-			else
-			{
-				if (SelectedRow.UseTranslate)
-				{
-					//FTimerHandle Delay;
-
+					//if current montage consumes cooldown properties
 					if (SelectedRow.IsUsingCD)
 					{
-						//GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("Play montage: %s"), *SelectedRow.SkillMoveset->GetName()));
+						///GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("Play montage: %s"), *SelectedRow.SkillMoveset->GetName()));
+						//GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("ISUSINGCD")));
 
-						float montageTimer = this->GetMesh()->GetAnimInstance()->Montage_Play(SelectedRow.SkillMoveset, 1.0f, EMontagePlayReturnType::MontageLength, 0.0f, true);
-
-						////setting up for translate properties
-						//FTimerHandle handle;
-						//FTimerDelegate TimerDelegate;
-
-						////launch player forwa rd after 0.218f
-						//TimerDelegate.BindLambda([this, SelectedRow]()
-						//{
-						//	UE_LOG(LogTemp, Warning, TEXT("DELAY BEFORE TRANSLATE CHARACTER FORWARD"));
-
-						//	FVector dashVector = FVector(this->GetCapsuleComponent()->GetForwardVector().X*SelectedRow.TranslateDist, this->GetCapsuleComponent()->GetForwardVector().Y*SelectedRow.TranslateDist, this->GetCapsuleComponent()->GetForwardVector().Z);
-
-						//	this->LaunchCharacter(dashVector, true, true);
-						//});
-						///**		cooldown to execute lines inside TimerDelegate*/
-						//this->GetWorldTimerManager().SetTimer(handle, TimerDelegate, 0.6f, false);
-
-						///**		Enable movement back after montage finished playing*/
-						//this->GetWorld()->GetTimerManager().SetTimer(Delay, this, &ABattleMobaCharacter::EnableMovementMode, montageTimer, false);
+						PlayAnimMontage(SelectedRow.SkillMoveset, 1.0f, MontageSection);
 					}
-				}
-
-				else if (SelectedRow.UseSection)
-				{
-					FTimerHandle delay;
-					FTimerDelegate timerDel;
-
-					this->OnComboDelay = true;
-
-					PlayAnimMontage(SelectedRow.SkillMoveset, 1.0f, MontageSection);
-
-					int32 sectionIndex = GetCurrentMontage()->GetSectionIndex(MontageSection);
-					float sectionLength = GetCurrentMontage()->GetSectionLength(sectionIndex);
-
-					timerDel.BindLambda([this]()
-					{
-						this->OnComboDelay = false;
-
-					});
-
-					this->GetWorldTimerManager().SetTimer(delay, timerDel, sectionLength + comboInterval, false);
 				}
 
 				else
 				{
-					//GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("STATEMENT ELSE")));
+					if (SelectedRow.UseTranslate)
+					{
+						//FTimerHandle Delay;
+
+						if (SelectedRow.IsUsingCD)
+						{
+							FTimerHandle dashTimer;
+							FTimerDelegate dashTimerDel;
+
+							FOnMontageEnded MontageEndDel;
+
+							//GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("Play montage: %s"), *SelectedRow.SkillMoveset->GetName()));
+							this->GetMesh()->GetAnimInstance()->Montage_Play(SelectedRow.SkillMoveset, 1.0f, EMontagePlayReturnType::MontageLength, 0.0f, true);
+							this->GetMesh()->GetAnimInstance()->Montage_JumpToSection(MontageSection);
+
+							FVector dashVector = FVector(this->GetCapsuleComponent()->GetForwardVector().X*SelectedRow.TranslateDist, this->GetCapsuleComponent()->GetForwardVector().Y*SelectedRow.TranslateDist, this->GetCapsuleComponent()->GetForwardVector().Z);
+
+							this->LaunchCharacter(dashVector, false, false);
+
+							dashTimerDel.BindLambda([this]()
+							{
+								this->GetMesh()->GetAnimInstance()->Montage_JumpToSection("GetUp");
+							});
+
+							this->GetWorldTimerManager().SetTimer(dashTimer, dashTimerDel, 0.5f, false);
+
+							MontageEndDel.BindUObject(this, &ABattleMobaCharacter::OnHRMontageEnd);
+							this->GetMesh()->GetAnimInstance()->Montage_SetEndDelegate(MontageEndDel, SelectedRow.SkillMoveset);
+							
+						}
+					}
+
+					else if (SelectedRow.UseSection)
+					{
+						FTimerHandle delay;
+						FTimerDelegate timerDel;
+
+						this->OnComboDelay = true;
+
+						PlayAnimMontage(SelectedRow.SkillMoveset, 1.0f, MontageSection);
+
+						int32 sectionIndex = GetCurrentMontage()->GetSectionIndex(MontageSection);
+						float sectionLength = GetCurrentMontage()->GetSectionLength(sectionIndex);
+
+						timerDel.BindLambda([this]()
+						{
+							this->OnComboDelay = false;
+
+						});
+
+						this->GetWorldTimerManager().SetTimer(delay, timerDel, sectionLength + comboInterval, false);
+					}
+
+					else
+					{
+						//GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("STATEMENT ELSE")));
+					}
+
 				}
 
-			}
+				this->MinDamage = SelectedRow.MinDamage;
+				this->MaxDamage = SelectedRow.MaxDamage;
+				this->BaseDamage = float(FMath::RandRange(this->MinDamage, this->MaxDamage));
+				this->HitReactionMoveset = SelectedRow.HitMoveset;
+				this->StunDuration = SelectedRow.StunTime;
+				this->StunImpulse = SelectedRow.StunImpulse;
 
-			this->MinDamage = SelectedRow.MinDamage;
-			this->MaxDamage = SelectedRow.MaxDamage;
-			this->BaseDamage = float(FMath::RandRange(this->MinDamage, this->MaxDamage));
-			this->HitReactionMoveset = SelectedRow.HitMoveset;
-			this->StunDuration = SelectedRow.StunTime;
-			this->StunImpulse = SelectedRow.StunImpulse;
+			}
 		}
 	}
 }
