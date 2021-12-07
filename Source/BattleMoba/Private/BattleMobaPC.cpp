@@ -117,7 +117,7 @@ void ABattleMobaPC::SpectateNextPlayer_Implementation(const TArray<ABattleMobaPC
 				ABattleMobaPlayerState* ps = Cast<ABattleMobaPlayerState>(PlayerList[currentPlayer]->PlayerState);
 				if (ps->TeamName == thisps->TeamName) //spectating only team pawn
 				{
-					this->SetViewTargetWithBlend(PlayerList[currentPlayer], 0.0f, EViewTargetBlendFunction::VTBlend_Linear, 0.0f, true);
+					this->SetViewTargetWithBlend(PlayerList[currentPlayer], 0.0f, EViewTargetBlendFunction::VTBlend_Linear, 0.0f, false);
 					CurrSpectator = PlayerList[currentPlayer];//set new spectated player
 					CurrSpectator->SpectPI = this->pi;
 					return;
