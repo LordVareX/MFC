@@ -72,6 +72,10 @@ void ABattleMobaCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>&
 	DOREPLIFETIME(ABattleMobaCharacter, Defense);
 	DOREPLIFETIME(ABattleMobaCharacter, StunDuration);
 	DOREPLIFETIME(ABattleMobaCharacter, StunImpulse);
+	DOREPLIFETIME(ABattleMobaCharacter, FrontHitMoveset);
+	DOREPLIFETIME(ABattleMobaCharacter, BackHitMoveset);
+	DOREPLIFETIME(ABattleMobaCharacter, RightHitMoveset);
+	DOREPLIFETIME(ABattleMobaCharacter, LeftHitMoveset);
 }
 
 ABattleMobaCharacter::ABattleMobaCharacter()
@@ -445,28 +449,28 @@ float ABattleMobaCharacter::TakeDamage(float Damage, FDamageEvent const & Damage
 				if (UKismetMathLibrary::InRange_FloatFloat(RotDifference.Yaw, -135.0f, -45.0f, true, true))
 				{
 					HitReactionClient(this, Damage, this->RightHitMoveset, HitSection, 0.0f, FVector(0, 0, 0), false);
-					GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Yellow, FString::Printf(TEXT("Hit from RIGHT")));
+					GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Yellow, FString::Printf(TEXT("Hit from RIGHT")));
 				}
 
 				// front
 				else if (UKismetMathLibrary::InRange_FloatFloat(RotDifference.Yaw, -45.0f, 45.0f, true, true))
 				{
 					HitReactionClient(this, Damage, this->FrontHitMoveset, HitSection, 0.0f, FVector(0, 0, 0), false);
-					GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Yellow, FString::Printf(TEXT("Hit from FRONT")));
+					GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Yellow, FString::Printf(TEXT("Hit from FRONT")));
 				}
 
 				//	left
 				else if (UKismetMathLibrary::InRange_FloatFloat(RotDifference.Yaw, 45.0f, 135.0f, true, true))
 				{
 					HitReactionClient(this, Damage, this->LeftHitMoveset, HitSection, 0.0f, FVector(0, 0, 0), false);
-					GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Yellow, FString::Printf(TEXT("Hit from LEFT")));
+					GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Yellow, FString::Printf(TEXT("Hit from LEFT")));
 				}
 
 				//	back
 				else
 				{
 					HitReactionClient(this, Damage, this->BackHitMoveset, HitSection, 0.0f, FVector(0, 0, 0), false);
-					GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Yellow, FString::Printf(TEXT("Hit from BACK")));
+					GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Yellow, FString::Printf(TEXT("Hit from BACK")));
 				}
 
 			}
@@ -522,6 +526,7 @@ void ABattleMobaCharacter::RefreshPlayerData()
 	GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Magenta, FString::Printf(TEXT("BEGINPLAY")));
 
 	ServerSetupStats();
+
 	if (ActionTable)
 	{
 		FString Context;
@@ -978,11 +983,13 @@ void ABattleMobaCharacter::HitReactionClient_Implementation(AActor* HitActor, fl
 					FTimerHandle delay;
 					FTimerDelegate delayDel;
 
-					GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Blue, FString::Printf(TEXT("Knock back? %s"), isKnockback ? TEXT("true") : TEXT("false")));
-					GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Yellow, FString::Printf(TEXT("Stun Time: %f"), StunTime));
+					
 					//		when attacker is on Special Attack skills
 					if (isKnockback)
 					{
+						GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Blue, FString::Printf(TEXT("Knock back? %s"), isKnockback ? TEXT("true") : TEXT("false")));
+						GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Yellow, FString::Printf(TEXT("Stun Time: %f"), StunTime));
+
 						FOnMontageEnded MontageEndedDelegate;
 
 						//		stun enemy, does not allow movement and input skill
@@ -1021,6 +1028,7 @@ void ABattleMobaCharacter::HitReactionClient_Implementation(AActor* HitActor, fl
 					//		simple directional hit reaction
 					else
 					{
+						GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Purple, FString::Printf(TEXT("Directional Hit Reaction")));
 						FOnMontageEnded MontageEndedDelegate;
 
 						//		disable movement and input skill
@@ -1031,10 +1039,13 @@ void ABattleMobaCharacter::HitReactionClient_Implementation(AActor* HitActor, fl
 								this->AnimInsta->CanMove = false;
 							}
 						}
+
 						//		cancel stun timer, stop montage.. leave nullptr to stop any active montage
-						this->GetWorldTimerManager().ClearTimer(delay);
-						this->GetMesh()->GetAnimInstance()->Montage_Stop(0.1f, nullptr);
-						
+						if (this->GetWorldTimerManager().IsTimerActive(delay) == true)
+						{
+							this->GetWorldTimerManager().ClearTimer(delay);
+							this->GetMesh()->GetAnimInstance()->Montage_Stop(0.1f, nullptr);
+						}
 
 						//		play hit reaction of directional hit reaction
 						this->GetMesh()->GetAnimInstance()->Montage_Play(HitMoveset, 1.0f, EMontagePlayReturnType::MontageLength, 0.0f, true);
@@ -1805,10 +1816,10 @@ void ABattleMobaCharacter::SetupStats_Implementation()
 		MaxHealth = PS->MaxHealth;
 		Health = MaxHealth;
 		Defence = PS->Defense;
-		FrontHitMoveset = PS->FrontHitMoveset;
+		/*FrontHitMoveset = PS->FrontHitMoveset;
 		BackHitMoveset = PS->BackHitMoveset;
 		LeftHitMoveset = PS->LeftHitMoveset;
-		RightHitMoveset = PS->RightHitMoveset;
+		RightHitMoveset = PS->RightHitMoveset;*/
 	}
 }
 
@@ -2034,24 +2045,7 @@ void ABattleMobaCharacter::HitResult_Implementation(FHitResult hit, UParticleSys
 				DoDamage(DamagedEnemy);
 			}
 
-			//GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Red, FString::Printf(TEXT("Closest bone: "), *HitBone.ToString()));
-			if (IsValid(ImpactEffect))
-			{
-				if (AttachTo != NAME_None)
-				{
-					GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Purple, FString::Printf(TEXT("Impact Effect: "), *ImpactEffect->GetName()));
-
-					//		spawn particle on closest bone location to hit impact
-					UGameplayStatics::SpawnEmitterAtLocation(this->GetWorld(), ImpactEffect, this->GetMesh()->GetSocketLocation(AttachTo), FRotator::ZeroRotator, false);
-				}
-			}
-
-			if (IsValid(HitSound))
-			{
-				GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Purple, FString::Printf(TEXT("Hit Sound: "), *HitSound->GetName()));
-				UGameplayStatics::PlaySoundAtLocation(this->GetWorld(), HitSound, this->GetActorLocation());
-			}
-			
+			PlayEffectsClient(ImpactEffect, AttachTo, HitSound);
 		}
 	}
 
@@ -2063,26 +2057,17 @@ void ABattleMobaCharacter::HitResult_Implementation(FHitResult hit, UParticleSys
 			ArrDamagedEnemy.Add(DamagedTower);
 			TowerReceiveDamage(DamagedTower, this->BaseDamage);
 
-			if (IsValid(ImpactEffect))
-			{
-				UGameplayStatics::SpawnEmitterAtLocation(this->GetWorld(), ImpactEffect, this->GetMesh()->GetSocketLocation(AttachTo), FRotator::ZeroRotator, false);
-			}
-			
-			if (IsValid(HitSound))
-			{
-				GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Purple, FString::Printf(TEXT("Hit Sound: "), *HitSound->GetName()));
-				UGameplayStatics::PlaySoundAtLocation(this->GetWorld(), HitSound, this->GetActorLocation());
-			}
+			PlayEffectsClient(ImpactEffect, AttachTo, HitSound);
 		}
 	}
 }
 
-bool ABattleMobaCharacter::SpecialAttackTrace_Validate(FVector BoxSize, FVector Offset, UParticleSystem* ImpactEffect, FName DamageSocket, FName ParticleSocket, USoundBase* HitSound)
+bool ABattleMobaCharacter::SpecialAttackTrace_Validate(FVector BoxSize, UParticleSystem* ImpactEffect, FName DamageSocket, FName ParticleSocket, USoundBase* HitSound)
 {
 	return true;
 }
 
-void ABattleMobaCharacter::SpecialAttackTrace_Implementation(FVector BoxSize, FVector Offset, UParticleSystem* ImpactEffect, FName DamageSocket, FName ParticleSocket, USoundBase* HitSound)
+void ABattleMobaCharacter::SpecialAttackTrace_Implementation(FVector BoxSize, UParticleSystem* ImpactEffect, FName DamageSocket, FName ParticleSocket, USoundBase* HitSound)
 {
 	//		initialize hit results
 	TArray<FHitResult> hitResults;
@@ -2136,20 +2121,7 @@ void ABattleMobaCharacter::SpecialAttackTrace_Implementation(FVector BoxSize, FV
 							DoDamage(pc);
 						}
 
-						if (IsValid(ImpactEffect))
-						{
-							if (ParticleSocket != NAME_None)
-							{
-								FName bone = ParticleSocket;
-								UGameplayStatics::SpawnEmitterAtLocation(this->GetWorld(), ImpactEffect, this->GetMesh()->GetBoneLocation(bone, EBoneSpaces::WorldSpace), FRotator::ZeroRotator, false);
-							}
-						}
-
-						if (IsValid(HitSound))
-						{
-							GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Purple, FString::Printf(TEXT("Hit Sound: "), *HitSound->GetName()));
-							UGameplayStatics::PlaySoundAtLocation(this->GetWorld(), HitSound, this->GetActorLocation());
-						}
+						PlayEffectsClient(ImpactEffect, ParticleSocket, HitSound);
 					}
 				}
 
@@ -2161,20 +2133,36 @@ void ABattleMobaCharacter::SpecialAttackTrace_Implementation(FVector BoxSize, FV
 						TowerReceiveDamage(tower, this->BaseDamage);
 						Victims.Add(tower);
 
-						if (IsValid(ImpactEffect) && IsValid(ImpactEffect))
-						{
-							UGameplayStatics::SpawnEmitterAtLocation(this->GetWorld(), ImpactEffect, this->GetMesh()->GetSocketLocation(ParticleSocket), FRotator::ZeroRotator, false);
-						}
-
-						if (IsValid(HitSound))
-						{
-							GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Purple, FString::Printf(TEXT("Hit Sound: "), *HitSound->GetName()));
-							UGameplayStatics::PlaySoundAtLocation(this->GetWorld(), HitSound, this->GetActorLocation());
-						}
+						PlayEffectsClient(ImpactEffect, ParticleSocket, HitSound);
 					}
 				}
 			}
 		}
+	}
+}
+
+bool ABattleMobaCharacter::PlayEffectsClient_Validate(UParticleSystem * ImpactEffect, FName ParticleSocket, USoundBase * HitSound)
+{
+	return true;
+}
+
+void ABattleMobaCharacter::PlayEffectsClient_Implementation(UParticleSystem * ImpactEffect, FName ParticleSocket, USoundBase * HitSound)
+{
+	if (IsValid(ImpactEffect))
+	{
+		if (ParticleSocket != NAME_None)
+		{
+			GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Purple, FString::Printf(TEXT("Impact Effect: "), *ImpactEffect->GetName()));
+
+			//		spawn particle on closest bone location to hit impact
+			UGameplayStatics::SpawnEmitterAtLocation(this->GetWorld(), ImpactEffect, this->GetMesh()->GetSocketLocation(ParticleSocket), FRotator::ZeroRotator, false);
+		}
+	}
+
+	if (IsValid(HitSound))
+	{
+		GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Purple, FString::Printf(TEXT("Hit Sound: "), *HitSound->GetName()));
+		UGameplayStatics::PlaySoundAtLocation(this->GetWorld(), HitSound, this->GetActorLocation());
 	}
 }
 
@@ -2472,4 +2460,5 @@ void ABattleMobaCharacter::MoveRight(float Value)
 		}
 	}
 }
+
 

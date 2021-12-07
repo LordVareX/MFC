@@ -263,16 +263,16 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "HitReaction")
 		UAnimMontage* HitReactionMoveset;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "HitReaction")
+	UPROPERTY(EditAnywhere, Replicated, BlueprintReadWrite, Category = "HitReaction")
 		UAnimMontage* FrontHitMoveset;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "HitReaction")
+	UPROPERTY(EditAnywhere, Replicated, BlueprintReadWrite, Category = "HitReaction")
 		UAnimMontage* BackHitMoveset;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "HitReaction")
+	UPROPERTY(EditAnywhere, Replicated, BlueprintReadWrite, Category = "HitReaction")
 		UAnimMontage* RightHitMoveset;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "HitReaction")
+	UPROPERTY(EditAnywhere, Replicated, BlueprintReadWrite, Category = "HitReaction")
 		UAnimMontage* LeftHitMoveset;
 
 	UPROPERTY(VisibleAnywhere, Replicated, Category = "HitReaction")
@@ -454,9 +454,12 @@ protected:
 
 	//		Attack sphere trace for area of damage
 	UFUNCTION(Reliable, Server, WithValidation, BlueprintCallable, Category = "HitReaction")
-		void SpecialAttackTrace(FVector BoxSize, FVector Offset, UParticleSystem* ImpactEffect, FName DamageSocket, FName ParticleSocket, USoundBase* HitSound);
+		void SpecialAttackTrace(FVector BoxSize, UParticleSystem* ImpactEffect, FName DamageSocket, FName ParticleSocket, USoundBase* HitSound);
 
-	//Skill sent to server
+	UFUNCTION(Reliable, NetMulticast, WithValidation, Category = "HitReaction")
+		void PlayEffectsClient(UParticleSystem* ImpactEffect, FName ParticleSocket, USoundBase* HitSound);
+	
+		//Skill sent to server
 	UFUNCTION(Reliable, Server, WithValidation, BlueprintCallable, Category = "HitReaction")
 		void FireTrace(UBoxComponent* Col1, UBoxComponent* Col2, UBoxComponent* Col3, UBoxComponent* Col4, UBoxComponent* Col5, UBoxComponent* Col6);
 
