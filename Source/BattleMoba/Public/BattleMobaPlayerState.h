@@ -79,8 +79,10 @@ public:
 	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadWrite, Category = "Item")
 		int ChiOrbs = 0;
 
-	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadWrite, Category = "Item")
+	UPROPERTY(VisibleAnywhere, ReplicatedUsing = OnRep_Timer, BlueprintReadWrite, Category = "Item")
 		int RespawnTimeCounter = 30;
+	UFUNCTION()
+		void OnRep_Timer();
 
 	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadWrite, Category = "Respawn")
 		FTimerHandle RespawnHandle;
@@ -101,10 +103,20 @@ public:
 		UAnimMontage* LeftHitMoveset;
 
 public:
+
+	UFUNCTION(Reliable, Server, WithValidation, Category = "Timer")
+	void StartRespawnTimer(ABattleMobaPlayerState* ps);
+
+	UFUNCTION(Reliable, Server, WithValidation, Category = "Timer")
+	void RespawnTimerCount(ABattleMobaPlayerState * ps);
+
+	UFUNCTION(Reliable, NetMulticast, WithValidation, Category = "Timer")
+		void MulticastTimerCount(int32 val);
+
 	UFUNCTION(Reliable, Client, WithValidation, Category = "PI")
 		void SetPlayerIndex(int32 PlayerIndex);
 
 	//For displaying respawn time count
-	UFUNCTION(BlueprintImplementableEvent, Category = "Damage")
-		void DisplayRespawnTime();
+	UFUNCTION(BlueprintImplementableEvent, Category = "Timer")
+		void DisplayRespawnTime(int32 val);
 };

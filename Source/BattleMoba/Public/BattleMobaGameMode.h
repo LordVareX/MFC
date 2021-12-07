@@ -186,12 +186,6 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Score")
 		void PlayerKilled(ABattleMobaPlayerState* victim, ABattleMobaPlayerState* killer, TArray<ABattleMobaPlayerState*> assist);
 
-	UFUNCTION(BlueprintCallable, Category = "Score")
-		void StartRespawnTimer(ABattleMobaPlayerState* ps);
-
-	void RespawnTimerCount(FTimerHandle* RespawnHandle, ABattleMobaPlayerState* ps);
-
-
 	virtual void PostLogin(APlayerController* NewPlayer) override;
 
 	UFUNCTION()

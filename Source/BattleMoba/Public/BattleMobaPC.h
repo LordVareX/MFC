@@ -44,6 +44,9 @@ public:
 	UFUNCTION(BlueprintImplementableEvent, Category = "Players")
 		void NameChangeRequest(const FString &PlayerName, int32 PIndex);
 
+	UFUNCTION(Reliable, Client, WithValidation, Category = "Respawn")
+		void SetupPawnAttribute();
+
 protected:
 
 	//spectator pi

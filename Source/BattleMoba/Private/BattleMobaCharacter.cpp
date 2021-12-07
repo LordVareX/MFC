@@ -519,18 +519,11 @@ void ABattleMobaCharacter::OnConstruction(const FTransform & Transform)
 
 void ABattleMobaCharacter::RefreshPlayerData()
 {
-	ABattleMobaPlayerState* PS = Cast<ABattleMobaPlayerState>(GetPlayerState());
-	if (PS)
-	{
-		if (IsLocallyControlled())
-		{
-			ServerSetBlendspace(PS);
-		}
+	GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Magenta, FString::Printf(TEXT("BEGINPLAY")));
 
-		ActionTable = PS->ActionTable;
-		//MaxHealth = PS->MaxHealth;
-		//Defence = PS->Defense;
-		
+	ServerSetupStats();
+	if (ActionTable)
+	{
 		FString Context;
 		for (auto& name : ActionTable->GetRowNames())
 		{
@@ -540,6 +533,15 @@ void ABattleMobaCharacter::RefreshPlayerData()
 			{
 				row->isOnCD = false;
 			}
+		}
+	}
+
+	ABattleMobaPlayerState* PS = Cast<ABattleMobaPlayerState>(GetPlayerState());
+	if (PS)
+	{
+		if (IsLocallyControlled())
+		{
+			ServerSetBlendspace(PS);
 		}
 	}
 
@@ -960,10 +962,12 @@ void ABattleMobaCharacter::HitReactionClient_Implementation(AActor* HitActor, fl
 					this->GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 					this->GetCharacterMovement()->DisableMovement();
 
+					//ps->StartRespawnTimer(ps);
+
 					if (GetLocalRole() == ROLE_Authority)
 					{
 						//Start Respawn Timer Count
-						gm->StartRespawnTimer(ps);
+						ps->StartRespawnTimer(ps);
 						this->GetWorld()->GetTimerManager().SetTimer(this->RespawnTimer, this, &ABattleMobaCharacter::RespawnCharacter, 3.0f, false);
 					}
 				}
@@ -1347,8 +1351,6 @@ void ABattleMobaCharacter::RespawnCharacter_Implementation()
 		ABattleMobaPlayerState* PS = Cast<ABattleMobaPlayerState>(PC->PlayerState);
 		if (PS)
 		{
-			PS->RespawnTimeCounter -= 1;
-			PS->DisplayRespawnTime();
 			PC->RespawnPawn(PS->SpawnTransform);
 			PC->UnPossess();
 		}
@@ -1373,6 +1375,7 @@ bool ABattleMobaCharacter::ServerSetupStats_Validate()
 
 void ABattleMobaCharacter::ServerSetupStats_Implementation()
 {
+	GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("SERVERSETUPSTATS")));
 	SetupStats();
 }
 
@@ -1794,6 +1797,7 @@ bool ABattleMobaCharacter::SetupStats_Validate()
 
 void ABattleMobaCharacter::SetupStats_Implementation()
 {
+	GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("SETUPSTATS")));
 	ABattleMobaPlayerState* PS = Cast<ABattleMobaPlayerState>(GetPlayerState());
 	if (PS)
 	{

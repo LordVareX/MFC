@@ -329,14 +329,14 @@ protected:
 	UPROPERTY(VisibleAnywhere, ReplicatedUsing = OnRep_Health, BlueprintReadWrite, Category = "Status")
 		float Health;
 
+	UFUNCTION()
+		void OnRep_Health();
+
 	UPROPERTY(EditDefaultsOnly, Replicated, BlueprintReadWrite, Category = "Status")
 		float MaxHealth;
 
 	UPROPERTY(EditDefaultsOnly, Replicated, BlueprintReadWrite, Category = "Status")
 		float Defense;
-
-	UFUNCTION()
-		void OnRep_Health();
 
 	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadWrite, Category = "Status")
 		float Stamina;
@@ -425,9 +425,6 @@ protected:
 
 	UFUNCTION(BlueprintImplementableEvent, Category = "Setup")
 		void FinishSetupBeginPlay();
-
-	UFUNCTION(BlueprintCallable, Category = "Setup")
-		void RefreshPlayerData();
 
 	UFUNCTION(BlueprintCallable, meta = (ExpandEnumAsExecs = Type))
 		void CheckSwipeType(EInputType Type, FVector2D Location, TEnumAsByte<ETouchIndex::Type> TouchIndex);
@@ -542,6 +539,9 @@ public:
 
 	UFUNCTION(BlueprintImplementableEvent, Category = "HUD")
 		void CreateCPHUD();
+
+	UFUNCTION(BlueprintCallable, Category = "Setup")
+		void RefreshPlayerData();
 
 	UFUNCTION(Reliable, NetMulticast, WithValidation, BlueprintCallable, Category = "ReceiveDamage")
 		void TowerReceiveDamage(ADestructibleTower* Tower, float DamageApply);
