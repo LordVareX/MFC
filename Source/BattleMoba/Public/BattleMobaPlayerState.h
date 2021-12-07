@@ -35,7 +35,7 @@ public:
 
 public:
 	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadWrite, Category = "Status")
-		float MaxHealth = 750.0f;
+		float MaxHealth = 450.0f;
 
 	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadWrite, Category = "Status")
 		float Defense = 750.0f;

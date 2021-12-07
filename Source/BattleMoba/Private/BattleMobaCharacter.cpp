@@ -521,7 +521,11 @@ void ABattleMobaCharacter::RefreshPlayerData()
 {
 	GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Magenta, FString::Printf(TEXT("BEGINPLAY")));
 
-	ServerSetupStats();
+	if (IsLocallyControlled())
+	{
+		ServerSetupStats();
+	}
+	
 	if (ActionTable)
 	{
 		FString Context;
@@ -1510,7 +1514,7 @@ void ABattleMobaCharacter::RotateNearestTarget_Implementation(AActor* Target, ER
 			//setting up delay properties
 			FTimerHandle handle;
 			FTimerDelegate TimerDelegate;
-
+			
 			TimerDelegate.BindLambda([this, inst, Type, SelectedRow]()
 			{
 				//inst->Speed = 0.0f;
@@ -1530,7 +1534,7 @@ void ABattleMobaCharacter::RotateNearestTarget_Implementation(AActor* Target, ER
 				inst->bMoving = false;
 			});
 			/*Start delay to reset speed*/
-			this->GetWorldTimerManager().SetTimer(handle, TimerDelegate, 0.1f, false);
+			this->GetWorldTimerManager().SetTimer(handle, TimerDelegate, 0.15f, false);
 
 		}
 		else
