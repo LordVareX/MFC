@@ -594,8 +594,8 @@ void ABattleMobaGameMode::SpawnBasedOnTeam(FName TeamName, USkeletalMesh* CharMe
 				newPlayer->Possess(pawn);
 				newPlayer->ClientSetRotation(PStart->GetActorRotation());
 
-				newPlayer->bShowMouseCursor = false;
-				newPlayer->SetInputMode(FInputModeGameOnly());
+				newPlayer->bShowMouseCursor = true;
+				newPlayer->SetInputMode(FInputModeUIOnly());
 			}
 		}
 	}
@@ -1076,7 +1076,7 @@ void ABattleMobaGameMode::RespawnRequested_Implementation(APlayerController* pla
 					if (pawn)
 					{
 						//Assign team and player name before finish spawning
-						pawn->PlayerName = playerController->PlayerState->GetPlayerName();
+						pawn->PlayerName = PS->Username;
 						pawn->TeamName = PS->TeamName;
 						pawn->CharMesh = PS->CharMesh;
 
