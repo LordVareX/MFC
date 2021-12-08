@@ -1885,7 +1885,7 @@ void ABattleMobaCharacter::MulticastExecuteAction_Implementation(FActionSkill Se
 								this->GetMesh()->GetAnimInstance()->Montage_JumpToSection("GetUp");
 							});
 
-							this->GetWorldTimerManager().SetTimer(dashTimer, dashTimerDel, 0.5f, false);
+							this->GetWorldTimerManager().SetTimer(dashTimer, dashTimerDel, 0.2f, false);
 
 							MontageEndDel.BindUObject(this, &ABattleMobaCharacter::OnHRMontageEnd);
 							this->GetMesh()->GetAnimInstance()->Montage_SetEndDelegate(MontageEndDel, SelectedRow.SkillMoveset);
@@ -2147,6 +2147,19 @@ void ABattleMobaCharacter::SpecialAttackTrace_Implementation(FVector BoxSize, UP
 				}
 			}
 		}
+	}
+}
+
+bool ABattleMobaCharacter::ServerPlayEffects_Validate(UParticleSystem * ImpactEffect, FName ParticleSocket, USoundBase * HitSound)
+{
+	return true;
+}
+
+void ABattleMobaCharacter::ServerPlayEffects_Implementation(UParticleSystem * ImpactEffect, FName ParticleSocket, USoundBase * HitSound)
+{
+	if (this->GetLocalRole() == ROLE_Authority)
+	{
+		PlayEffectsClient(ImpactEffect, ParticleSocket, HitSound);
 	}
 }
 

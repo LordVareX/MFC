@@ -456,6 +456,9 @@ protected:
 	UFUNCTION(Reliable, Server, WithValidation, BlueprintCallable, Category = "HitReaction")
 		void SpecialAttackTrace(FVector BoxSize, UParticleSystem* ImpactEffect, FName DamageSocket, FName ParticleSocket, USoundBase* HitSound);
 
+	UFUNCTION(Reliable, Server, WithValidation, BlueprintCallable, Category = "HitReaction")
+		void ServerPlayEffects(UParticleSystem* ImpactEffect, FName ParticleSocket, USoundBase* HitSound);
+
 	UFUNCTION(Reliable, NetMulticast, WithValidation, Category = "HitReaction")
 		void PlayEffectsClient(UParticleSystem* ImpactEffect, FName ParticleSocket, USoundBase* HitSound);
 	
@@ -494,7 +497,7 @@ protected:
 	UFUNCTION(BlueprintCallable, Category = "ActionSkill")
 		void AttackCombo(FActionSkill SelectedRow);
 
-	UFUNCTION(Reliable, Server, WithValidation, Category = "ActionSkill")
+	UFUNCTION(Reliable, Server, WithValidation, BlueprintCallable, Category = "ActionSkill")
 		void ServerCounterAttack(ABattleMobaCharacter* hitActor);
 
 	UFUNCTION(Reliable, NetMulticast, WithValidation, Category = "ActionSkill")
