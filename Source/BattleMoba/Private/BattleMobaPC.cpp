@@ -73,6 +73,20 @@ int32 ABattleMobaPC::CheckIndexValidity(int32 index, TArray<ABattleMobaPC*> Play
 
 }
 
+bool ABattleMobaPC::ClientSetInputMode_Validate()
+{
+	return true;
+}
+
+void ABattleMobaPC::ClientSetInputMode_Implementation()
+{
+	if (this->IsLocalPlayerController() && this->GetNetMode() != ENetMode::NM_DedicatedServer)
+	{
+		//this->bShowMouseCursor = true;
+		this->SetInputMode(FInputModeGameAndUI());
+	}
+}
+
 bool ABattleMobaPC::SpectateNextPlayer_Validate(const TArray<ABattleMobaPC*>& PlayerList, EFormula SwitchMode)
 {
 	return true;

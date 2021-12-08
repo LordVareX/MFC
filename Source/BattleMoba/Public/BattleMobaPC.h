@@ -56,6 +56,9 @@ protected:
 	UFUNCTION(BlueprintPure, Category = "Increment")
 		static int32 CheckIndexValidity(int32 index, TArray<ABattleMobaPC*> PlayerList, EFormula SwitchMode);
 
+	UFUNCTION(BlueprintCallable, Reliable, Client, WithValidation, Category = "InputMode")
+		void ClientSetInputMode();
+
 	//RequestSpectator
 	UFUNCTION(BlueprintCallable, Reliable, Server, WithValidation, Category = "Spectator")
 		void SetupSpectator(EFormula SwitchMode);

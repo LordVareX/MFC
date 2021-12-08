@@ -594,8 +594,8 @@ void ABattleMobaGameMode::SpawnBasedOnTeam(FName TeamName, USkeletalMesh* CharMe
 				newPlayer->Possess(pawn);
 				newPlayer->ClientSetRotation(PStart->GetActorRotation());
 
-				newPlayer->bShowMouseCursor = true;
-				newPlayer->SetInputMode(FInputModeUIOnly());
+				/*newPlayer->bShowMouseCursor = true;
+				newPlayer->SetInputMode(FInputModeGameAndUI());*/
 			}
 		}
 	}
