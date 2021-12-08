@@ -326,6 +326,7 @@ void ABattleMobaGameMode::StartLobbyClock() {
 		else {
 			GState->LobbyCheck = true;
 			GetWorldTimerManager().ClearTimer(LobbyClockTimer);
+			UpdateLobby();
 			GetWorldTimerManager().SetTimer(ClockTimer, this, &ABattleMobaGameMode::StartClock, 1.0f, true);
 		}
 	}
