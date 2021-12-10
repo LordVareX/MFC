@@ -414,6 +414,12 @@ protected:
 
 	virtual float TakeDamage(float Damage, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser) override;
 
+	UFUNCTION(Reliable, Server, WithValidation, Category = "Action")
+		void ServerAddSkillComponent(FName SkillComp);
+
+	UFUNCTION(Reliable, Client, WithValidation, Category = "Action")
+		void MultiAddSkillComponent(FName SkillComp);
+
 	UFUNCTION(Reliable, Server, WithValidation, Category = "Movement")
 		void ServerSetBlendspace(ABattleMobaPlayerState* PS);
 
