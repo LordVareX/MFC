@@ -406,7 +406,7 @@ void ABattleMobaCharacter::BeginPlay()
 {
 	Super::BeginPlay();
 	RefreshPlayerData();
-
+	//this->GetComponents<UBattleMobaSkillComponent>(SkillComponents);
 	//SetupStats();
 }
 
@@ -480,32 +480,6 @@ float ABattleMobaCharacter::TakeDamage(float Damage, FDamageEvent const & Damage
 		}
 	}
 	return 0.0f;
-}
-
-bool ABattleMobaCharacter::ServerAddSkillComponent_Validate(FName SkillComp)
-{
-	return true;
-}
-
-void ABattleMobaCharacter::ServerAddSkillComponent_Implementation(FName SkillComp)
-{
-	MultiAddSkillComponent(SkillComp);
-}
-
-bool ABattleMobaCharacter::MultiAddSkillComponent_Validate(FName SkillComp)
-{
-	return true;
-}
-
-void ABattleMobaCharacter::MultiAddSkillComponent_Implementation(FName SkillComp)
-{
-	UBattleMobaSkillComponent* SkillComponent = NewObject<UBattleMobaSkillComponent>(this, UBattleMobaSkillComponent::StaticClass(), SkillComp, RF_Transient);
-	if (SkillComponent)
-	{
-		SkillComponent->RegisterComponent();
-		this->AddInstanceComponent(SkillComponent);
-		GEngine->AddOnScreenDebugMessage(-1, 20.0f, FColor::Yellow, FString::Printf(TEXT("Component name: %s"), *SkillComponent->GetFName().ToString()));
-	}
 }
 
 bool ABattleMobaCharacter::ServerSetBlendspace_Validate(ABattleMobaPlayerState* PS)
@@ -1859,14 +1833,8 @@ void ABattleMobaCharacter::SetupStats_Implementation()
 				{
 					row->isOnCD = false;
 
-					if (row->SkillComponent != "None")
-					{
-						//Add skill component
-						if (IsLocallyControlled())
-						{
-							ServerAddSkillComponent(row->SkillComponent);
-						}
-					}
+					//Add skill component
+					row->SkillComp = UInputLibrary::AddComponentByClass(row->SkillComponent, this);
 				}
 			}
 		}
@@ -1880,6 +1848,8 @@ bool ABattleMobaCharacter::MulticastExecuteAction_Validate(FActionSkill Selected
 
 void ABattleMobaCharacter::MulticastExecuteAction_Implementation(FActionSkill SelectedRow, FName MontageSection, bool bSpecialAttack)
 {
+	//GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Blue, FString::Printf(TEXT("row->isOnCD: %s"), SelectedRow.isOnCD ? TEXT("true") : TEXT("false")));
+
 	/**		Checks SkeletalMesh exists / AnimInst Exists / Player is Stunned or still executing a skill */
 	if (this->GetMesh()->SkeletalMesh != nullptr)
 	{
@@ -1887,7 +1857,13 @@ void ABattleMobaCharacter::MulticastExecuteAction_Implementation(FActionSkill Se
 		{
 			if (this->AnimInsta->CanMove == true)
 			{
-				//GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Blue, FString::Printf(TEXT("row->isOnCD: %s"), SelectedRow.isOnCD ? TEXT("true") : TEXT("false")));
+///////////////////////////////////////This will access current row actor component which will run Execute()//////////////////////////////////////////////////////////////////////////
+				if (SelectedRow.SkillComp)
+				{
+					SelectedRow.SkillComp->Execute(this);/********/
+					GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Blue, FString::Printf(TEXT("Begin Run Function from the SkillComp Class")));
+				}
+////////////////////////////////////////////////////////////End Skill Comp access/////////////////////////////////////////////////////////////////////////////////////////////////////
 
 				/**		Disable movement on Action Skill*/
 				this->AnimInsta->CanMove = false;
@@ -1898,7 +1874,7 @@ void ABattleMobaCharacter::MulticastExecuteAction_Implementation(FActionSkill Se
 					//if current montage consumes cooldown properties
 					if (SelectedRow.IsUsingCD)
 					{
-						///GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("Play montage: %s"), *SelectedRow.SkillMoveset->GetName()));
+						/*GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("Play montage: %s"), *SelectedRow.SkillMoveset->GetName()));*/
 						//GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("ISUSINGCD")));
 
 						PlayAnimMontage(SelectedRow.SkillMoveset, 1.0f, MontageSection);

@@ -6,6 +6,7 @@
 #include "Components/ActorComponent.h"
 #include "BattleMobaSkillComponent.generated.h"
 
+class ABattleMobaCharacter;
 
 UCLASS(Blueprintable, meta=(BlueprintSpawnableComponent))
 class BATTLEMOBA_API UBattleMobaSkillComponent : public UActorComponent
@@ -18,12 +19,15 @@ public:
 	UBattleMobaSkillComponent(const FObjectInitializer& ObjectInitializer);
 
 protected:
-	// Called when the game starts
-	virtual void BeginPlay() override;
+	UFUNCTION(BlueprintImplementableEvent, Category = "Execute")
+		void ExecuteSkill();
 
 public:	
 	// Called every frame
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
-		
+	// Called when the game starts
+	virtual void BeginPlay() override;
+
+	void Execute(ABattleMobaCharacter* OwningChar);
 };

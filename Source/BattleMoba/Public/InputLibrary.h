@@ -51,7 +51,7 @@ struct FActionSkill : public FTableRowBase
 {
 	GENERATED_BODY()
 
-		UPROPERTY()
+	UPROPERTY()
 		bool isOnCD = false;
 
 	//If cooldown mechanic is applied
@@ -107,8 +107,11 @@ struct FActionSkill : public FTableRowBase
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Anim")
 		UAnimMontage* HitMoveset;
 
+	UPROPERTY()
+		UBattleMobaSkillComponent* SkillComp;
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Skill")
-		FName SkillComponent;
+		TSubclassOf<UBattleMobaSkillComponent> SkillComponent;
 
 	//For array comparison
 	bool operator ==(const FActionSkill &other) const
@@ -180,4 +183,8 @@ public:
 
 	//Detect linear swipe
 	static bool DetectLinearSwipe(FVector2D Line1Start, FVector2D Line1End, EInputType& Branches, bool Dos);
+
+	//Adds a UActorComponent Subclass, and adds it to the Outer Actor.
+	UFUNCTION(BlueprintPure, Category = "ActorComponent")
+		static UBattleMobaSkillComponent* AddComponentByClass(TSubclassOf<UBattleMobaSkillComponent> Class, AActor* Outer);
 };

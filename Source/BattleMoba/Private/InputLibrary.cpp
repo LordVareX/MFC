@@ -6,6 +6,7 @@
 #include "Math/UnrealMathUtility.h"
 #include "Kismet/KismetTextLibrary.h"
 #include "Components/WidgetComponent.h"
+#include "BattleMobaSkillComponent.h"
 #include "DrawDebugHelpers.h"
 
 FDateTime UInputLibrary::GetCurrentDateAndTime()
@@ -312,4 +313,36 @@ bool UInputLibrary::DetectLinearSwipe(FVector2D Line1Start, FVector2D Line1End, 
 	//	}
 	//}
 	return false;
+}
+
+//Adds a USkillComponent Subclass, and adds it to the Outer Actor.
+UBattleMobaSkillComponent* UInputLibrary::AddComponentByClass(TSubclassOf<UBattleMobaSkillComponent> Class, AActor* Outer)
+{
+	if (Class != nullptr && Outer != nullptr)
+	{
+		UBattleMobaSkillComponent* Component = NewObject<UBattleMobaSkillComponent>(Outer, *Class, Class->GetFName(), RF_Transient);
+		//UBattleMobaSkillComponent* Component = Cast<UBattleMobaSkillComponent>(Class);
+		if (Component != nullptr)
+		{
+			Component->Rename(*Class->GetName());
+			/*if (Outer->HasActorBegunPlay())
+			{
+				Component->bWantsBeginPlay = true;
+			}*/
+			Component->RegisterComponent();
+			Outer->AddInstanceComponent(Component);
+
+			if (!Component->HasBegunPlay())
+			{
+				Component->BeginPlay();
+			}
+			return Component;
+		}
+		else
+		{
+			return nullptr;
+		}
+	}
+
+	return nullptr;
 }
