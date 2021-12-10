@@ -36,6 +36,7 @@
 #include "BattleMobaGameMode.h"
 #include "BMobaTriggerCapsule.h"
 #include "BattleMobaCTF.h"
+#include "BattleMobaSkillComponent.h"
 
 
 void ABattleMobaCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -76,6 +77,7 @@ void ABattleMobaCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>&
 	DOREPLIFETIME(ABattleMobaCharacter, BackHitMoveset);
 	DOREPLIFETIME(ABattleMobaCharacter, RightHitMoveset);
 	DOREPLIFETIME(ABattleMobaCharacter, LeftHitMoveset);
+	/*DOREPLIFETIME(ABattleMobaCharacter, SkillComp);*/
 }
 
 ABattleMobaCharacter::ABattleMobaCharacter()
@@ -404,6 +406,7 @@ void ABattleMobaCharacter::BeginPlay()
 {
 	Super::BeginPlay();
 	RefreshPlayerData();
+
 	//SetupStats();
 }
 
@@ -479,6 +482,32 @@ float ABattleMobaCharacter::TakeDamage(float Damage, FDamageEvent const & Damage
 	return 0.0f;
 }
 
+bool ABattleMobaCharacter::ServerAddSkillComponent_Validate(FName SkillComp)
+{
+	return true;
+}
+
+void ABattleMobaCharacter::ServerAddSkillComponent_Implementation(FName SkillComp)
+{
+	MultiAddSkillComponent(SkillComp);
+}
+
+bool ABattleMobaCharacter::MultiAddSkillComponent_Validate(FName SkillComp)
+{
+	return true;
+}
+
+void ABattleMobaCharacter::MultiAddSkillComponent_Implementation(FName SkillComp)
+{
+	UBattleMobaSkillComponent* SkillComponent = NewObject<UBattleMobaSkillComponent>(this, UBattleMobaSkillComponent::StaticClass(), SkillComp, RF_Transient);
+	if (SkillComponent)
+	{
+		SkillComponent->RegisterComponent();
+		this->AddInstanceComponent(SkillComponent);
+		GEngine->AddOnScreenDebugMessage(-1, 20.0f, FColor::Yellow, FString::Printf(TEXT("Component name: %s"), *SkillComponent->GetFName().ToString()));
+	}
+}
+
 bool ABattleMobaCharacter::ServerSetBlendspace_Validate(ABattleMobaPlayerState* PS)
 {
 	return true;
@@ -523,25 +552,9 @@ void ABattleMobaCharacter::OnConstruction(const FTransform & Transform)
 
 void ABattleMobaCharacter::RefreshPlayerData()
 {
-	GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Magenta, FString::Printf(TEXT("BEGINPLAY")));
-
 	if (IsLocallyControlled())
 	{
 		ServerSetupStats();
-	}
-	
-	if (ActionTable)
-	{
-		FString Context;
-		for (auto& name : ActionTable->GetRowNames())
-		{
-			FActionSkill* row = ActionTable->FindRow<FActionSkill>(name, Context);
-
-			if (row)
-			{
-				row->isOnCD = false;
-			}
-		}
 	}
 
 	ABattleMobaPlayerState* PS = Cast<ABattleMobaPlayerState>(GetPlayerState());
@@ -1824,6 +1837,39 @@ void ABattleMobaCharacter::SetupStats_Implementation()
 		BackHitMoveset = PS->BackHitMoveset;
 		LeftHitMoveset = PS->LeftHitMoveset;
 		RightHitMoveset = PS->RightHitMoveset;
+
+		//Remove previous skill component
+		for (int32 i = 0; i < this->GetInstanceComponents().Num(); i++)
+		{
+			UBattleMobaSkillComponent* SkillComponent = Cast<UBattleMobaSkillComponent>(this->GetInstanceComponents()[i]);
+			if (SkillComponent)
+			{
+				SkillComponent->DestroyComponent();
+			}
+		}
+
+		if (ActionTable)
+		{
+			FString Context;
+			for (auto& name : ActionTable->GetRowNames())
+			{
+				FActionSkill* row = ActionTable->FindRow<FActionSkill>(name, Context);
+
+				if (row)
+				{
+					row->isOnCD = false;
+
+					if (row->SkillComponent != "None")
+					{
+						//Add skill component
+						if (IsLocallyControlled())
+						{
+							ServerAddSkillComponent(row->SkillComponent);
+						}
+					}
+				}
+			}
+		}
 	}
 }
 

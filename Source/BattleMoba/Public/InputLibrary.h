@@ -8,6 +8,7 @@
 #include "InputLibrary.generated.h"
 
 class UWidgetComponent;
+class UBattleMobaSkillComponent;
 
 //For logging purposes
 #define GETENUMSTRING(etype, evalue) ( (FindObject<UEnum>(ANY_PACKAGE, TEXT(etype), true) != nullptr) ? FindObject<UEnum>(ANY_PACKAGE, TEXT(etype), true)->GetNameStringByIndex((int32)evalue) : FString("Invalid - are you sure enum uses UENUM() macro?") )
@@ -105,6 +106,9 @@ struct FActionSkill : public FTableRowBase
 	//Anim to be played on special attack
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Anim")
 		UAnimMontage* HitMoveset;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Skill")
+		FName SkillComponent;
 
 	//For array comparison
 	bool operator ==(const FActionSkill &other) const
