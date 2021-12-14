@@ -20,7 +20,7 @@ public:
 
 protected:
 	UFUNCTION(BlueprintImplementableEvent, Category = "Execute")
-		void ExecuteSkill();
+		void ExecuteSkill(ABattleMobaCharacter* OwningChar);
 
 public:	
 	// Called every frame

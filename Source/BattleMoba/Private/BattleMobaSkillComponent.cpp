@@ -31,7 +31,7 @@ void UBattleMobaSkillComponent::Execute(ABattleMobaCharacter* OwningChar)
 	//General executing functions
 	if (OwningChar != nullptr)
 	{
-		ExecuteSkill();
+		ExecuteSkill(OwningChar);
 		GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Blue, FString::Printf(TEXT("Execute")));
 	}
 }
