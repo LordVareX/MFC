@@ -346,3 +346,9 @@ UBattleMobaSkillComponent* UInputLibrary::AddComponentByClass(TSubclassOf<UBattl
 
 	return nullptr;
 }
+
+void UInputLibrary::RenameObject(FString name, UObject* object)
+{
+	const TCHAR* Charname = *name;
+	object->Rename(Charname);
+}

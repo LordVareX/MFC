@@ -540,8 +540,8 @@ void ABattleMobaCharacter::RefreshPlayerData()
 		}
 	}
 
-	this->GetMesh()->SetSkeletalMesh(CharMesh, false);
-	AnimInsta = Cast<UBattleMobaAnimInstance>(this->GetMesh()->GetAnimInstance());
+	/*this->GetMesh()->SetSkeletalMesh(CharMesh, false);
+	AnimInsta = Cast<UBattleMobaAnimInstance>(this->GetMesh()->GetAnimInstance());*/
 	
 
 	FTimerHandle handle;
@@ -1803,6 +1803,7 @@ void ABattleMobaCharacter::SetupStats_Implementation()
 	ABattleMobaPlayerState* PS = Cast<ABattleMobaPlayerState>(GetPlayerState());
 	if (PS)
 	{
+		CharMesh = PS->CharMesh;
 		ActionTable = PS->ActionTable;
 		MaxHealth = PS->MaxHealth;
 		Health = MaxHealth;
@@ -1811,6 +1812,9 @@ void ABattleMobaCharacter::SetupStats_Implementation()
 		BackHitMoveset = PS->BackHitMoveset;
 		LeftHitMoveset = PS->LeftHitMoveset;
 		RightHitMoveset = PS->RightHitMoveset;
+
+		this->GetMesh()->SetSkeletalMesh(CharMesh, false);
+		AnimInsta = Cast<UBattleMobaAnimInstance>(this->GetMesh()->GetAnimInstance());
 
 		//Remove previous skill component
 		for (int32 i = 0; i < this->GetInstanceComponents().Num(); i++)

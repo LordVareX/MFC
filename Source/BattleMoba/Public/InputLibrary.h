@@ -157,6 +157,9 @@ public:
 	//	UFUNCTION(BlueprintPure, Category = "Rotation")
 	//	static FRotator LookRotation(FVector lookAt, FVector upDirection);
 
+	UFUNCTION(BlueprintCallable, Category = "Utilities")
+		static void RenameObject(FString name, UObject* object);
+
 	UFUNCTION(BlueprintCallable, Category = "DateAndTime")
 		static FDateTime GetCurrentDateAndTime();
 
