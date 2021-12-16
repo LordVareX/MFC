@@ -387,16 +387,13 @@ protected:
 	UPROPERTY(VisibleAnywhere, Replicated, Category = "HitReaction")
 		TArray<class AActor*> ArrDamagedEnemy;
 
-	UPROPERTY(VisibleAnywhere, Replicated, Category = "HitReaction")
-		bool bApplyHitTrace = true;
-
-	FCollisionQueryParams AttackTraceParams;
 	TEnumAsByte<ETouchIndex::Type> MoveTouchIndex;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
 		TEnumAsByte<ETouchIndex::Type> RotTouchIndex;
 
-
+	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadWrite, Category = "Status")
+		class UBattleMobaSkillComponent* SkillComp;
 
 protected:
 	// APawn interface
@@ -465,10 +462,6 @@ protected:
 	UFUNCTION(Reliable, NetMulticast, WithValidation, Category = "HitReaction")
 		void PlayEffectsClient(UParticleSystem* ImpactEffect, FName ParticleSocket, USoundBase* HitSound);
 	
-		//Skill sent to server
-	UFUNCTION(Reliable, Server, WithValidation, BlueprintCallable, Category = "HitReaction")
-		void FireTrace(UBoxComponent* Col1, UBoxComponent* Col2, UBoxComponent* Col3, UBoxComponent* Col4, UBoxComponent* Col5, UBoxComponent* Col6);
-
 	UFUNCTION(Reliable, Server, WithValidation, BlueprintCallable, Category = "HitReaction")
 		void DoDamage(AActor* HitActor);
 
@@ -483,7 +476,6 @@ protected:
 
 	UFUNCTION(Reliable, NetMulticast, WithValidation, BlueprintCallable, Category = "HitReaction")
 		void MulticastRotateHitActor(AActor* HitActor, AActor* Attacker);
-
 
 	UFUNCTION()
 		void ClearDamageDealers();

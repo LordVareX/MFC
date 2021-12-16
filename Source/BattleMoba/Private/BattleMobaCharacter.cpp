@@ -67,7 +67,6 @@ void ABattleMobaCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>&
 	DOREPLIFETIME(ABattleMobaCharacter, OnSpecialAttack);
 	DOREPLIFETIME(ABattleMobaCharacter, ActiveColliders);
 	DOREPLIFETIME(ABattleMobaCharacter, ArrDamagedEnemy);
-	DOREPLIFETIME(ABattleMobaCharacter, bApplyHitTrace);
 	DOREPLIFETIME(ABattleMobaCharacter, comboCount);
 	DOREPLIFETIME(ABattleMobaCharacter, MaxHealth);
 	DOREPLIFETIME(ABattleMobaCharacter, Defense);
@@ -77,7 +76,7 @@ void ABattleMobaCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>&
 	DOREPLIFETIME(ABattleMobaCharacter, BackHitMoveset);
 	DOREPLIFETIME(ABattleMobaCharacter, RightHitMoveset);
 	DOREPLIFETIME(ABattleMobaCharacter, LeftHitMoveset);
-	/*DOREPLIFETIME(ABattleMobaCharacter, SkillComp);*/
+	DOREPLIFETIME(ABattleMobaCharacter, SkillComp);
 }
 
 ABattleMobaCharacter::ABattleMobaCharacter()
@@ -406,8 +405,7 @@ void ABattleMobaCharacter::BeginPlay()
 {
 	Super::BeginPlay();
 	RefreshPlayerData();
-	//this->GetComponents<UBattleMobaSkillComponent>(SkillComponents);
-	//SetupStats();
+	
 }
 
 float ABattleMobaCharacter::TakeDamage(float Damage, FDamageEvent const & DamageEvent, AController* EventInstigator, AActor* DamageCauser)
@@ -1818,6 +1816,8 @@ void ABattleMobaCharacter::SetupStats_Implementation()
 		BackHitMoveset = PS->BackHitMoveset;
 		LeftHitMoveset = PS->LeftHitMoveset;
 		RightHitMoveset = PS->RightHitMoveset;
+		SkillComp = PS->SkillComponent;
+
 
 		this->GetMesh()->SetSkeletalMesh(CharMesh, false);
 		AnimInsta = Cast<UBattleMobaAnimInstance>(this->GetMesh()->GetAnimInstance());
@@ -1844,7 +1844,7 @@ void ABattleMobaCharacter::SetupStats_Implementation()
 					row->isOnCD = false;
 
 					//Add skill component
-					row->SkillComp = UInputLibrary::AddComponentByClass(row->SkillComponent, this);
+					/*row->SkillComp = UInputLibrary::AddComponentByClass(row->SkillComponent, this);*/
 				}
 			}
 		}
@@ -2240,138 +2240,6 @@ void ABattleMobaCharacter::DoDamage_Implementation(AActor* HitActor)
 	}
 }
 
-bool ABattleMobaCharacter::FireTrace_Validate(UBoxComponent* Col1, UBoxComponent* Col2, UBoxComponent* Col3, UBoxComponent* Col4, UBoxComponent* Col5, UBoxComponent* Col6)
-{
-	return true;
-}
-
-void ABattleMobaCharacter::FireTrace_Implementation(UBoxComponent* Col1, UBoxComponent* Col2, UBoxComponent* Col3, UBoxComponent* Col4, UBoxComponent* Col5, UBoxComponent* Col6)
-{
-	if (this->GetMesh()->SkeletalMesh != nullptr)
-	{
-		if (this->AnimInsta != nullptr)
-		{
-			GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Magenta, FString::Printf(TEXT("Can Attack = %s"), AnimInsta->canAttack ? TEXT("True") : TEXT("False")));
-			if (AnimInsta->canAttack == true)
-			{
-				GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Yellow, FString::Printf(TEXT("Apply Hit Trace = %s"), bApplyHitTrace ? TEXT("True") : TEXT("False")));
-				//		stop the hit happening again
-				if (bApplyHitTrace == true)
-				{
-					FHitResult hitRes1;
-					bool bHit1 = GetWorld()->LineTraceSingleByChannel(hitRes1, Col1->GetComponentLocation(), Col1->GetComponentLocation() + (GetActorForwardVector() * TraceDistance), ECC_PhysicsBody, AttackTraceParams);
-
-					if (bHit1)
-					{
-						bApplyHitTrace = false;
-						//		pass hit results to further give conditions on damage
-						ABattleMobaCharacter* hitChar = Cast<ABattleMobaCharacter>(hitRes1.Actor);
-						ADestructibleTower* hitTower = Cast<ADestructibleTower>(hitRes1.Actor);
-
-						if (hitChar && hitChar->InRagdoll == false && hitChar->TeamName != this->TeamName)
-						{
-							DoDamage(hitChar);
-							bApplyHitTrace = true;
-						}
-					}
-
-					else
-					{
-						FHitResult hitRes2;
-						bool bHit2 = GetWorld()->LineTraceSingleByChannel(hitRes2, Col2->GetComponentLocation(), Col2->GetComponentLocation() + (GetActorForwardVector() * TraceDistance), ECC_PhysicsBody, AttackTraceParams);
-
-						if (bHit2)
-						{
-							bApplyHitTrace = false;
-							ABattleMobaCharacter* hitChar = Cast<ABattleMobaCharacter>(hitRes2.Actor);
-
-							if (hitChar && hitChar->InRagdoll == false && hitChar->TeamName != this->TeamName)
-							{
-								DoDamage(hitChar);
-								bApplyHitTrace = true;
-							}
-						}
-
-						else
-						{
-							FHitResult hitRes3;
-							bool bHit3 = GetWorld()->LineTraceSingleByChannel(hitRes3, Col3->GetComponentLocation(), Col3->GetComponentLocation() + (GetActorForwardVector() * TraceDistance), ECC_PhysicsBody, AttackTraceParams);
-
-							if (bHit3)
-							{
-								bApplyHitTrace = false;
-								ABattleMobaCharacter* hitChar = Cast<ABattleMobaCharacter>(hitRes3.Actor);
-
-								if (hitChar && hitChar->InRagdoll == false && hitChar->TeamName != this->TeamName)
-								{
-									DoDamage(hitChar);
-									bApplyHitTrace = true;
-								}
-							}
-
-							else
-							{
-								FHitResult hitRes4;
-								bool bHit4 = GetWorld()->LineTraceSingleByChannel(hitRes4, Col4->GetComponentLocation(), Col4->GetComponentLocation() + (GetActorForwardVector() * TraceDistance), ECC_PhysicsBody, AttackTraceParams);
-
-								if (bHit4)
-								{
-									bApplyHitTrace = false;
-									ABattleMobaCharacter* hitChar = Cast<ABattleMobaCharacter>(hitRes4.Actor);
-
-									if (hitChar && hitChar->InRagdoll == false && hitChar->TeamName != this->TeamName)
-									{
-										DoDamage(hitChar);
-										bApplyHitTrace = true;
-									}
-								}
-
-								else
-								{
-									FHitResult hitRes5;
-									bool bHit5 = GetWorld()->LineTraceSingleByChannel(hitRes5, Col5->GetComponentLocation(), Col5->GetComponentLocation() + (GetActorForwardVector() * TraceDistance), ECC_PhysicsBody, AttackTraceParams);
-
-									if (bHit5)
-									{
-										bApplyHitTrace = false;
-										ABattleMobaCharacter* hitChar = Cast<ABattleMobaCharacter>(hitRes5.Actor);
-
-										if (hitChar && hitChar->InRagdoll == false && hitChar->TeamName != this->TeamName)
-										{
-											DoDamage(hitChar);
-											bApplyHitTrace = true;
-										}
-									}
-
-									else
-									{
-										FHitResult hitRes6;
-										bool bHit6 = GetWorld()->LineTraceSingleByChannel(hitRes6, Col6->GetComponentLocation(), Col6->GetComponentLocation() + (GetActorForwardVector() * TraceDistance), ECC_PhysicsBody, AttackTraceParams);
-
-										if (bHit6)
-										{
-											bApplyHitTrace = false;
-											ABattleMobaCharacter* hitChar = Cast<ABattleMobaCharacter>(hitRes6.Actor);
-
-											if (hitChar && hitChar->InRagdoll == false && hitChar->TeamName != this->TeamName)
-											{
-												DoDamage(hitChar);
-												bApplyHitTrace = true;
-											}
-										}
-									}
-								}
-							}
-						}
-					}
-				}
-			}
-
-			//		get AttackCol world locations
-		}
-	}
-}
-
 bool ABattleMobaCharacter::ServerExecuteAction_Validate(FActionSkill SelectedRow, FName MontageSection, bool bSpecialAttack)
 {
 	return true;
@@ -2381,8 +2249,6 @@ void ABattleMobaCharacter::ServerExecuteAction_Implementation(FActionSkill Selec
 {
 	MulticastExecuteAction(SelectedRow, MontageSection, bSpecialAttack);
 }
-
-
 
 void ABattleMobaCharacter::TouchStarted(ETouchIndex::Type FingerIndex, FVector Location)
 {
