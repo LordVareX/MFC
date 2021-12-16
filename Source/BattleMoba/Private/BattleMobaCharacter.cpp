@@ -1823,14 +1823,14 @@ void ABattleMobaCharacter::SetupStats_Implementation()
 		AnimInsta = Cast<UBattleMobaAnimInstance>(this->GetMesh()->GetAnimInstance());
 
 		//Remove previous skill component
-		for (int32 i = 0; i < this->GetInstanceComponents().Num(); i++)
+		/*for (int32 i = 0; i < this->GetInstanceComponents().Num(); i++)
 		{
 			UBattleMobaSkillComponent* SkillComponent = Cast<UBattleMobaSkillComponent>(this->GetInstanceComponents()[i]);
 			if (SkillComponent)
 			{
 				SkillComponent->DestroyComponent();
 			}
-		}
+		}*/
 
 		if (ActionTable)
 		{
@@ -1868,11 +1868,11 @@ void ABattleMobaCharacter::MulticastExecuteAction_Implementation(FActionSkill Se
 			if (this->AnimInsta->CanMove == true)
 			{
 ///////////////////////////////////////This will access current row actor component which will run Execute()//////////////////////////////////////////////////////////////////////////
-				if (SelectedRow.SkillComp)
-				{
-					SelectedRow.SkillComp->Execute(this);/********/
-					GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Blue, FString::Printf(TEXT("Begin Run Function from the SkillComp Class")));
-				}
+				//if (SelectedRow.SkillComp)
+				//{
+				//	SelectedRow.SkillComp->Execute(this);/********/
+				//	GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Blue, FString::Printf(TEXT("Begin Run Function from the SkillComp Class")));
+				//}
 ////////////////////////////////////////////////////////////End Skill Comp access/////////////////////////////////////////////////////////////////////////////////////////////////////
 
 				/**		Disable movement on Action Skill*/
