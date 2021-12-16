@@ -66,7 +66,7 @@ void ABattleMobaGameMode::BeginPlay()
 {
 	Super::BeginPlay();
 
-
+	//GetWorldTimerManager().SetTimer(LobbyClockTimer, this, &ABattleMobaGameMode::StartLobbyClock, 1.0f, true);
 }
 //Chars = CharSelections;
 
@@ -523,7 +523,7 @@ void ABattleMobaGameMode::PostLogin(APlayerController* NewPlayer)
 					//}
 				}
 			}
-			if (Players.Num() >= 8)
+			if (Players.Num() >= 2)
 			{
 				GetWorldTimerManager().SetTimer(LobbyClockTimer, this, &ABattleMobaGameMode::StartLobbyClock, 1.0f, true);
 				UpdateLobby();
