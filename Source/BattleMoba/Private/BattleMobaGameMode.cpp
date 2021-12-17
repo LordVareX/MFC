@@ -497,13 +497,13 @@ void ABattleMobaGameMode::PostLogin(APlayerController* NewPlayer)
 					{
 						GState->TeamA.Add(PS->GetPlayerName());
 						SpawnBasedOnTeam("Radiant", CharSelections[CharIndex]);
-						UpdateLobby();
+						//UpdateLobby();
 					}
 					else
 					{
 						GState->TeamB.Add(PS->GetPlayerName());
 						SpawnBasedOnTeam("Dire", CharSelections[CharIndex]);
-						UpdateLobby();
+						
 					}
 					//Random unique number for character mesh array
 					//if (Chars.Num() > 0)
@@ -528,7 +528,7 @@ void ABattleMobaGameMode::PostLogin(APlayerController* NewPlayer)
 			if (Players.Num() >= 2)
 			{
 				GetWorldTimerManager().SetTimer(LobbyClockTimer, this, &ABattleMobaGameMode::StartLobbyClock, 1.0f, true);
-				
+				UpdateLobby();
 			}
 		}
 	}
