@@ -107,12 +107,6 @@ struct FActionSkill : public FTableRowBase
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Anim")
 		UAnimMontage* HitMoveset;
 
-	UPROPERTY()
-		UBattleMobaSkillComponent* SkillComp;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Skill")
-		TSubclassOf<UBattleMobaSkillComponent> SkillComponent;
-
 	//For array comparison
 	bool operator ==(const FActionSkill &other) const
 	{
@@ -156,6 +150,9 @@ public:
 	//
 	//	UFUNCTION(BlueprintPure, Category = "Rotation")
 	//	static FRotator LookRotation(FVector lookAt, FVector upDirection);
+
+	UFUNCTION(BlueprintCallable, Category = "Utilities")
+		static void RenameObject(FString name, UObject* object);
 
 	UFUNCTION(BlueprintCallable, Category = "DateAndTime")
 		static FDateTime GetCurrentDateAndTime();

@@ -102,6 +102,9 @@ public:
 	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadWrite, Category = "HitReaction")
 		UAnimMontage* LeftHitMoveset;
 
+	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadWrite, Category = "Skill")
+		class UBattleMobaSkillComponent* SkillComponent;
+
 public:
 
 	UFUNCTION(Reliable, Server, WithValidation, Category = "Timer")

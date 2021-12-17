@@ -66,7 +66,7 @@ void ABattleMobaGameMode::BeginPlay()
 {
 	Super::BeginPlay();
 
-
+	//GetWorldTimerManager().SetTimer(LobbyClockTimer, this, &ABattleMobaGameMode::StartLobbyClock, 1.0f, true);
 }
 //Chars = CharSelections;
 
@@ -493,28 +493,39 @@ void ABattleMobaGameMode::PostLogin(APlayerController* NewPlayer)
 				if (GState)
 				{
 					PS->Pi = Players.Num() - 1;
-
-					//Random unique number for character mesh array
-					if (Chars.Num() > 0)
+					if ((PS->Pi) < 4)
 					{
-						CharIndex = FMath::RandRange(0, Chars.Num() - 1);
-						//PS->CharMesh = Chars[CharIndex];
-						GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Yellow, FString::Printf(TEXT("Player Index : %d"), Players.Num() - 1));
-						if ((PS->Pi) < 4)
-						{
-							GState->TeamA.Add(PS->GetPlayerName());
-							SpawnBasedOnTeam("Radiant", CharSelections[CharIndex]);
-						}
-						else
-						{
-							GState->TeamB.Add(PS->GetPlayerName());
-							SpawnBasedOnTeam("Dire", CharSelections[CharIndex]);
-						}
-						Chars.RemoveAtSwap(CharIndex);
+						GState->TeamA.Add(PS->GetPlayerName());
+						SpawnBasedOnTeam("Radiant", CharSelections[CharIndex]);
+						//UpdateLobby();
 					}
+					else
+					{
+						GState->TeamB.Add(PS->GetPlayerName());
+						SpawnBasedOnTeam("Dire", CharSelections[CharIndex]);
+						
+					}
+					//Random unique number for character mesh array
+					//if (Chars.Num() > 0)
+					//{
+					//	CharIndex = FMath::RandRange(0, Chars.Num() - 1);
+					//	//PS->CharMesh = Chars[CharIndex];
+					//	GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Yellow, FString::Printf(TEXT("Player Index : %d"), Players.Num() - 1));
+					//	if ((PS->Pi) < 4)
+					//	{
+					//		GState->TeamA.Add(PS->GetPlayerName());
+					//		SpawnBasedOnTeam("Radiant", CharSelections[CharIndex]);
+					//	}
+					//	else
+					//	{
+					//		GState->TeamB.Add(PS->GetPlayerName());
+					//		SpawnBasedOnTeam("Dire", CharSelections[CharIndex]);
+					//	}
+					//	Chars.RemoveAtSwap(CharIndex);
+					//}
 				}
 			}
-			if (Players.Num() >= 8)
+			if (Players.Num() >= 2)
 			{
 				GetWorldTimerManager().SetTimer(LobbyClockTimer, this, &ABattleMobaGameMode::StartLobbyClock, 1.0f, true);
 				UpdateLobby();
@@ -572,7 +583,7 @@ void ABattleMobaGameMode::SpawnBasedOnTeam(FName TeamName, USkeletalMesh* CharMe
 			FName Team;
 			PS->TeamName = TeamName;
 			Team = TeamName;
-			PS->CharMesh = CharMesh;
+			//PS->CharMesh = CharMesh;
 
 			AActor* PStart = FindPlayerStart(newPlayer, FString::FromInt(PS->Pi));
 

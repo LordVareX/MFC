@@ -32,6 +32,7 @@ void ABattleMobaPlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty
 	DOREPLIFETIME(ABattleMobaPlayerState, BackHitMoveset);
 	DOREPLIFETIME(ABattleMobaPlayerState, RightHitMoveset);
 	DOREPLIFETIME(ABattleMobaPlayerState, LeftHitMoveset);
+	DOREPLIFETIME(ABattleMobaPlayerState, SkillComponent);
 }
 
 void ABattleMobaPlayerState::OnRep_Timer()
