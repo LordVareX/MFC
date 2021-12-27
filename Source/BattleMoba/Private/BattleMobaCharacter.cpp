@@ -1170,12 +1170,10 @@ void ABattleMobaCharacter::GetButtonSkillAction(FKey Currkeys, FString ButtonNam
 
 												if (this->IsLocallyControlled())
 												{
-													DetectNearestTarget(EResult::Cooldown, *row);
-													AttackSection = "NormalAttack01";
+													/*DetectNearestTarget(EResult::Cooldown, *row);
+													AttackSection = "NormalAttack01";*/
 													//play the animation that visible to all clients
 													//ServerExecuteAction(*row, CurrentSection, AttackSection, true);
-
-													//setting up for cooldown properties
 													FTimerHandle handle;
 													FTimerDelegate TimerDelegate;
 
@@ -1191,8 +1189,13 @@ void ABattleMobaCharacter::GetButtonSkillAction(FKey Currkeys, FString ButtonNam
 													//start cooldown the skill
 													this->GetWorldTimerManager().SetTimer(handle, TimerDelegate, row->CDDuration, false);
 													CooldownVal = row->CDDuration;
-													break;
+													//break;
 												}
+												//setting up for cooldown properties
+												
+												DetectNearestTarget(EResult::Cooldown, *row);
+												AttackSection = "NormalAttack01";
+												
 											}
 											break;
 										}
