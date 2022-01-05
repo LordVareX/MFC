@@ -97,3 +97,23 @@ void ABattleMobaPlayerState::RespawnTimerCount_Implementation(ABattleMobaPlayerS
 		MulticastTimerCount(ps->RespawnTimeCounter);
 	}
 }
+
+void ABattleMobaPlayerState::AddExp(int EXPoint, int& OutLevel)
+{
+	Exp = Exp + EXPoint;
+
+	//if enough exp, level up
+	if (Exp >= ExpNeeded)
+	{
+		Level++;
+
+		//Set the remainder exp from prev level to current exp of current level
+		Exp = Exp - ExpNeeded;
+
+		//to clamp exp value needed for each level
+		//ExpNeeded = ExpNeeded + ....;
+
+		//return level
+		OutLevel = Level;
+	}
+}
