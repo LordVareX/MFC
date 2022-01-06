@@ -47,6 +47,30 @@ enum class EResult : uint8
 };
 
 USTRUCT(BlueprintType)
+struct FLevelAttributes :public FTableRowBase
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Level")
+		int Level = 0;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Exp")
+		int MaxExpPerLevel = 0;
+};
+
+USTRUCT(BlueprintType)
+struct FRewards :public FTableRowBase
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "EnemyLevel")
+		int EnemyLevel = 0;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Exp")
+		int ExpKills = 0;
+};
+
+USTRUCT(BlueprintType)
 struct FActionSkill : public FTableRowBase
 {
 	GENERATED_BODY()
@@ -184,4 +208,7 @@ public:
 	//Adds a UActorComponent Subclass, and adds it to the Outer Actor.
 	UFUNCTION(BlueprintPure, Category = "ActorComponent")
 		static UBattleMobaSkillComponent* AddComponentByClass(TSubclassOf<UBattleMobaSkillComponent> Class, AActor* Outer);
+
+	//Calculate player rewards
+		static bool CalculateRewards(int OriginalHonor, int PlayersCount, FRewards* row, FName RowName, int& HonorVal, int& ExpOut);
 };

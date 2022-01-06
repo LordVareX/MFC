@@ -4,11 +4,16 @@
 #include "BattleMobaPlayerState.h"
 #include "Engine.h"
 #include "Net/UnrealNetwork.h"
+#include "InputLibrary.h"
 
 void ABattleMobaPlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
+	DOREPLIFETIME(ABattleMobaPlayerState, Level);
+	DOREPLIFETIME(ABattleMobaPlayerState, Honor);
+	DOREPLIFETIME(ABattleMobaPlayerState, ExpNeeded);
+	DOREPLIFETIME(ABattleMobaPlayerState, Exp);
 	DOREPLIFETIME(ABattleMobaPlayerState, Pi);
 	DOREPLIFETIME(ABattleMobaPlayerState, CurrentStyle);
 	DOREPLIFETIME(ABattleMobaPlayerState, Kill);
@@ -98,21 +103,76 @@ void ABattleMobaPlayerState::RespawnTimerCount_Implementation(ABattleMobaPlayerS
 	}
 }
 
+void ABattleMobaPlayerState::SetCurrentPlayerLevel()
+{
+	if (LevelTable != nullptr)
+	{
+		//Set initial attributes
+		FName NextRowName = LevelTable->GetRowNames()[Level];
+		FLevelAttributes* Nextrow = LevelTable->FindRow<FLevelAttributes>(NextRowName, FString());
+		if (Nextrow)
+		{
+			ExpNeeded = Nextrow->MaxExpPerLevel;
+			Level = Nextrow->Level - 1;
+		}
+	}
+}
+
+bool ABattleMobaPlayerState::ServerSetExp_Validate(int EXPoint)
+{
+	return true;
+}
+
+void ABattleMobaPlayerState::ServerSetExp_Implementation(int EXPoint)
+{
+	ClientSetExp(EXPoint);
+}
+
+bool ABattleMobaPlayerState::ClientSetExp_Validate(int EXPoint)
+{
+	return true;
+}
+
+void ABattleMobaPlayerState::ClientSetExp_Implementation(int EXPoint)
+{
+	AddExp(EXPoint, this->Level);
+}
+
 void ABattleMobaPlayerState::AddExp(int EXPoint, int& OutLevel)
 {
-	Exp = Exp + EXPoint;
+	//Get last row of datatable
+	FName lastRowName = LevelTable->GetRowNames()[LevelTable->GetRowNames().Num()-1];
+	FLevelAttributes* lastRow = LevelTable->FindRow<FLevelAttributes>(lastRowName, FString());
+
+	Exp = FMath::Clamp(Exp + EXPoint, 0, lastRow->MaxExpPerLevel);
 
 	//if enough exp, level up
 	if (Exp >= ExpNeeded)
 	{
-		Level++;
+		//Level++;
+
+		GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Orange, FString::Printf(TEXT("Exp : %d"), EXPoint));
+
+		Level = FMath::Clamp(Level+1, 1, lastRow->Level);
+		/*Level++;*/
 
 		//Set the remainder exp from prev level to current exp of current level
-		Exp = Exp - ExpNeeded;
+		//Exp = Exp - ExpNeeded;
 
-		//to clamp exp value needed for each level
-		//ExpNeeded = ExpNeeded + ....;
+		//Get new row of datatable
+		if (LevelTable->GetRowNames().IsValidIndex(Level))
+		{
+			FName newRowName = LevelTable->GetRowNames()[Level];
+			FLevelAttributes* newRow = LevelTable->FindRow<FLevelAttributes>(newRowName, FString());
 
+			if (newRow)
+			{
+				//to clamp exp value needed for each level
+				ExpNeeded = newRow->MaxExpPerLevel;
+				GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Orange, FString::Printf(TEXT("ExpNeeded : %d"), ExpNeeded));
+			}
+		}
+		
 		//return level
 		OutLevel = Level;
 	}

@@ -942,8 +942,6 @@ void ABattleMobaCharacter::HitReactionClient_Implementation(AActor* HitActor, fl
 					{
 						if (gm)
 						{
-							//Set killer experience point
-							this->DamageDealers.Last()->AddExp(5, this->DamageDealers.Last()->Level);
 							gm->PlayerKilled(ps, this->DamageDealers.Last(), DamageDealers); //Set current team scores and kills
 						}
 					});

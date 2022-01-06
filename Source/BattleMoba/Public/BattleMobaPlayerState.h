@@ -7,6 +7,7 @@
 #include "BattleMobaPlayerState.generated.h"
 
 class USkeletalMesh;
+//class UAnimMontage;
 /**
  *
  */
@@ -18,11 +19,12 @@ class BATTLEMOBA_API ABattleMobaPlayerState : public APlayerState
 		void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const;
 
 protected:
+
 	/////////////Levelling Up and Experience Point///////////////////////
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "EXP")
+	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadWrite, Category = "EXP")
 		int Exp = 0;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "EXP")
+	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadWrite, Category = "EXP")
 		int ExpNeeded = 10;
 	/////////////////////////////////////////////////////////////////////
 
@@ -43,9 +45,13 @@ public:
 		bool bTeamB;
 
 public:
+
+	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadWrite, Category = "Money")
+		int Honor = 0;
+
 	/////////////Levelling Up///////////////////////
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Level")
-		int Level = 0;
+	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadWrite, Category = "Level")
+		int Level = 1;
 	////////////////////////////////////////////////
 
 	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadWrite, Category = "Status")
@@ -104,6 +110,9 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 		class UDataTable* ActionTable;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+		class UDataTable* LevelTable;
+
 	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadWrite, Category = "HitReaction")
 		UAnimMontage* FrontHitMoveset;
 
@@ -138,6 +147,15 @@ public:
 		void DisplayRespawnTime(int32 val);
 
 	////////////////////Level UP///////////////////////////////////////
+	UFUNCTION(BlueprintCallable)
+		void SetCurrentPlayerLevel();
+
+	UFUNCTION(Reliable, Server, WithValidation, Category = "Exp")
+		void ServerSetExp(int EXPoint);
+
+	UFUNCTION(Reliable, Client, WithValidation, Category = "Exp")
+		void ClientSetExp(int EXPoint);
+
 	UFUNCTION(BlueprintCallable)
 		void AddExp(int EXPoint, int& OutLevel);
 	//////////////////////////////////////////////////////////////////

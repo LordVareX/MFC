@@ -347,6 +347,27 @@ UBattleMobaSkillComponent* UInputLibrary::AddComponentByClass(TSubclassOf<UBattl
 	return nullptr;
 }
 
+bool UInputLibrary::CalculateRewards(int OriginalHonor, int PlayersCount, FRewards* row, FName RowName, int& HonorVal, int& ExpOut)
+{
+	if (row)
+	{
+		//set honor val
+		HonorVal = OriginalHonor - (50 * (PlayersCount - 1));
+
+		//if more than one player contributed
+		if (PlayersCount > 1)
+		{
+			//Set experience point
+			ExpOut = FMath::RoundToInt(row->ExpKills*.6f);
+		}
+		else
+			ExpOut = FMath::RoundToInt(row->ExpKills);
+
+		return true;
+	}
+	return false;
+}
+
 void UInputLibrary::RenameObject(FString name, UObject* object)
 {
 	const TCHAR* Charname = *name;

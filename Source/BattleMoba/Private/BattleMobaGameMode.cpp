@@ -20,6 +20,7 @@
 #include "BattleMobaGameState.h"
 #include "BattleMobaHUD.h"
 #include "BattleMobaPC.h"
+#include "InputLibrary.h"
 
 
 void ABattleMobaGameMode::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -1031,10 +1032,24 @@ void ABattleMobaGameMode::PlayerKilled(ABattleMobaPlayerState* victim, ABattleMo
 	{
 		for (int32 i = 0; i < assist.Num() - 1; i++)
 		{
-			if (i < assist.Num() - 1)
+			if (assist[i] != assist.Last())
 			{
 				assist[i]->Assist += 1;
 				GState->Assist = assist[i]->Assist;
+
+				if (RewardTable != nullptr)
+				{
+					int exp;
+
+					//Get victim level
+					FName RowName = RewardTable->GetRowNames()[victim->Level-1];
+					FRewards* row = RewardTable->FindRow<FRewards>(RowName, FString());
+					if (UInputLibrary::CalculateRewards(HonorKill, assist.Num(), row, RowName, assist[i]->Honor, exp))
+					{
+						//Set assist experience point
+						assist[i]->ServerSetExp(exp);
+					}
+				}
 			}
 		}
 	}
@@ -1045,6 +1060,19 @@ void ABattleMobaGameMode::PlayerKilled(ABattleMobaPlayerState* victim, ABattleMo
 		killer->Kill += 1;
 		GState->Kill += 1;
 
+		if (RewardTable != nullptr)
+		{
+			int exp;
+
+			//Get victim level
+			FName RowName = RewardTable->GetRowNames()[victim->Level - 1];
+			FRewards* row = RewardTable->FindRow<FRewards>(RowName, FString());
+			if (UInputLibrary::CalculateRewards(HonorKill, assist.Num(), row, RowName, killer->Honor, exp))
+			{
+				//Set kill experience point
+				killer->ServerSetExp(exp);
+			}
+		}
 		if (killer->TeamName == "Radiant")
 		{
 			GState->TeamKillA += 1;
