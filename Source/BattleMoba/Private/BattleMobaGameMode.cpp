@@ -1028,6 +1028,8 @@ void ABattleMobaGameMode::PickAWinningTeam() {
 
 void ABattleMobaGameMode::PlayerKilled(ABattleMobaPlayerState* victim, ABattleMobaPlayerState* killer, TArray<ABattleMobaPlayerState*> assist)
 {
+	FName RowName = RewardTable->GetRowNames()[victim->Level - 1];
+	FRewards* row = RewardTable->FindRow<FRewards>(RowName, FString());
 	if (assist.IsValidIndex(0))
 	{
 		for (int32 i = 0; i < assist.Num() - 1; i++)
@@ -1040,12 +1042,13 @@ void ABattleMobaGameMode::PlayerKilled(ABattleMobaPlayerState* victim, ABattleMo
 				if (RewardTable != nullptr)
 				{
 					int exp;
+					int honor;
 
 					//Get victim level
-					FName RowName = RewardTable->GetRowNames()[victim->Level-1];
-					FRewards* row = RewardTable->FindRow<FRewards>(RowName, FString());
-					if (UInputLibrary::CalculateRewards(HonorKill, assist.Num(), row, RowName, assist[i]->Honor, exp))
+					if (UInputLibrary::CalculateRewards(HonorKill, assist.Num(), row, RowName, honor, exp))
 					{
+						//add honor value
+						assist[i]->Honor += honor;
 						//Set assist experience point
 						assist[i]->ServerSetExp(exp);
 					}
@@ -1063,14 +1066,15 @@ void ABattleMobaGameMode::PlayerKilled(ABattleMobaPlayerState* victim, ABattleMo
 		if (RewardTable != nullptr)
 		{
 			int exp;
+			int honor;
 
 			//Get victim level
-			FName RowName = RewardTable->GetRowNames()[victim->Level - 1];
-			FRewards* row = RewardTable->FindRow<FRewards>(RowName, FString());
-			if (UInputLibrary::CalculateRewards(HonorKill, assist.Num(), row, RowName, killer->Honor, exp))
+			if (UInputLibrary::CalculateRewards(HonorKill, assist.Num(), row, RowName, honor, exp))
 			{
+				//add honor value
+				killer->Honor += honor;
 				//Set kill experience point
-				killer->ServerSetExp(exp);
+				killer->ServerSetExp(row->ExpKills);
 			}
 		}
 		if (killer->TeamName == "Radiant")

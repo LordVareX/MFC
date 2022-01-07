@@ -46,6 +46,15 @@ enum class EResult : uint8
 	Section
 };
 
+UENUM(BlueprintType)
+enum class ESkills : uint8
+{
+	Skill1,
+	Skill2,
+	Ultimate,
+	AuraElement
+};
+
 USTRUCT(BlueprintType)
 struct FLevelAttributes :public FTableRowBase
 {
@@ -55,7 +64,19 @@ struct FLevelAttributes :public FTableRowBase
 		int Level = 0;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Exp")
-		int MaxExpPerLevel = 0;
+		int MinExpPerLevel = 0;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Unlockable")
+		TArray<ESkills> SkillUnlock;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Exp")
+		float HPIncrementPercent = 0;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Exp")
+		float DmgIncrementPercent = 4.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Exp")
+		float DefIncrementPercent = 0;
 };
 
 USTRUCT(BlueprintType)
@@ -190,8 +211,11 @@ public:
 	UFUNCTION(BlueprintPure, Category = "DateAndTime")
 		static FString DisplayMinutesSecondsFormat(float Seconds);
 
+	UFUNCTION(BlueprintPure, Category = "Math|Percentage")
+		static float ChangeValueByPercentage(float OriginalVal, float Percent, bool increaseVal);
+
 	UFUNCTION(BlueprintCallable, Category = "Sorting Functions")    // Sort actors by distance from target actor    
-		static void  Distance_Sort(UPARAM() TArray <AActor*> Array_To_Sort, UPARAM()AActor* From_Actor, bool Descending, TArray <FActor_Dist> &Sorted_Array);
+		static void Distance_Sort(UPARAM() TArray <AActor*> Array_To_Sort, UPARAM()AActor* From_Actor, bool Descending, TArray <FActor_Dist> &Sorted_Array);
 
 	UFUNCTION(BlueprintCallable, Category = "Displays") //Hide 3D widget behind building etc
 		static void SetUIVisibility(UWidgetComponent* widget, AActor* FromActor);

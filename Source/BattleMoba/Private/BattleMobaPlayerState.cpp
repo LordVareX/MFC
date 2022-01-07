@@ -5,6 +5,7 @@
 #include "Engine.h"
 #include "Net/UnrealNetwork.h"
 #include "InputLibrary.h"
+#include "BattleMobaCharacter.h"
 
 void ABattleMobaPlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
@@ -32,6 +33,7 @@ void ABattleMobaPlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty
 	DOREPLIFETIME(ABattleMobaPlayerState, RespawnHandle);
 	DOREPLIFETIME(ABattleMobaPlayerState, MaxHealth);
 	DOREPLIFETIME(ABattleMobaPlayerState, Defense);
+	DOREPLIFETIME(ABattleMobaPlayerState, BaseDamagePercent);
 	DOREPLIFETIME(ABattleMobaPlayerState, StyleName);
 	DOREPLIFETIME(ABattleMobaPlayerState, FrontHitMoveset);
 	DOREPLIFETIME(ABattleMobaPlayerState, BackHitMoveset);
@@ -112,7 +114,7 @@ void ABattleMobaPlayerState::SetCurrentPlayerLevel()
 		FLevelAttributes* Nextrow = LevelTable->FindRow<FLevelAttributes>(NextRowName, FString());
 		if (Nextrow)
 		{
-			ExpNeeded = Nextrow->MaxExpPerLevel;
+			ExpNeeded = Nextrow->MinExpPerLevel;
 			Level = Nextrow->Level - 1;
 		}
 	}
@@ -144,7 +146,7 @@ void ABattleMobaPlayerState::AddExp(int EXPoint, int& OutLevel)
 	FName lastRowName = LevelTable->GetRowNames()[LevelTable->GetRowNames().Num()-1];
 	FLevelAttributes* lastRow = LevelTable->FindRow<FLevelAttributes>(lastRowName, FString());
 
-	Exp = FMath::Clamp(Exp + EXPoint, 0, lastRow->MaxExpPerLevel);
+	Exp = FMath::Clamp(Exp + EXPoint, 0, lastRow->MinExpPerLevel);
 
 	//if enough exp, level up
 	if (Exp >= ExpNeeded)
@@ -168,8 +170,29 @@ void ABattleMobaPlayerState::AddExp(int EXPoint, int& OutLevel)
 			if (newRow)
 			{
 				//to clamp exp value needed for each level
-				ExpNeeded = newRow->MaxExpPerLevel;
+				ExpNeeded = newRow->MinExpPerLevel;
 				GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Orange, FString::Printf(TEXT("ExpNeeded : %d"), ExpNeeded));
+
+				//Adjust base stats
+				FName curRowName = LevelTable->GetRowNames()[Level-1];
+				FLevelAttributes* Row = LevelTable->FindRow<FLevelAttributes>(curRowName, FString());
+				if (Row)
+				{
+					MaxHealth = UInputLibrary::ChangeValueByPercentage(MaxHealth, Row->HPIncrementPercent, true);
+					Defense = UInputLibrary::ChangeValueByPercentage(Defense, Row->DefIncrementPercent, true);
+					BaseDamagePercent = Row->DmgIncrementPercent;
+
+					Row->SkillUnlock;
+
+					ABattleMobaCharacter* player = Cast<ABattleMobaCharacter>(GetPawn());
+					if (player)
+					{
+						if (player->IsLocallyControlled())
+						{
+							player->ServerSetupBaseStats(MaxHealth, Defense);
+						}
+					}
+				}
 			}
 		}
 		

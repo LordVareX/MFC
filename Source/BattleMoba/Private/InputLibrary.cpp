@@ -45,6 +45,20 @@ FString UInputLibrary::DisplayMinutesSecondsFormat(float Seconds)
 	return DString + ":" + newModT.ToString();
 }
 
+float UInputLibrary::ChangeValueByPercentage(float OriginalVal, float Percent, bool increaseVal)
+{
+	float val = OriginalVal / 100.0f;
+	val*= FMath::Clamp(Percent, 0.0f, 100.0f);
+	if (increaseVal)
+	{
+		OriginalVal += val;
+	}
+	else
+		OriginalVal -= val;
+	GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("Total original value = %f"), OriginalVal));
+	return OriginalVal;
+}
+
 //Pass a copy of the actor array to sort and the "central" actor to measure distance from, output a reference to the sorted struct array created in the function
 void UInputLibrary::Distance_Sort(UPARAM()TArray<AActor*> Array_To_Sort, UPARAM()AActor * From_Actor, bool Descending, TArray<FActor_Dist>& Sorted_Array)
 {
@@ -357,11 +371,12 @@ bool UInputLibrary::CalculateRewards(int OriginalHonor, int PlayersCount, FRewar
 		//if more than one player contributed
 		if (PlayersCount > 1)
 		{
+			float exp = row->ExpKills*.6f;
 			//Set experience point
-			ExpOut = FMath::RoundToInt(row->ExpKills*.6f);
+			ExpOut = round(exp);
 		}
 		else
-			ExpOut = FMath::RoundToInt(row->ExpKills);
+			ExpOut = row->ExpKills;
 
 		return true;
 	}

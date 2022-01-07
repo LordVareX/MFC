@@ -1420,6 +1420,27 @@ void ABattleMobaCharacter::EnableMovementMode()
 	}
 }
 
+bool ABattleMobaCharacter::ServerSetupBaseStats_Validate(float HealthMax, float Def)
+{
+	return true;
+}
+
+void ABattleMobaCharacter::ServerSetupBaseStats_Implementation(float HealthMax, float Def)
+{
+	SetupBaseStats(HealthMax, Def);
+}
+
+bool ABattleMobaCharacter::SetupBaseStats_Validate(float HealthMax, float Def)
+{
+	return true;
+}
+
+void ABattleMobaCharacter::SetupBaseStats_Implementation(float HealthMax, float Def)
+{
+	MaxHealth = HealthMax;
+	Defence = Def;
+}
+
 bool ABattleMobaCharacter::ServerSetupStats_Validate()
 {
 	return true;
@@ -1853,11 +1874,10 @@ void ABattleMobaCharacter::SetupStats_Implementation()
 	ABattleMobaPlayerState* PS = Cast<ABattleMobaPlayerState>(GetPlayerState());
 	if (PS)
 	{
+		SetupBaseStats(PS->MaxHealth, PS->Defense);
 		CharMesh = PS->CharMesh;
 		ActionTable = PS->ActionTable;
-		MaxHealth = PS->MaxHealth;
 		Health = MaxHealth;
-		Defence = PS->Defense;
 		FrontHitMoveset = PS->FrontHitMoveset;
 		BackHitMoveset = PS->BackHitMoveset;
 		LeftHitMoveset = PS->LeftHitMoveset;
@@ -2014,6 +2034,15 @@ void ABattleMobaCharacter::MulticastExecuteAction_Implementation(FActionSkill Se
 				this->MinDamage = SelectedRow.MinDamage;
 				this->MaxDamage = SelectedRow.MaxDamage;
 				this->BaseDamage = float(FMath::RandRange(this->MinDamage, this->MaxDamage));
+		
+				//Increase base damage by level
+				ABattleMobaPlayerState* ps = Cast<ABattleMobaPlayerState>(this->GetPlayerState());
+				if (ps)
+				{
+					this->BaseDamage = UInputLibrary::ChangeValueByPercentage(this->BaseDamage, ps->BaseDamagePercent, true);
+					
+				}
+
 				this->HitReactionMoveset = SelectedRow.HitMoveset;
 				this->StunDuration = SelectedRow.StunTime;
 				this->StunImpulse = SelectedRow.StunImpulse;

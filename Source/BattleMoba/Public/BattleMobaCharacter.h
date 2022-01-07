@@ -519,6 +519,9 @@ protected:
 	UFUNCTION(BlueprintCallable, Category = "Movement")
 		void EnableMovementMode();
 
+	UFUNCTION(NetMulticast, Reliable, WithValidation, Category = "BaseStats")//HP, Damage, Defense
+		void SetupBaseStats(float HealthMax, float Def);
+
 	UFUNCTION(BlueprintCallable, Server, Reliable, WithValidation)
 		void ServerSetupStats();
 
@@ -560,6 +563,9 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = "Setup")
 		void RefreshPlayerData();
+
+	UFUNCTION(BlueprintCallable, Server, Reliable, WithValidation)
+		void ServerSetupBaseStats(float HealthMax, float Def);
 
 	UFUNCTION(Reliable, NetMulticast, WithValidation, BlueprintCallable, Category = "ReceiveDamage")
 		void TowerReceiveDamage(ADestructibleTower* Tower, float DamageApply);

@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "InputLibrary.h"
 #include "GameFramework/PlayerState.h"
 #include "BattleMobaPlayerState.generated.h"
 
@@ -26,6 +27,9 @@ protected:
 
 	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadWrite, Category = "EXP")
 		int ExpNeeded = 10;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "UnlockedSkill")
+		TMap<ESkills, int32> SkillMap;
 	/////////////////////////////////////////////////////////////////////
 
 public:
@@ -59,6 +63,9 @@ public:
 
 	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadWrite, Category = "Status")
 		float Defense = 750.0f;
+
+	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadWrite, Category = "Status")
+		float BaseDamagePercent = 0.0f;
 
 	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadWrite, Category = "Status")
 		FName TeamName;
