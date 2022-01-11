@@ -45,6 +45,20 @@ FString UInputLibrary::DisplayMinutesSecondsFormat(float Seconds)
 	return DString + ":" + newModT.ToString();
 }
 
+float UInputLibrary::ChangeValueByPercentage(float OriginalVal, float Percent, bool increaseVal)
+{
+	float val = OriginalVal / 100.0f;
+	val*= FMath::Clamp(Percent, 0.0f, 100.0f);
+	if (increaseVal)
+	{
+		OriginalVal += val;
+	}
+	else
+		OriginalVal -= val;
+	GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("Total original value = %f"), OriginalVal));
+	return OriginalVal;
+}
+
 //Pass a copy of the actor array to sort and the "central" actor to measure distance from, output a reference to the sorted struct array created in the function
 void UInputLibrary::Distance_Sort(UPARAM()TArray<AActor*> Array_To_Sort, UPARAM()AActor * From_Actor, bool Descending, TArray<FActor_Dist>& Sorted_Array)
 {
@@ -345,6 +359,28 @@ UBattleMobaSkillComponent* UInputLibrary::AddComponentByClass(TSubclassOf<UBattl
 	}
 
 	return nullptr;
+}
+
+bool UInputLibrary::CalculateRewards(int OriginalHonor, int PlayersCount, FRewards* row, FName RowName, int& HonorVal, int& ExpOut)
+{
+	if (row)
+	{
+		//set honor val
+		HonorVal = OriginalHonor - (50 * (PlayersCount - 1));
+
+		//if more than one player contributed
+		if (PlayersCount > 1)
+		{
+			float exp = row->ExpKills*.6f;
+			//Set experience point
+			ExpOut = round(exp);
+		}
+		else
+			ExpOut = row->ExpKills;
+
+		return true;
+	}
+	return false;
 }
 
 void UInputLibrary::RenameObject(FString name, UObject* object)

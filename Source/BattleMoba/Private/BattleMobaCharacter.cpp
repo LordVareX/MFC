@@ -1075,12 +1075,9 @@ void ABattleMobaCharacter::HitReactionClient_Implementation(AActor* HitActor, fl
 
 void ABattleMobaCharacter::OnHRMontageEnd(UAnimMontage * animMontage, bool bInterrupted)
 {
-	if (this->GetMesh()->SkeletalMesh != nullptr)
+	if (this->IsLocallyControlled())
 	{
-		if (this->AnimInsta != nullptr)
-		{
-			this->AnimInsta->CanMove = true;
-		}
+		ServerEnableMovement(true);
 	}
 }
 
@@ -1123,6 +1120,52 @@ void ABattleMobaCharacter::ClearDamageDealers()
 	}
 	else
 		this->GetWorldTimerManager().ClearTimer(this->DealerTimer);
+}
+
+bool ABattleMobaCharacter::ServerLaunchChar_Validate(FVector LaunchVelocity, bool bXYOverride, bool bZOverride)
+{
+	return true;
+}
+
+void ABattleMobaCharacter::ServerLaunchChar_Implementation(FVector LaunchVelocity, bool bXYOverride, bool bZOverride)
+{
+	MulticastLaunchChar(LaunchVelocity, bXYOverride, bZOverride);
+}
+
+bool ABattleMobaCharacter::MulticastLaunchChar_Validate(FVector LaunchVelocity, bool bXYOverride, bool bZOverride)
+{
+	return true;
+}
+
+void ABattleMobaCharacter::MulticastLaunchChar_Implementation(FVector LaunchVelocity, bool bXYOverride, bool bZOverride)
+{
+	this->LaunchCharacter(LaunchVelocity, bXYOverride, bZOverride);
+}
+
+bool ABattleMobaCharacter::ServerPlayMontage_Validate(UAnimMontage * AnimMontage, float InPlayRate, FName StartSectionName)
+{
+	return true;
+}
+
+void ABattleMobaCharacter::ServerPlayMontage_Implementation(UAnimMontage * AnimMontage, float InPlayRate, FName StartSectionName)
+{
+	MulticastPlayMontage(AnimMontage, InPlayRate, StartSectionName);
+}
+
+bool ABattleMobaCharacter::MulticastPlayMontage_Validate(UAnimMontage * AnimMontage, float InPlayRate, FName StartSectionName)
+{
+	return true;
+}
+
+void ABattleMobaCharacter::MulticastPlayMontage_Implementation(UAnimMontage * AnimMontage, float InPlayRate, FName StartSectionName)
+{
+	FOnMontageEnded MontageEndDel;
+
+	this->GetMesh()->GetAnimInstance()->Montage_Play(AnimMontage, InPlayRate, EMontagePlayReturnType::MontageLength, 0.0f, true);
+	this->GetMesh()->GetAnimInstance()->Montage_JumpToSection(StartSectionName);
+
+	MontageEndDel.BindUObject(this, &ABattleMobaCharacter::OnHRMontageEnd);
+	this->GetMesh()->GetAnimInstance()->Montage_SetEndDelegate(MontageEndDel, AnimMontage);
 }
 
 void ABattleMobaCharacter::GetButtonSkillAction(FKey Currkeys, FString ButtonName, bool& cooldown, float& CooldownVal)
@@ -1375,6 +1418,27 @@ void ABattleMobaCharacter::EnableMovementMode()
 			this->AnimInsta->CanMove = true;
 		}
 	}
+}
+
+bool ABattleMobaCharacter::ServerSetupBaseStats_Validate(float HealthMax, float Def)
+{
+	return true;
+}
+
+void ABattleMobaCharacter::ServerSetupBaseStats_Implementation(float HealthMax, float Def)
+{
+	SetupBaseStats(HealthMax, Def);
+}
+
+bool ABattleMobaCharacter::SetupBaseStats_Validate(float HealthMax, float Def)
+{
+	return true;
+}
+
+void ABattleMobaCharacter::SetupBaseStats_Implementation(float HealthMax, float Def)
+{
+	MaxHealth = HealthMax;
+	Defence = Def;
 }
 
 bool ABattleMobaCharacter::ServerSetupStats_Validate()
@@ -1810,11 +1874,10 @@ void ABattleMobaCharacter::SetupStats_Implementation()
 	ABattleMobaPlayerState* PS = Cast<ABattleMobaPlayerState>(GetPlayerState());
 	if (PS)
 	{
+		SetupBaseStats(PS->MaxHealth, PS->Defense);
 		CharMesh = PS->CharMesh;
 		ActionTable = PS->ActionTable;
-		MaxHealth = PS->MaxHealth;
 		Health = MaxHealth;
-		Defence = PS->Defense;
 		FrontHitMoveset = PS->FrontHitMoveset;
 		BackHitMoveset = PS->BackHitMoveset;
 		LeftHitMoveset = PS->LeftHitMoveset;
@@ -1890,7 +1953,10 @@ void ABattleMobaCharacter::MulticastExecuteAction_Implementation(FActionSkill Se
 						/*GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("Play montage: %s"), *SelectedRow.SkillMoveset->GetName()));*/
 						//GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("ISUSINGCD")));
 
-						PlayAnimMontage(SelectedRow.SkillMoveset, 1.0f, MontageSection);
+						if (this->IsLocallyControlled())
+						{
+							ServerPlayMontage(SelectedRow.SkillMoveset, 1.0f, MontageSection);
+						}
 					}
 				}
 
@@ -1905,25 +1971,28 @@ void ABattleMobaCharacter::MulticastExecuteAction_Implementation(FActionSkill Se
 							FTimerHandle dashTimer;
 							FTimerDelegate dashTimerDel;
 
-							FOnMontageEnded MontageEndDel;
-
-							//GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("Play montage: %s"), *SelectedRow.SkillMoveset->GetName()));
-							this->GetMesh()->GetAnimInstance()->Montage_Play(SelectedRow.SkillMoveset, 1.0f, EMontagePlayReturnType::MontageLength, 0.0f, true);
-							this->GetMesh()->GetAnimInstance()->Montage_JumpToSection(MontageSection);
+							//FOnMontageEnded MontageEndDel;
 
 							FVector dashVector = FVector(this->GetCapsuleComponent()->GetForwardVector().X*SelectedRow.TranslateDist, this->GetCapsuleComponent()->GetForwardVector().Y*SelectedRow.TranslateDist, this->GetCapsuleComponent()->GetForwardVector().Z);
 
-							this->LaunchCharacter(dashVector, false, false);
-
-							dashTimerDel.BindLambda([this]()
+							if (this->IsLocallyControlled())
 							{
-								this->GetMesh()->GetAnimInstance()->Montage_JumpToSection("GetUp");
+								ServerPlayMontage(SelectedRow.SkillMoveset, 1.0f, MontageSection);
+								ServerLaunchChar(dashVector, false, false);
+							}
+
+							dashTimerDel.BindLambda([this, SelectedRow]()
+							{
+								if (this->IsLocallyControlled())
+								{
+									ServerPlayMontage(SelectedRow.SkillMoveset, 1.0f, "GetUp");
+								}
 							});
 
 							this->GetWorldTimerManager().SetTimer(dashTimer, dashTimerDel, 0.2f, false);
 
-							MontageEndDel.BindUObject(this, &ABattleMobaCharacter::OnHRMontageEnd);
-							this->GetMesh()->GetAnimInstance()->Montage_SetEndDelegate(MontageEndDel, SelectedRow.SkillMoveset);
+							//MontageEndDel.BindUObject(this, &ABattleMobaCharacter::OnHRMontageEnd);
+							//this->GetMesh()->GetAnimInstance()->Montage_SetEndDelegate(MontageEndDel, SelectedRow.SkillMoveset);
 							
 						}
 					}
@@ -1935,10 +2004,15 @@ void ABattleMobaCharacter::MulticastExecuteAction_Implementation(FActionSkill Se
 
 						this->OnComboDelay = true;
 
-						PlayAnimMontage(SelectedRow.SkillMoveset, 1.0f, MontageSection);
+						if (this->IsLocallyControlled())
+						{
+							ServerPlayMontage(SelectedRow.SkillMoveset, 1.0f, MontageSection);
+						}
 
-						int32 sectionIndex = GetCurrentMontage()->GetSectionIndex(MontageSection);
-						float sectionLength = GetCurrentMontage()->GetSectionLength(sectionIndex);
+						int32 sectionIndex = SelectedRow.SkillMoveset->GetSectionIndex(MontageSection);
+						float sectionLength = SelectedRow.SkillMoveset->GetSectionLength(sectionIndex);
+
+						//GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Magenta, FString::Printf(TEXT("section Length: %f"), sectionLength));
 
 						timerDel.BindLambda([this]()
 						{
@@ -1947,6 +2021,7 @@ void ABattleMobaCharacter::MulticastExecuteAction_Implementation(FActionSkill Se
 						});
 
 						this->GetWorldTimerManager().SetTimer(delay, timerDel, sectionLength + comboInterval, false);
+											
 					}
 
 					else
@@ -1959,6 +2034,15 @@ void ABattleMobaCharacter::MulticastExecuteAction_Implementation(FActionSkill Se
 				this->MinDamage = SelectedRow.MinDamage;
 				this->MaxDamage = SelectedRow.MaxDamage;
 				this->BaseDamage = float(FMath::RandRange(this->MinDamage, this->MaxDamage));
+		
+				//Increase base damage by level
+				ABattleMobaPlayerState* ps = Cast<ABattleMobaPlayerState>(this->GetPlayerState());
+				if (ps)
+				{
+					this->BaseDamage = UInputLibrary::ChangeValueByPercentage(this->BaseDamage, ps->BaseDamagePercent, true);
+					
+				}
+
 				this->HitReactionMoveset = SelectedRow.HitMoveset;
 				this->StunDuration = SelectedRow.StunTime;
 				this->StunImpulse = SelectedRow.StunImpulse;
@@ -2384,4 +2468,28 @@ void ABattleMobaCharacter::MoveRight(float Value)
 	}
 }
 
+bool ABattleMobaCharacter::ServerEnableMovement_Validate(bool allowMove)
+{
+	return true;
+}
 
+void ABattleMobaCharacter::ServerEnableMovement_Implementation(bool allowMove)
+{
+	MulticastEnableMovement(allowMove);
+}
+
+bool ABattleMobaCharacter::MulticastEnableMovement_Validate(bool allowMove)
+{
+	return true;
+}
+
+void ABattleMobaCharacter::MulticastEnableMovement_Implementation(bool allowMove)
+{
+	if (this->GetMesh()->SkeletalMesh != nullptr)
+	{
+		if (this->AnimInsta != nullptr)
+		{
+			this->AnimInsta->CanMove = allowMove;
+		}
+	}
+}

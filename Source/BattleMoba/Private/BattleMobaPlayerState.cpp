@@ -4,11 +4,17 @@
 #include "BattleMobaPlayerState.h"
 #include "Engine.h"
 #include "Net/UnrealNetwork.h"
+#include "InputLibrary.h"
+#include "BattleMobaCharacter.h"
 
 void ABattleMobaPlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
+	DOREPLIFETIME(ABattleMobaPlayerState, Level);
+	DOREPLIFETIME(ABattleMobaPlayerState, Honor);
+	DOREPLIFETIME(ABattleMobaPlayerState, ExpNeeded);
+	DOREPLIFETIME(ABattleMobaPlayerState, Exp);
 	DOREPLIFETIME(ABattleMobaPlayerState, Pi);
 	DOREPLIFETIME(ABattleMobaPlayerState, CurrentStyle);
 	DOREPLIFETIME(ABattleMobaPlayerState, Kill);
@@ -27,6 +33,7 @@ void ABattleMobaPlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty
 	DOREPLIFETIME(ABattleMobaPlayerState, RespawnHandle);
 	DOREPLIFETIME(ABattleMobaPlayerState, MaxHealth);
 	DOREPLIFETIME(ABattleMobaPlayerState, Defense);
+	DOREPLIFETIME(ABattleMobaPlayerState, BaseDamagePercent);
 	DOREPLIFETIME(ABattleMobaPlayerState, StyleName);
 	DOREPLIFETIME(ABattleMobaPlayerState, FrontHitMoveset);
 	DOREPLIFETIME(ABattleMobaPlayerState, BackHitMoveset);
@@ -95,5 +102,101 @@ void ABattleMobaPlayerState::RespawnTimerCount_Implementation(ABattleMobaPlayerS
 	{
 		ps->RespawnTimeCounter -= 1;
 		MulticastTimerCount(ps->RespawnTimeCounter);
+	}
+}
+
+void ABattleMobaPlayerState::SetCurrentPlayerLevel()
+{
+	if (LevelTable != nullptr)
+	{
+		//Set initial attributes
+		FName NextRowName = LevelTable->GetRowNames()[Level];
+		FLevelAttributes* Nextrow = LevelTable->FindRow<FLevelAttributes>(NextRowName, FString());
+		if (Nextrow)
+		{
+			ExpNeeded = Nextrow->MinExpPerLevel;
+			Level = Nextrow->Level - 1;
+		}
+	}
+}
+
+bool ABattleMobaPlayerState::ServerSetExp_Validate(int EXPoint)
+{
+	return true;
+}
+
+void ABattleMobaPlayerState::ServerSetExp_Implementation(int EXPoint)
+{
+	ClientSetExp(EXPoint);
+}
+
+bool ABattleMobaPlayerState::ClientSetExp_Validate(int EXPoint)
+{
+	return true;
+}
+
+void ABattleMobaPlayerState::ClientSetExp_Implementation(int EXPoint)
+{
+	AddExp(EXPoint, this->Level);
+}
+
+void ABattleMobaPlayerState::AddExp(int EXPoint, int& OutLevel)
+{
+	//Get last row of datatable
+	FName lastRowName = LevelTable->GetRowNames()[LevelTable->GetRowNames().Num()-1];
+	FLevelAttributes* lastRow = LevelTable->FindRow<FLevelAttributes>(lastRowName, FString());
+
+	Exp = FMath::Clamp(Exp + EXPoint, 0, lastRow->MinExpPerLevel);
+
+	//if enough exp, level up
+	if (Exp >= ExpNeeded)
+	{
+		//Level++;
+
+		GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Orange, FString::Printf(TEXT("Exp : %d"), EXPoint));
+
+		Level = FMath::Clamp(Level+1, 1, lastRow->Level);
+		/*Level++;*/
+
+		//Set the remainder exp from prev level to current exp of current level
+		//Exp = Exp - ExpNeeded;
+
+		//Get new row of datatable
+		if (LevelTable->GetRowNames().IsValidIndex(Level))
+		{
+			FName newRowName = LevelTable->GetRowNames()[Level];
+			FLevelAttributes* newRow = LevelTable->FindRow<FLevelAttributes>(newRowName, FString());
+
+			if (newRow)
+			{
+				//to clamp exp value needed for each level
+				ExpNeeded = newRow->MinExpPerLevel;
+				GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Orange, FString::Printf(TEXT("ExpNeeded : %d"), ExpNeeded));
+
+				//Adjust base stats
+				FName curRowName = LevelTable->GetRowNames()[Level-1];
+				FLevelAttributes* Row = LevelTable->FindRow<FLevelAttributes>(curRowName, FString());
+				if (Row)
+				{
+					MaxHealth = UInputLibrary::ChangeValueByPercentage(MaxHealth, Row->HPIncrementPercent, true);
+					Defense = UInputLibrary::ChangeValueByPercentage(Defense, Row->DefIncrementPercent, true);
+					BaseDamagePercent = Row->DmgIncrementPercent;
+
+					Row->SkillUnlock;
+
+					ABattleMobaCharacter* player = Cast<ABattleMobaCharacter>(GetPawn());
+					if (player)
+					{
+						if (player->IsLocallyControlled())
+						{
+							player->ServerSetupBaseStats(MaxHealth, Defense);
+						}
+					}
+				}
+			}
+		}
+		
+		//return level
+		OutLevel = Level;
 	}
 }

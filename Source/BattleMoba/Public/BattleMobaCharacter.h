@@ -207,6 +207,7 @@ protected:
 	void OnCameraShake();
 
 	void OnHRMontageEnd(UAnimMontage* animMontage, bool bInterrupted);
+	
 
 protected:
 
@@ -259,7 +260,7 @@ protected:
 	UPROPERTY(VisibleAnywhere, Replicated, Category = "ActionSkill")
 		UAnimMontage* CounterMoveset;
 
-	//Assign data table from bp 
+	//Assign actionskill data table from bp 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 		class UDataTable* ActionTable;
 
@@ -488,6 +489,18 @@ protected:
 	UFUNCTION(Reliable, NetMulticast, WithValidation, Category = "ActionSkill")
 		void MulticastExecuteAction(FActionSkill SelectedRow, FName MontageSection, bool bSpecialAttack);
 
+	UFUNCTION(Reliable, Server, WithValidation, Category = "ActionSkill")
+		void ServerLaunchChar(FVector LaunchVelocity, bool bXYOverride, bool bZOverride);
+
+	UFUNCTION(Reliable, NetMulticast, WithValidation, Category = "ActionSkill")
+		void MulticastLaunchChar(FVector LaunchVelocity, bool bXYOverride, bool bZOverride);
+
+	UFUNCTION(Reliable, Server, WithValidation, Category = "ActionSkill")
+		void ServerPlayMontage(class UAnimMontage* AnimMontage, float InPlayRate, FName StartSectionName);
+
+	UFUNCTION(Reliable, NetMulticast, WithValidation, Category = "ActionSkill")
+		void MulticastPlayMontage(class UAnimMontage* AnimMontage, float InPlayRate, FName StartSectionName);
+
 	//Get skills from input touch combo
 	UFUNCTION(BlueprintCallable, Category = "ActionSkill")
 		void AttackCombo(FActionSkill SelectedRow);
@@ -505,6 +518,9 @@ protected:
 	//Resets Movement Mode
 	UFUNCTION(BlueprintCallable, Category = "Movement")
 		void EnableMovementMode();
+
+	UFUNCTION(NetMulticast, Reliable, WithValidation, Category = "BaseStats")//HP, Damage, Defense
+		void SetupBaseStats(float HealthMax, float Def);
 
 	UFUNCTION(BlueprintCallable, Server, Reliable, WithValidation)
 		void ServerSetupStats();
@@ -527,7 +543,11 @@ protected:
 	UFUNCTION(BlueprintImplementableEvent, Category = "Effects")
 		void CombatCamShake();
 
+	UFUNCTION(Reliable, Server, WithValidation)
+		void ServerEnableMovement(bool allowMove);
 
+	UFUNCTION(Reliable, NetMulticast, WithValidation)
+		void MulticastEnableMovement(bool allowMove);
 
 public:
 	/** Returns CameraBoom subobject **/
@@ -543,6 +563,9 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = "Setup")
 		void RefreshPlayerData();
+
+	UFUNCTION(BlueprintCallable, Server, Reliable, WithValidation)
+		void ServerSetupBaseStats(float HealthMax, float Def);
 
 	UFUNCTION(Reliable, NetMulticast, WithValidation, BlueprintCallable, Category = "ReceiveDamage")
 		void TowerReceiveDamage(ADestructibleTower* Tower, float DamageApply);
