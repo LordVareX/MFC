@@ -1168,145 +1168,173 @@ void ABattleMobaCharacter::MulticastPlayMontage_Implementation(UAnimMontage * An
 	this->GetMesh()->GetAnimInstance()->Montage_SetEndDelegate(MontageEndDel, AnimMontage);
 }
 
+void ABattleMobaCharacter::CheckInputValidity()
+{
+
+}
+
 void ABattleMobaCharacter::GetButtonSkillAction(FKey Currkeys, FString ButtonName, bool& cooldown, float& CooldownVal)
 {
-	if (ActionEnabled == true)
+	if (IsUpgradingSkill)
 	{
-		if (GetMesh()->SkeletalMesh != nullptr)
+		if (MainWidget->GetClass()->ImplementsInterface(UBattleMobaInterface::StaticClass()))
 		{
-			if (this->AnimInsta != nullptr)
+			GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("Pass through interface!")));
+			Cast<IBattleMobaInterface>(MainWidget)->Execute_LookUp(MainWidget, Currkeys.ToString());
+		}
+	}
+	else
+	{
+		if (ActionEnabled == true)
+		{
+			if (GetMesh()->SkeletalMesh != nullptr)
 			{
-				if (this->AnimInsta->CanMove == true)
+				if (this->AnimInsta != nullptr)
 				{
-					if (ActionTable != nullptr)
+					if (this->AnimInsta->CanMove == true)
 					{
-						//Used in error reporting
-						FString Context;
-						for (auto& name : ActionTable->GetRowNames())
+						if (ActionTable != nullptr)
 						{
-							FActionSkill* row = ActionTable->FindRow<FActionSkill>(name, Context);
-
-							if (row)
+							//Used in error reporting
+							FString Context;
+							for (auto& name : ActionTable->GetRowNames())
 							{
-								if (row->keys == Currkeys || row->ButtonName == ButtonName)
+								FActionSkill* row = ActionTable->FindRow<FActionSkill>(name, Context);
+
+								if (row)
 								{
-									//		SpecialAttack01 & SpecialAttack02
-									if (row->IsUsingCD && !row->UseTranslate)
+									if (row->keys == Currkeys || row->ButtonName == ButtonName)
 									{
-										//GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Blue, FString::Printf(TEXT("row->isOnCD: %s"), row->isOnCD ? TEXT("true") : TEXT("false")));
+										//Look up through Skills TMap to check for unlocked spells
+										if (GetPlayerState()->GetClass()->ImplementsInterface(UBattleMobaInterface::StaticClass()))
+										{
+											GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("Pass through lookup interface!")));
+											Cast<IBattleMobaInterface>(GetPlayerState())->Execute_LookUp(GetPlayerState(), row->ButtonName);
 
-										//if the skill is on cooldown, stop playing the animation, else play the skill animation
-										if (row->isOnCD == true)
-										{
-											GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("Current %s skill is on cooldown!!"), ((*name.ToString()))));
-											cooldown = row->isOnCD;
-											//row->isOnCD = false;
-											break;
-										}
-										else if (row->isOnCD == false)
-										{
-											cooldown = row->isOnCD;
-											row->isOnCD = true;
-											GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Emerald, FString::Printf(TEXT("Current key is %s"), ((*row->keys.ToString()))));
-											if (row->SkillMoveset != nullptr)
+											//If the spell is already unlocked
+											if (IsExist)
 											{
-
-												if (this->IsLocallyControlled())
+												//		SpecialAttack01 & SpecialAttack02
+												if (row->IsUsingCD && !row->UseTranslate)
 												{
-													/*DetectNearestTarget(EResult::Cooldown, *row);
-													AttackSection = "NormalAttack01";*/
-													//play the animation that visible to all clients
-													//ServerExecuteAction(*row, CurrentSection, AttackSection, true);
-													FTimerHandle handle;
-													FTimerDelegate TimerDelegate;
+													//GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Blue, FString::Printf(TEXT("row->isOnCD: %s"), row->isOnCD ? TEXT("true") : TEXT("false")));
 
-													//set the row boolean to false after finish cooldown timer
-													TimerDelegate.BindLambda([row, this]()
+													//if the skill is on cooldown, stop playing the animation, else play the skill animation
+													if (row->isOnCD == true)
 													{
-														UE_LOG(LogTemp, Warning, TEXT("DELAY BEFORE SETTING UP COOLDOWN TO FALSE"));
-														row->isOnCD = false;
+														GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("Current %s skill is on cooldown!!"), ((*name.ToString()))));
+														cooldown = row->isOnCD;
+														//row->isOnCD = false;
+														break;
+													}
+													else if (row->isOnCD == false)
+													{
+														cooldown = row->isOnCD;
+														row->isOnCD = true;
+														GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Emerald, FString::Printf(TEXT("Current key is %s"), ((*row->keys.ToString()))));
+														if (row->SkillMoveset != nullptr)
+														{
 
-														//GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Blue, FString::Printf(TEXT("row->isOnCD: %s"), row->isOnCD ? TEXT("true") : TEXT("false")));
-													});
+															if (this->IsLocallyControlled())
+															{
+																/*DetectNearestTarget(EResult::Cooldown, *row);
+																AttackSection = "NormalAttack01";*/
+																//play the animation that visible to all clients
+																//ServerExecuteAction(*row, CurrentSection, AttackSection, true);
+																FTimerHandle handle;
+																FTimerDelegate TimerDelegate;
 
-													//start cooldown the skill
-													this->GetWorldTimerManager().SetTimer(handle, TimerDelegate, row->CDDuration, false);
-													CooldownVal = row->CDDuration;
-													//break;
+																//set the row boolean to false after finish cooldown timer
+																TimerDelegate.BindLambda([row, this]()
+																{
+																	UE_LOG(LogTemp, Warning, TEXT("DELAY BEFORE SETTING UP COOLDOWN TO FALSE"));
+																	row->isOnCD = false;
+
+																	//GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Blue, FString::Printf(TEXT("row->isOnCD: %s"), row->isOnCD ? TEXT("true") : TEXT("false")));
+																});
+
+																//start cooldown the skill
+																this->GetWorldTimerManager().SetTimer(handle, TimerDelegate, row->CDDuration, false);
+																CooldownVal = row->CDDuration;
+																//break;
+															}
+															//setting up for cooldown properties
+
+															DetectNearestTarget(EResult::Cooldown, *row);
+															AttackSection = "NormalAttack01";
+
+														}
+														break;
+													}
 												}
-												//setting up for cooldown properties
-												
-												DetectNearestTarget(EResult::Cooldown, *row);
-												AttackSection = "NormalAttack01";
-												
-											}
-											break;
-										}
-									}
 
-									//		Dash
-									else if (row->IsUsingCD && row->UseTranslate)
-									{
-										if (row->isOnCD == true)
-										{
-											GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("Current %s skill is on cooldown!!"), ((*name.ToString()))));
-											cooldown = row->isOnCD;
-											break;
-										}
-										else if (row->isOnCD == false)
-										{
-											cooldown = row->isOnCD;
-											row->isOnCD = true;
-											//GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("Current key is %s"), ((*row->keys.ToString()))));
-											if (row->SkillMoveset != nullptr)
-											{
-												if (this->IsLocallyControlled())
+												//		Dash
+												else if (row->IsUsingCD && row->UseTranslate)
 												{
-													AttackSection = "NormalAttack01";
-
-													//play the animation that visible to all clients
-													ServerExecuteAction(*row, AttackSection, false);
-
-													//setting up for cooldown properties
-													FTimerHandle handle;
-													FTimerDelegate TimerDelegate;
-
-													//set the row boolean to false after finish cooldown timer
-													TimerDelegate.BindLambda([row, this]()
+													if (row->isOnCD == true)
 													{
-														UE_LOG(LogTemp, Warning, TEXT("DELAY BEFORE SETTING UP COOLDOWN TO FALSE"));
-														row->isOnCD = false;
+														GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("Current %s skill is on cooldown!!"), ((*name.ToString()))));
+														cooldown = row->isOnCD;
+														break;
+													}
+													else if (row->isOnCD == false)
+													{
+														cooldown = row->isOnCD;
+														row->isOnCD = true;
+														//GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("Current key is %s"), ((*row->keys.ToString()))));
+														if (row->SkillMoveset != nullptr)
+														{
+															if (this->IsLocallyControlled())
+															{
+																AttackSection = "NormalAttack01";
 
-														//GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Blue, FString::Printf(TEXT("row->isOnCD: %s"), row->isOnCD ? TEXT("true") : TEXT("false")));
-													});
+																//play the animation that visible to all clients
+																ServerExecuteAction(*row, AttackSection, false);
 
-													//start cooldown the skill
-													this->GetWorldTimerManager().SetTimer(handle, TimerDelegate, row->CDDuration, false);
-													CooldownVal = row->CDDuration;
-													break;
+																//setting up for cooldown properties
+																FTimerHandle handle;
+																FTimerDelegate TimerDelegate;
+
+																//set the row boolean to false after finish cooldown timer
+																TimerDelegate.BindLambda([row, this]()
+																{
+																	UE_LOG(LogTemp, Warning, TEXT("DELAY BEFORE SETTING UP COOLDOWN TO FALSE"));
+																	row->isOnCD = false;
+
+																	//GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Blue, FString::Printf(TEXT("row->isOnCD: %s"), row->isOnCD ? TEXT("true") : TEXT("false")));
+																});
+
+																//start cooldown the skill
+																this->GetWorldTimerManager().SetTimer(handle, TimerDelegate, row->CDDuration, false);
+																CooldownVal = row->CDDuration;
+																break;
+															}
+														}
+														break;
+													}
+												}
+
+												/**   current skill has combo */
+												else if (row->UseSection)
+												{
+													//GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("Current key is %s"), ((*row->keys.ToString()))));
+													if (row->SkillMoveset != nullptr)
+													{
+														if (this->IsLocallyControlled())
+														{
+															DetectNearestTarget(EResult::Section, *row);
+														}
+														/*AttackCombo(*row);*/
+														break;
+
+													}
 												}
 											}
-											break;
-										}
-									}
-
-									/**   current skill has combo */
-									else if (row->UseSection)
-									{
-										//GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("Current key is %s"), ((*row->keys.ToString()))));
-										if (row->SkillMoveset != nullptr)
-										{
-											if (this->IsLocallyControlled())
-											{
-												DetectNearestTarget(EResult::Section, *row);
-											}
-											/*AttackCombo(*row);*/
-											break;
-
 										}
 									}
 								}
 							}
+							IsExist = false;
 						}
 					}
 				}
@@ -2491,5 +2519,33 @@ void ABattleMobaCharacter::MulticastEnableMovement_Implementation(bool allowMove
 		{
 			this->AnimInsta->CanMove = allowMove;
 		}
+	}
+}
+
+void ABattleMobaCharacter::Activate_Implementation()
+{
+	UE_LOG(LogTemp, Warning, TEXT("Implementation"));
+}
+
+void ABattleMobaCharacter::ActivatePure(float a, float b)
+{
+	if (this->IsLocallyControlled())
+	{
+		this->ServerSetupBaseStats(a, b);
+	}
+	if (MainWidget != nullptr && MainWidget->GetClass()->ImplementsInterface(UBattleMobaInterface::StaticClass()))
+	{
+		//Opens level up windows
+		Cast<IBattleMobaInterface>(MainWidget)->Execute_CheckBool(MainWidget, true);
+	}
+	UE_LOG(LogTemp, Warning, TEXT("Pure"));
+}
+
+void ABattleMobaCharacter::CheckBool_Implementation(bool check)
+{
+	if (check)
+	{
+		GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Orange, FString::Printf(TEXT("EXIST")));
+		IsExist = true;
 	}
 }

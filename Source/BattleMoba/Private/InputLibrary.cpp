@@ -3,11 +3,23 @@
 
 #include "InputLibrary.h"
 #include "Engine.h"
+#include "UObject/NameTypes.h"
 #include "Math/UnrealMathUtility.h"
 #include "Kismet/KismetTextLibrary.h"
 #include "Components/WidgetComponent.h"
 #include "BattleMobaSkillComponent.h"
 #include "DrawDebugHelpers.h"
+
+FString UInputLibrary::EditSpaceAfterUppercase(FString str, bool AddSpace)
+{ 
+	if (AddSpace)
+	{
+		return FName::NameToDisplayString(str, false);
+	}
+	else
+		str.RemoveSpacesInline();
+	return str;
+}
 
 FDateTime UInputLibrary::GetCurrentDateAndTime()
 {
@@ -359,6 +371,25 @@ UBattleMobaSkillComponent* UInputLibrary::AddComponentByClass(TSubclassOf<UBattl
 	}
 
 	return nullptr;
+}
+
+TMap<FString, int>* UInputLibrary::AddToTMap(TMap<FString, int>* Items, FString key)
+{
+	if (Items->Contains(key))
+	{
+		int32 val = *Items->Find(key) + 1;
+		Items->Add(key, val);
+	}
+	else
+		Items->Add(key, 1);
+
+	for (const TPair<FString, int>& pair : *Items)
+	{
+		GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("Key : %s, Value : %f"), *pair.Key, pair.Value));
+		/*pair.Key;
+		pair.Value;*/
+	}
+	return Items;
 }
 
 bool UInputLibrary::CalculateRewards(int OriginalHonor, int PlayersCount, FRewards* row, FName RowName, int& HonorVal, int& ExpOut)

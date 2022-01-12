@@ -6,6 +6,7 @@
 #include "Net/UnrealNetwork.h"
 #include "InputLibrary.h"
 #include "BattleMobaCharacter.h"
+#include "BattleMobaInterface.h"
 
 void ABattleMobaPlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
@@ -105,19 +106,26 @@ void ABattleMobaPlayerState::RespawnTimerCount_Implementation(ABattleMobaPlayerS
 	}
 }
 
-void ABattleMobaPlayerState::SetCurrentPlayerLevel()
+void ABattleMobaPlayerState::AddToMap(FString str)
 {
-	if (LevelTable != nullptr)
+	Skills = *UInputLibrary::AddToTMap(&Skills, str);
+}
+
+void ABattleMobaPlayerState::LookUp_Implementation(const FString& str)
+{
+	GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Orange, FString::Printf(TEXT("%s"), *str));
+	if (Skills.Contains(str))//if the skill is already unlocked and stored in the Skill TMap
 	{
-		//Set initial attributes
-		FName NextRowName = LevelTable->GetRowNames()[Level];
-		FLevelAttributes* Nextrow = LevelTable->FindRow<FLevelAttributes>(NextRowName, FString());
-		if (Nextrow)
+		GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Green, FString::Printf(TEXT("TRUE")));
+		if (GetPawn()->GetClass()->ImplementsInterface(UBattleMobaInterface::StaticClass()))
 		{
-			ExpNeeded = Nextrow->MinExpPerLevel;
-			Level = Nextrow->Level - 1;
-		}
+			Cast<IBattleMobaInterface>(GetPawn())->Execute_CheckBool(GetPawn(), Skills.Contains(str));//set exist bool in player character to true
+		}							
 	}
+}
+
+void ABattleMobaPlayerState::ActivatePure(float a, float b)
+{
 }
 
 bool ABattleMobaPlayerState::ServerSetExp_Validate(int EXPoint)
@@ -182,15 +190,11 @@ void ABattleMobaPlayerState::AddExp(int EXPoint, int& OutLevel)
 					Defense = UInputLibrary::ChangeValueByPercentage(Defense, Row->DefIncrementPercent, true);
 					BaseDamagePercent = Row->DmgIncrementPercent;
 
-					Row->SkillUnlock;
+					/*Row->SkillUnlock;*/
 
-					ABattleMobaCharacter* player = Cast<ABattleMobaCharacter>(GetPawn());
-					if (player)
+					if (GetPawn()->GetClass()->ImplementsInterface(UBattleMobaInterface::StaticClass()))
 					{
-						if (player->IsLocallyControlled())
-						{
-							player->ServerSetupBaseStats(MaxHealth, Defense);
-						}
+						Cast<IBattleMobaInterface>(GetPawn())->ActivatePure(MaxHealth, Defense);
 					}
 				}
 			}

@@ -7,6 +7,7 @@
 #include "InputLibrary.h"
 #include "GameFramework/Character.h"
 #include "BattleMobaAnimInstance.h"
+#include "BattleMobaInterface.h"
 #include "BattleMobaCharacter.generated.h"
 
 class ABMobaTriggerCapsule;
@@ -14,7 +15,7 @@ struct FTimerHandle;
 class ABattleMobaCTF;
 
 UCLASS(config = Game)
-class ABattleMobaCharacter : public ACharacter
+class ABattleMobaCharacter : public ACharacter, public IBattleMobaInterface
 {
 	GENERATED_BODY()
 
@@ -137,8 +138,14 @@ class ABattleMobaCharacter : public ACharacter
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = Components, meta = (AllowPrivateAccess = "true"))
 		class UWidgetComponent* W_DamageOutput;
 
+	private:
+		bool IsExist = false;
+
 public:
 	ABattleMobaCharacter();
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "LevelUp")
+		bool IsUpgradingSkill = false;
 
 	/** Base turn rate, in deg/sec. Other scaling may affect final turn rate. */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera)
@@ -550,6 +557,13 @@ protected:
 		void MulticastEnableMovement(bool allowMove);
 
 public:
+
+	/*******************Interfaces***********************/
+	virtual void Activate_Implementation(); // include a blueprint function
+	virtual void ActivatePure(float a, float b) override; //c++ only function
+
+	virtual void CheckBool_Implementation(bool check);
+
 	/** Returns CameraBoom subobject **/
 	FORCEINLINE class USpringArmComponent* GetCameraBoom() const { return CameraBoom; }
 	/** Returns FollowCamera subobject **/
@@ -585,5 +599,7 @@ public:
 
 	//Get skills from input touch combo
 	UFUNCTION(BlueprintCallable, Category = "ActionSkill")
-		void GetButtonSkillAction(FKey Currkeys, FString ButtonName, bool& cooldown, float& CooldownVal);
+	void GetButtonSkillAction(FKey Currkeys, FString ButtonName, bool& cooldown, float& CooldownVal);
+
+	void CheckInputValidity();
 };

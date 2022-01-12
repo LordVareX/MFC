@@ -49,6 +49,7 @@ enum class EResult : uint8
 UENUM(BlueprintType)
 enum class ESkills : uint8
 {
+	None,
 	Skill1,
 	Skill2,
 	Ultimate,
@@ -199,6 +200,9 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Utilities")
 		static void RenameObject(FString name, UObject* object);
 
+	UFUNCTION(BlueprintPure, Category = "Utilities")
+		static FString EditSpaceAfterUppercase(FString str, bool AddSpace);
+
 	UFUNCTION(BlueprintCallable, Category = "DateAndTime")
 		static FDateTime GetCurrentDateAndTime();
 
@@ -232,6 +236,9 @@ public:
 	//Adds a UActorComponent Subclass, and adds it to the Outer Actor.
 	UFUNCTION(BlueprintPure, Category = "ActorComponent")
 		static UBattleMobaSkillComponent* AddComponentByClass(TSubclassOf<UBattleMobaSkillComponent> Class, AActor* Outer);
+
+	//UFUNCTION(BlueprintPure, Category = "Sorting Functions")
+		static TMap<FString, int>* AddToTMap(TMap<FString, int>* Items, FString key);
 
 	//Calculate player rewards
 		static bool CalculateRewards(int OriginalHonor, int PlayersCount, FRewards* row, FName RowName, int& HonorVal, int& ExpOut);

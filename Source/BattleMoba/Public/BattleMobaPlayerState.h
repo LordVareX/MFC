@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "InputLibrary.h"
+#include "BattleMobaInterface.h"
 #include "GameFramework/PlayerState.h"
 #include "BattleMobaPlayerState.generated.h"
 
@@ -13,7 +14,7 @@ class USkeletalMesh;
  *
  */
 UCLASS()
-class BATTLEMOBA_API ABattleMobaPlayerState : public APlayerState
+class BATTLEMOBA_API ABattleMobaPlayerState : public APlayerState, public IBattleMobaInterface
 {
 	GENERATED_BODY()
 
@@ -26,10 +27,10 @@ protected:
 		int Exp = 0;
 
 	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadWrite, Category = "EXP")
-		int ExpNeeded = 10;
+		int ExpNeeded = 0;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "UnlockedSkill")
-		TMap<ESkills, int32> SkillMap;
+		TMap<FString, int> Skills;
 	/////////////////////////////////////////////////////////////////////
 
 public:
@@ -55,7 +56,7 @@ public:
 
 	/////////////Levelling Up///////////////////////
 	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadWrite, Category = "Level")
-		int Level = 1;
+		int Level = 0;
 	////////////////////////////////////////////////
 
 	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadWrite, Category = "Status")
@@ -135,7 +136,15 @@ public:
 	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadWrite, Category = "Skill")
 		class UBattleMobaSkillComponent* SkillComponent;
 
+protected:
+
+	UFUNCTION(BlueprintCallable)
+		void AddToMap(FString str);
+
 public:
+
+	virtual void LookUp_Implementation(const FString& str); //interface
+	virtual void ActivatePure(float a, float b) override; //c++ only function
 
 	UFUNCTION(Reliable, Server, WithValidation, Category = "Timer")
 	void StartRespawnTimer(ABattleMobaPlayerState* ps);
@@ -154,10 +163,7 @@ public:
 		void DisplayRespawnTime(int32 val);
 
 	////////////////////Level UP///////////////////////////////////////
-	UFUNCTION(BlueprintCallable)
-		void SetCurrentPlayerLevel();
-
-	UFUNCTION(Reliable, Server, WithValidation, Category = "Exp")
+	UFUNCTION(BlueprintCallable, Reliable, Server, WithValidation, Category = "Exp")
 		void ServerSetExp(int EXPoint);
 
 	UFUNCTION(Reliable, Client, WithValidation, Category = "Exp")
