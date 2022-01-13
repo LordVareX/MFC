@@ -1135,6 +1135,8 @@ void ABattleMobaGameMode::RespawnRequested_Implementation(APlayerController* pla
 					if (pc)
 					{
 						pc->SetupPawnAttribute();
+						pc->bShowMouseCursor = false;
+						pc->SetInputMode(FInputModeGameAndUI());
 					}
 				}
 			}

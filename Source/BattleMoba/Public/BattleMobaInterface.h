@@ -27,5 +27,8 @@ public:
 
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Interface")
 		void CheckBool(bool check);
+
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Interface")
+		void CheckStringWithFloat(const FString& str, const float& Float, bool check);
 };
 

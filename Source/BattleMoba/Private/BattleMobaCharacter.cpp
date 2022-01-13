@@ -970,7 +970,6 @@ void ABattleMobaCharacter::HitReactionClient_Implementation(AActor* HitActor, fl
 				{
 					FTimerHandle delay;
 					FTimerDelegate delayDel;
-
 					
 					//		when attacker is on Special Attack skills
 					if (isKnockback)
@@ -1264,6 +1263,12 @@ void ABattleMobaCharacter::GetButtonSkillAction(FKey Currkeys, FString ButtonNam
 															AttackSection = "NormalAttack01";
 
 														}
+														//Calls widget for display purposes
+														if (MainWidget->GetClass()->ImplementsInterface(UBattleMobaInterface::StaticClass()))
+														{
+															GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("Pass through lookup interface!")));
+															Cast<IBattleMobaInterface>(MainWidget)->Execute_CheckStringWithFloat(MainWidget, row->ButtonName, CooldownVal, cooldown);
+														}
 														break;
 													}
 												}
@@ -1307,6 +1312,13 @@ void ABattleMobaCharacter::GetButtonSkillAction(FKey Currkeys, FString ButtonNam
 																//start cooldown the skill
 																this->GetWorldTimerManager().SetTimer(handle, TimerDelegate, row->CDDuration, false);
 																CooldownVal = row->CDDuration;
+
+																//Calls widget for display purposes
+																if (MainWidget->GetClass()->ImplementsInterface(UBattleMobaInterface::StaticClass()))
+																{
+																	GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("Pass through lookup interface!")));
+																	Cast<IBattleMobaInterface>(MainWidget)->Execute_CheckStringWithFloat(MainWidget, row->ButtonName, CooldownVal, cooldown);
+																}
 																break;
 															}
 														}
@@ -1465,6 +1477,8 @@ bool ABattleMobaCharacter::SetupBaseStats_Validate(float HealthMax, float Def)
 
 void ABattleMobaCharacter::SetupBaseStats_Implementation(float HealthMax, float Def)
 {
+	float hpPercent = UInputLibrary::CalculatePercentageFromValue(Health, MaxHealth, 100.0f);
+	Health = UInputLibrary::CalculateValueFromPercentage(hpPercent, HealthMax, 100.0f);
 	MaxHealth = HealthMax;
 	Defence = Def;
 }

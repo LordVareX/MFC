@@ -26,6 +26,10 @@ void UBattleMobaSkillComponent::BeginPlay()
 	
 }
 
+void UBattleMobaSkillComponent::ActivatePure(float a, float b)
+{
+}
+
 void UBattleMobaSkillComponent::Execute(ABattleMobaCharacter* OwningChar)
 {
 	//General executing functions

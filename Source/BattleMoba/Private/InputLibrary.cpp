@@ -57,6 +57,16 @@ FString UInputLibrary::DisplayMinutesSecondsFormat(float Seconds)
 	return DString + ":" + newModT.ToString();
 }
 
+float UInputLibrary::CalculateValueFromPercentage(float Percentage, float MaxA, float MaxPercentage)
+{
+	return (Percentage / MaxPercentage) * MaxA;
+}
+
+float UInputLibrary::CalculatePercentageFromValue(float Value, float Max, float MaxPercentage)
+{
+	return (Value / Max) * MaxPercentage;
+}
+
 float UInputLibrary::ChangeValueByPercentage(float OriginalVal, float Percent, bool increaseVal)
 {
 	float val = OriginalVal / 100.0f;

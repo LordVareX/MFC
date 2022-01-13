@@ -67,6 +67,9 @@ struct FLevelAttributes :public FTableRowBase
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Exp")
 		int MinExpPerLevel = 0;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Exp")
+		float RespawnTime = 0.0f;
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Unlockable")
 		TArray<ESkills> SkillUnlock;
 
@@ -214,6 +217,12 @@ public:
 
 	UFUNCTION(BlueprintPure, Category = "DateAndTime")
 		static FString DisplayMinutesSecondsFormat(float Seconds);
+
+	UFUNCTION(BlueprintPure, Category = "Math|Percentage")
+		static float CalculateValueFromPercentage(float Percentage, float MaxA, float MaxPercentage);
+
+	UFUNCTION(BlueprintPure, Category = "Math|Percentage")
+		static float CalculatePercentageFromValue(float Value, float Max, float MaxPercentage);
 
 	UFUNCTION(BlueprintPure, Category = "Math|Percentage")
 		static float ChangeValueByPercentage(float OriginalVal, float Percent, bool increaseVal);
