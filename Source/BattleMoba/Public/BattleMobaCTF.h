@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Engine/TriggerSphere.h"
+#include "InputLibrary.h"
 #include "BattleMobaCTF.generated.h"
 
 class ABattleMobaCharacter;
@@ -115,9 +116,15 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Status")
 		float RadiusSize = 200.0f;
 
-	//		Flag Name
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Status")
-		FName PointName = "BaseFlag";
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Type")
+		EFlagType FlagType = EFlagType::Base;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Perks")
+		EPerksType FlagPerks = EPerksType::Honor;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Perks")
+		float HonorVal = 0.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Perks")
+		float ExpVal = 0.0f;
 };

@@ -15,6 +15,7 @@
 #include "BattleMobaCharacter.h"
 #include "BattleMobaPlayerState.h"
 #include "BattleMobaGameState.h"
+#include "InputLibrary.h"
 
 void ABattleMobaCTF::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
@@ -219,21 +220,32 @@ void ABattleMobaCTF::GoldTimerFunction()
 				ABattleMobaPlayerState* ps = Cast<ABattleMobaPlayerState>(player->GetPlayerState());
 				if (ps->TeamName == ControllerTeam)
 				{
-					if (this->PointName == "BaseFlag")
+					if (this->FlagType == EFlagType::Base)
 					{
-						ps->ChiOrbs = ps->ChiOrbs + 1;
+						ps->Honor += this->HonorVal;
 					}
-
-					else if (this->PointName == "MinorFlag")
+					else if (this->FlagType == EFlagType::Minor)
 					{
-						ps->ChiOrbs = ps->ChiOrbs + 3;
+						if (this->FlagPerks == EPerksType::Honor)
+						{
+							ps->Honor += this->HonorVal;
+						}
+						else if (this->FlagPerks == EPerksType::Experience)
+						{
+							if (player->IsLocallyControlled())
+							{
+								ps->ServerSetExp(this->ExpVal);
+							}
+						}
 					}
-
-					else if (PointName == "MajorFlag")
+					else if (FlagType == EFlagType::Major)
 					{
-						ps->ChiOrbs = ps->ChiOrbs + 10;
+						ps->Honor += this->HonorVal;
+						if (player->IsLocallyControlled())
+						{
+							ps->ServerSetExp(this->ExpVal);
+						}
 					}
-
 					//GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("PointName %s"), ((*PointName.ToString()))));
 				}
 			}

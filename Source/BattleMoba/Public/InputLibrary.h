@@ -22,6 +22,24 @@ enum class EInputType : uint8
 	Hold
 };
 
+//Flag Type
+UENUM(BlueprintType)
+enum class EFlagType : uint8
+{
+	None,
+	Major,
+	Minor,
+	Base
+};
+
+UENUM(BlueprintType)
+enum class EPerksType : uint8
+{
+	None,
+	Honor,
+	Experience
+};
+
 //Style Type
 UENUM(BlueprintType)
 enum class EStyle : uint8
