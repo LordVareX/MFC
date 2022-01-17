@@ -174,5 +174,11 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 		void AddExp(int EXPoint, int& OutLevel);
+
+	UFUNCTION(BlueprintCallable, Reliable, Server, WithValidation, Category = "Exp")
+		void ServerSetRespawnTime(float time);
+
+	UFUNCTION(Reliable, NetMulticast, WithValidation, Category = "Exp")
+		void ClientSetRespawnTime(float time);
 	//////////////////////////////////////////////////////////////////
 };

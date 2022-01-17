@@ -213,7 +213,7 @@ void ABattleMobaPC::RespawnPawn_Implementation(FTransform SpawnTransform)
 		//get current controller playerstate
 		ABattleMobaPlayerState* thisstate = Cast<ABattleMobaPlayerState>(this->PlayerState);
 
-		float temp = float(thisstate->RespawnTimeCounter - 3);
+		float temp = thisstate->InitRespawnTime - 3.0f;
 
 		//Delay before respawning a new pawn
 		FTimerHandle handle1;
@@ -225,6 +225,6 @@ void ABattleMobaPC::RespawnPawn_Implementation(FTransform SpawnTransform)
 			PlayerCameraManager->BlendTimeToGo = 0.0f;
 			thisGameMode->RespawnRequested(this, thisstate->SpawnTransform);
 		});
-		this->GetWorldTimerManager().SetTimer(handle1, TimerDelegate1, 27.0f, false);
+		this->GetWorldTimerManager().SetTimer(handle1, TimerDelegate1, temp, false);
 	}
 }

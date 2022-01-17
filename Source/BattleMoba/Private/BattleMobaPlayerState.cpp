@@ -50,7 +50,7 @@ void ABattleMobaPlayerState::OnRep_InitTimer()
 
 void ABattleMobaPlayerState::OnRep_Timer()
 {
-	this->DisplayRespawnTime((int)InitRespawnTime);
+	this->DisplayRespawnTime(RespawnTimeCounter);
 }
 
 bool ABattleMobaPlayerState::MulticastTimerCount_Validate(int32 val)
@@ -194,11 +194,15 @@ void ABattleMobaPlayerState::AddExp(int EXPoint, int& OutLevel)
 					MaxHealth = UInputLibrary::ChangeValueByPercentage(MaxHealth, Row->HPIncrementPercent, true);
 					Defense = UInputLibrary::ChangeValueByPercentage(Defense, Row->DefIncrementPercent, true);
 					BaseDamagePercent = Row->DmgIncrementPercent;
-					RespawnTimeCounter = Row->RespawnTime;
+					if (GetPawn()->IsLocallyControlled())
+					{
+						ServerSetRespawnTime(Row->RespawnTime);
+					}
+					/*RespawnTimeCounter = Row->RespawnTime;
 					OnRep_Timer();
 
 					InitRespawnTime = RespawnTimeCounter;
-					OnRep_InitTimer();
+					OnRep_InitTimer();*/
 
 					/*Row->SkillUnlock;*/
 
@@ -213,4 +217,28 @@ void ABattleMobaPlayerState::AddExp(int EXPoint, int& OutLevel)
 		//return level
 		OutLevel = Level;
 	}
+}
+
+bool ABattleMobaPlayerState::ClientSetRespawnTime_Validate(float time)
+{
+	return true;
+}
+
+void ABattleMobaPlayerState::ClientSetRespawnTime_Implementation(float time)
+{
+	RespawnTimeCounter = time;
+	OnRep_Timer();
+
+	InitRespawnTime = RespawnTimeCounter;
+	OnRep_InitTimer();
+}
+
+bool ABattleMobaPlayerState::ServerSetRespawnTime_Validate(float time)
+{
+	return true;
+}
+
+void ABattleMobaPlayerState::ServerSetRespawnTime_Implementation(float time)
+{
+	ClientSetRespawnTime(time);
 }
