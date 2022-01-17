@@ -4,9 +4,9 @@
 
 #include "CoreMinimal.h"
 #include "Engine/GameInstance.h"
+#include "InputLibrary.h"
 #include "Runtime/Online/HTTP/Public/Http.h"
 #include "BattleMobaGameInstance.generated.h"
-
 /**
  *
  */
@@ -14,6 +14,11 @@ UCLASS()
 class BATTLEMOBA_API UBattleMobaGameInstance : public UGameInstance
 {
 	GENERATED_BODY()
+
+protected:
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+		class UDataTable* RewardTable;
 
 public:
 	UBattleMobaGameInstance();
@@ -56,6 +61,9 @@ public:
 
 	UFUNCTION()
 		void SetCognitoTokens(FString NewAccessToken, FString NewIdToken, FString NewRefreshToken);
+
+	//Get row from Rewards datatable
+	FRewards* GetRewardsData(FName& rowName, int rowIndex);
 
 private:
 	FHttpModule* HttpModule;

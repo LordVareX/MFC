@@ -21,6 +21,7 @@
 #include "BattleMobaHUD.h"
 #include "BattleMobaPC.h"
 #include "InputLibrary.h"
+#include "BattleMobaGameInstance.h"
 
 
 void ABattleMobaGameMode::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -1028,69 +1029,126 @@ void ABattleMobaGameMode::PickAWinningTeam() {
 
 void ABattleMobaGameMode::PlayerKilled(ABattleMobaPlayerState* victim, ABattleMobaPlayerState* killer, TArray<ABattleMobaPlayerState*> assist)
 {
-	FName RowName = RewardTable->GetRowNames()[victim->Level - 1];
-	FRewards* row = RewardTable->FindRow<FRewards>(RowName, FString());
-	if (assist.IsValidIndex(0))
+	//if (assist.IsValidIndex(0))
+	//{
+	//	for (int32 i = 0; i < assist.Num() - 1; i++)
+	//	{
+	//		if (assist[i] != assist.Last())
+	//		{
+	//			assist[i]->Assist += 1;
+	//			GState->Assist = assist[i]->Assist;
+
+	//			/*int exp;
+	//			int honor;*/
+
+	//			//Get victim level
+	//			//if (UInputLibrary::CalculateRewards(HonorKill, assist.Num(), row, rowName, honor, exp))
+	//			//{
+	//			//	//add honor value
+	//			//	assist[i]->Honor += honor;
+	//			//	//Set assist experience point
+	//			//	assist[i]->ClientSetExp(exp);
+	//			//}
+	//		}
+	//	}
+	//}
+	//if (killer != victim)
+	//{
+	//	victim->Death += 1;
+	//	GState->Death += 1;
+	//	killer->Kill += 1;
+	//	GState->Kill += 1;
+
+	//	/*int exp;
+	//	int honor;*/
+
+	//	//Get victim level
+	//	//if (UInputLibrary::CalculateRewards(HonorKill, assist.Num(), row, rowName, honor, exp))
+	//	//{
+	//	//	//add honor value
+	//	//	killer->Honor += honor;
+	//	//	//Set kill experience point
+	//	//	killer->ClientSetExp(row->ExpKills);
+	//	//}
+	//	if (killer->TeamName == "Radiant")
+	//	{
+	//		GState->TeamKillA += 1;
+	//	}
+	//	else if (killer->TeamName == "Dire")
+	//	{
+	//		GState->TeamKillB += 1;
+	//	}
+	//	/*if (GState->TeamA.Contains(killer->GetPlayerName()))
+	//	{
+	//		GState->TeamKillA += 1;
+	//	}
+	//	else
+	//		GState->TeamKillB += 1;*/
+	//}
+	UBattleMobaGameInstance* GI = Cast<UBattleMobaGameInstance>(UGameplayStatics::GetGameInstance(this));
+	if (GI)
 	{
-		for (int32 i = 0; i < assist.Num() - 1; i++)
+		FName rowName;
+		FRewards* row = GI->GetRewardsData(rowName, victim->Level - 1);
+		if (row)
 		{
-			if (assist[i] != assist.Last())
+			if (assist.IsValidIndex(0))
 			{
-				assist[i]->Assist += 1;
-				GState->Assist = assist[i]->Assist;
-
-				if (RewardTable != nullptr)
+				for (int32 i = 0; i < assist.Num() - 1; i++)
 				{
-					int exp;
-					int honor;
-
-					//Get victim level
-					if (UInputLibrary::CalculateRewards(HonorKill, assist.Num(), row, RowName, honor, exp))
+					if (assist[i] != assist.Last())
 					{
-						//add honor value
-						assist[i]->Honor += honor;
-						//Set assist experience point
-						assist[i]->ServerSetExp(exp);
+						assist[i]->Assist += 1;
+						GState->Assist = assist[i]->Assist;
+
+						int exp;
+						int honor;
+
+						//Get victim level
+						if (UInputLibrary::CalculateRewards(HonorKill, assist.Num(), row, rowName, honor, exp))
+						{
+							//add honor value
+							assist[i]->Honor += honor;
+							//Set assist experience point
+							assist[i]->ClientSetExp(exp);
+						}
 					}
 				}
 			}
-		}
-	}
-	if (killer != victim)
-	{
-		victim->Death += 1;
-		GState->Death += 1;
-		killer->Kill += 1;
-		GState->Kill += 1;
-
-		if (RewardTable != nullptr)
-		{
-			int exp;
-			int honor;
-
-			//Get victim level
-			if (UInputLibrary::CalculateRewards(HonorKill, assist.Num(), row, RowName, honor, exp))
+			if (killer != victim)
 			{
-				//add honor value
-				killer->Honor += honor;
-				//Set kill experience point
-				killer->ServerSetExp(row->ExpKills);
+				victim->Death += 1;
+				GState->Death += 1;
+				killer->Kill += 1;
+				GState->Kill += 1;
+
+				int exp;
+				int honor;
+
+				//Get victim level
+				if (UInputLibrary::CalculateRewards(HonorKill, assist.Num(), row, rowName, honor, exp))
+				{
+					//add honor value
+					killer->Honor += honor;
+					//Set kill experience point
+					killer->ClientSetExp(row->ExpKills);
+				}
+				if (killer->TeamName == "Radiant")
+				{
+					GState->TeamKillA += 1;
+				}
+				else if (killer->TeamName == "Dire")
+				{
+					GState->TeamKillB += 1;
+				}
+				/*if (GState->TeamA.Contains(killer->GetPlayerName()))
+				{
+					GState->TeamKillA += 1;
+				}
+				else
+					GState->TeamKillB += 1;*/
 			}
 		}
-		if (killer->TeamName == "Radiant")
-		{
-			GState->TeamKillA += 1;
-		}
-		else if (killer->TeamName == "Dire")
-		{
-			GState->TeamKillB += 1;
-		}
-		/*if (GState->TeamA.Contains(killer->GetPlayerName()))
-		{
-			GState->TeamKillA += 1;
-		}
-		else
-			GState->TeamKillB += 1;*/
 	}
 }
 

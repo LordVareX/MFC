@@ -106,6 +106,9 @@ public:
 
 	void GoldTimerFunction();
 
+	//Get Flag type to change perks value
+	void CheckFlagType(ABattleMobaCTF* currFlag, class ABattleMobaPlayerState* currPs, class ABattleMobaCharacter* currPlayer);
+
 protected:
 
 	//		Flag Mesh

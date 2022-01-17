@@ -126,26 +126,25 @@ void ABattleMobaCTF::OnRep_Val()
 
 		if (HealthText)
 		{
-			if (this->valDire <= 0 && this->valRadiant > 0)
+			if (/*this->valDire <= 0 && */this->valRadiant > 0)
 			{
-				FString TheFloatStr = FString::SanitizeFloat(this->valRadiant);
+				FString TheFloatStr = FString::FromInt((int)this->valRadiant);
 				HealthText->SetText(FText::FromString(TheFloatStr));
 				PBar->SetPercent(FMath::Clamp(this->valRadiant / 100.0f, 0.0f, 1.0f));
 			}
 
-			else if (this->valRadiant <= 0 && this->valDire > 0)
+			else if (/*this->valRadiant <= 0 && */this->valDire > 0)
 			{
-				FString TheFloatStr = FString::SanitizeFloat(this->valDire);
+				FString TheFloatStr = FString::FromInt((int)this->valDire);
 				HealthText->SetText(FText::FromString(TheFloatStr));
 				PBar->SetPercent(FMath::Clamp(this->valDire / 100.0f, 0.0f, 1.0f));
 			}
-
-			else
-			{
-				FString TheFloatStr = FString::SanitizeFloat(0.0f);
-				HealthText->SetText(FText::FromString(TheFloatStr));
-				PBar->SetPercent(FMath::Clamp(0.0f / 100.0f, 0.0f, 1.0f));
-			}
+			//else
+			//{
+			//	FString TheFloatStr = FString::SanitizeFloat(0.0f);
+			//	HealthText->SetText(FText::FromString(TheFloatStr));
+			//	PBar->SetPercent(FMath::Clamp(0.0f / 100.0f, 0.0f, 1.0f));
+			//}
 
 
 			//HealthBar->SetPercent(FMath::Clamp(this->Health / 100.0f, 0.0f, 1.0f));
@@ -211,7 +210,7 @@ void ABattleMobaCTF::GoldTimerFunction()
 
 		int arrLength = this->GiveGoldActors.Num();
 
-		//		for every player of the controller team will gain chi orbs for every second when the Control Flag progress reaches 100
+		//		for every player of the controller team will gain honor/exp or both for every second when the Control Flag progress reaches 100
 		for (uint8 i = 0; i < arrLength; ++i)
 		{
 			ABattleMobaCharacter* player = Cast<ABattleMobaCharacter>(GiveGoldActors[i]);
@@ -220,34 +219,38 @@ void ABattleMobaCTF::GoldTimerFunction()
 				ABattleMobaPlayerState* ps = Cast<ABattleMobaPlayerState>(player->GetPlayerState());
 				if (ps->TeamName == ControllerTeam)
 				{
-					if (this->FlagType == EFlagType::Base)
-					{
-						ps->Honor += this->HonorVal;
-					}
-					else if (this->FlagType == EFlagType::Minor)
-					{
-						if (this->FlagPerks == EPerksType::Honor)
-						{
-							ps->Honor += this->HonorVal;
-						}
-						else if (this->FlagPerks == EPerksType::Experience)
-						{
-							if (player->IsLocallyControlled())
-							{
-								ps->ServerSetExp(this->ExpVal);
-							}
-						}
-					}
-					else if (FlagType == EFlagType::Major)
-					{
-						ps->Honor += this->HonorVal;
-						if (player->IsLocallyControlled())
-						{
-							ps->ServerSetExp(this->ExpVal);
-						}
-					}
+					CheckFlagType(this, ps, player);
 					//GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("PointName %s"), ((*PointName.ToString()))));
 				}
+			}
+		}
+	}
+}
+
+void ABattleMobaCTF::CheckFlagType(ABattleMobaCTF* currFlag, class ABattleMobaPlayerState* currPs, class ABattleMobaCharacter* currPlayer)
+{
+	if (currFlag->FlagType == EFlagType::Base || currFlag->FlagType == EFlagType::Major)
+	{
+		currPs->Honor += currFlag->HonorVal;
+		if (currFlag->FlagType == EFlagType::Major)
+		{
+			if (currPlayer->IsLocallyControlled())
+			{
+				currPs->ServerSetExp(currFlag->ExpVal);
+			}
+		}
+	}
+	else if (currFlag->FlagType == EFlagType::Minor)
+	{
+		if (currFlag->FlagPerks == EPerksType::Honor)
+		{
+			currPs->Honor += currFlag->HonorVal;
+		}
+		else if (currFlag->FlagPerks == EPerksType::Experience)
+		{
+			if (currPlayer->IsLocallyControlled())
+			{
+				currPs->ServerSetExp(currFlag->ExpVal);
 			}
 		}
 	}

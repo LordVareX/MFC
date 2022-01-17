@@ -122,9 +122,6 @@ protected:
 
 	//virtual FString InitNewPlayer(APlayerController* NewPlayerController, const FUniqueNetIdRepl& UniqueId, const FString& Options, const FString& Portal) override;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-		class UDataTable* RewardTable;
-
 	UFUNCTION()
 		void StartClock();
 

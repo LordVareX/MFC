@@ -29,7 +29,6 @@ void ABattleMobaPlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty
 	DOREPLIFETIME(ABattleMobaPlayerState, CharMesh);
 	DOREPLIFETIME(ABattleMobaPlayerState, bTeamB);
 	DOREPLIFETIME(ABattleMobaPlayerState, TeamRef);
-	DOREPLIFETIME(ABattleMobaPlayerState, ChiOrbs);
 	DOREPLIFETIME(ABattleMobaPlayerState, RespawnTimeCounter);
 	DOREPLIFETIME(ABattleMobaPlayerState, InitRespawnTime);
 	DOREPLIFETIME(ABattleMobaPlayerState, RespawnHandle);
@@ -44,9 +43,14 @@ void ABattleMobaPlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty
 	DOREPLIFETIME(ABattleMobaPlayerState, SkillComponent);
 }
 
+void ABattleMobaPlayerState::OnRep_InitTimer()
+{
+
+}
+
 void ABattleMobaPlayerState::OnRep_Timer()
 {
-	this->DisplayRespawnTime(RespawnTimeCounter);
+	this->DisplayRespawnTime((int)InitRespawnTime);
 }
 
 bool ABattleMobaPlayerState::MulticastTimerCount_Validate(int32 val)
@@ -97,7 +101,7 @@ void ABattleMobaPlayerState::RespawnTimerCount_Implementation(ABattleMobaPlayerS
 	if (ps->RespawnTimeCounter <= 0)
 	{
 		this->GetWorldTimerManager().ClearTimer(RespawnHandle);
-		ps->RespawnTimeCounter = ps->InitRespawnTime;
+		ps->RespawnTimeCounter = (int)ps->InitRespawnTime;
 		MulticastTimerCount(ps->RespawnTimeCounter);
 	}
 	else if (ps->RespawnTimeCounter > 0)
@@ -191,7 +195,10 @@ void ABattleMobaPlayerState::AddExp(int EXPoint, int& OutLevel)
 					Defense = UInputLibrary::ChangeValueByPercentage(Defense, Row->DefIncrementPercent, true);
 					BaseDamagePercent = Row->DmgIncrementPercent;
 					RespawnTimeCounter = Row->RespawnTime;
+					OnRep_Timer();
+
 					InitRespawnTime = RespawnTimeCounter;
+					OnRep_InitTimer();
 
 					/*Row->SkillUnlock;*/
 

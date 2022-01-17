@@ -22,10 +22,6 @@ class BATTLEMOBA_API ABattleMobaPlayerState : public APlayerState, public IBattl
 
 protected:
 
-	//Respawntime
-	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadWrite, Category = "Respawn")
-		float InitRespawnTime = 0.0f;
-
 	/////////////Levelling Up and Experience Point///////////////////////
 	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadWrite, Category = "EXP")
 		int Exp = 0;
@@ -108,11 +104,14 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Respawn")
 		FTransform SpawnTransform;
 
-	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadWrite, Category = "Item")
-		int ChiOrbs = 0;
+	//Respawntime
+	UPROPERTY(VisibleAnywhere, ReplicatedUsing = OnRep_InitTimer, BlueprintReadWrite, Category = "Respawn")
+		float InitRespawnTime = 0.0f;
+	UFUNCTION()
+		void OnRep_InitTimer();
 
 	UPROPERTY(VisibleAnywhere, ReplicatedUsing = OnRep_Timer, BlueprintReadWrite, Category = "Item")
-		int RespawnTimeCounter = 0;
+		int RespawnTimeCounter = 30;
 	UFUNCTION()
 		void OnRep_Timer();
 

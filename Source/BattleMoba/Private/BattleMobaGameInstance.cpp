@@ -64,6 +64,22 @@ void UBattleMobaGameInstance::SetCognitoTokens(FString NewAccessToken, FString N
 	GetWorld()->GetTimerManager().SetTimer(RetrieveNewTokensHandle, this, &UBattleMobaGameInstance::RetrieveNewTokens, 1.0f, false, 3300.0f);
 }
 
+FRewards* UBattleMobaGameInstance::GetRewardsData(FName& rowName, int rowIndex)
+{
+	if (RewardTable != nullptr)
+	{
+		GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Red, FString::Printf(TEXT("Array length : %d"), ((RewardTable->GetRowNames().Num()))));
+
+		if (RewardTable->GetRowNames().IsValidIndex(0) && RewardTable->GetRowNames().IsValidIndex(rowIndex))
+		{
+			rowName = RewardTable->GetRowNames()[rowIndex];
+			FRewards* row = RewardTable->FindRow<FRewards>(rowName, FString());
+			return row;
+		}
+	}
+	return nullptr;
+}
+
 void UBattleMobaGameInstance::RetrieveNewTokens() {
 	if (AccessToken.Len() > 0 && RefreshToken.Len() > 0) {
 		TSharedPtr<FJsonObject> RequestObj = MakeShareable(new FJsonObject);
