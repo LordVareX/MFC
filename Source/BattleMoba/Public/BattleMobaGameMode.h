@@ -114,7 +114,8 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Map")
 		FString MapName;
 
-
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+		class UDataTable* RewardTable;
 
 protected:
 
@@ -185,6 +186,9 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = "Score")
 		void PlayerKilled(ABattleMobaPlayerState* victim, ABattleMobaPlayerState* killer, TArray<ABattleMobaPlayerState*> assist);
+
+	//Get row from Rewards datatable
+	FRewards* GetRewardsData(FName& rowName, int rowIndex);
 
 	virtual void PostLogin(APlayerController* NewPlayer) override;
 

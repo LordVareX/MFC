@@ -17,7 +17,7 @@ class BATTLEMOBA_API ABattleMobaGameState : public AGameStateBase
 
 	//Replicated Network setup
 	void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
-	
+
 public:
 	UPROPERTY(Replicated)
 		FString LatestEvent;
@@ -101,10 +101,10 @@ public:
 	//UFUNCTION(BlueprintImplementableEvent, Category = "Damage")
 	//	void DisplayRespawnTime();
 
+public:
+
 	//Change local tower progressbar color
 	UFUNCTION()
 		void SetTowerWidgetColors(ABattleMobaCTF* cf);
-
-
 };
 

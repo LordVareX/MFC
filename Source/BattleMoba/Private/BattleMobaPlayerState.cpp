@@ -7,6 +7,8 @@
 #include "InputLibrary.h"
 #include "BattleMobaCharacter.h"
 #include "BattleMobaInterface.h"
+#include "BattleMobaGameState.h"
+#include "BattleMobaGameMode.h"
 
 void ABattleMobaPlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {

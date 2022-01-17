@@ -1027,126 +1027,78 @@ void ABattleMobaGameMode::PickAWinningTeam() {
 //#endif
 //}
 
+FRewards* ABattleMobaGameMode::GetRewardsData(FName& rowName, int rowIndex)
+{
+	if (RewardTable != nullptr)
+	{
+		GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Red, FString::Printf(TEXT("Array length : %d"), ((RewardTable->GetRowNames().Num()))));
+
+		if (RewardTable->GetRowNames().IsValidIndex(0) && RewardTable->GetRowNames().IsValidIndex(rowIndex))
+		{
+			rowName = RewardTable->GetRowNames()[rowIndex];
+			FRewards* row = RewardTable->FindRow<FRewards>(rowName, FString());
+			return row;
+		}
+	}
+	return nullptr;
+}
+
 void ABattleMobaGameMode::PlayerKilled(ABattleMobaPlayerState* victim, ABattleMobaPlayerState* killer, TArray<ABattleMobaPlayerState*> assist)
 {
-	//if (assist.IsValidIndex(0))
-	//{
-	//	for (int32 i = 0; i < assist.Num() - 1; i++)
-	//	{
-	//		if (assist[i] != assist.Last())
-	//		{
-	//			assist[i]->Assist += 1;
-	//			GState->Assist = assist[i]->Assist;
-
-	//			/*int exp;
-	//			int honor;*/
-
-	//			//Get victim level
-	//			//if (UInputLibrary::CalculateRewards(HonorKill, assist.Num(), row, rowName, honor, exp))
-	//			//{
-	//			//	//add honor value
-	//			//	assist[i]->Honor += honor;
-	//			//	//Set assist experience point
-	//			//	assist[i]->ClientSetExp(exp);
-	//			//}
-	//		}
-	//	}
-	//}
-	//if (killer != victim)
-	//{
-	//	victim->Death += 1;
-	//	GState->Death += 1;
-	//	killer->Kill += 1;
-	//	GState->Kill += 1;
-
-	//	/*int exp;
-	//	int honor;*/
-
-	//	//Get victim level
-	//	//if (UInputLibrary::CalculateRewards(HonorKill, assist.Num(), row, rowName, honor, exp))
-	//	//{
-	//	//	//add honor value
-	//	//	killer->Honor += honor;
-	//	//	//Set kill experience point
-	//	//	killer->ClientSetExp(row->ExpKills);
-	//	//}
-	//	if (killer->TeamName == "Radiant")
-	//	{
-	//		GState->TeamKillA += 1;
-	//	}
-	//	else if (killer->TeamName == "Dire")
-	//	{
-	//		GState->TeamKillB += 1;
-	//	}
-	//	/*if (GState->TeamA.Contains(killer->GetPlayerName()))
-	//	{
-	//		GState->TeamKillA += 1;
-	//	}
-	//	else
-	//		GState->TeamKillB += 1;*/
-	//}
-	UBattleMobaGameInstance* GI = Cast<UBattleMobaGameInstance>(UGameplayStatics::GetGameInstance(this));
-	if (GI)
+	FName rowName = RewardTable->GetRowNames()[victim->Level];
+	FRewards* row = RewardTable->FindRow<FRewards>(rowName, FString());
+	if (row)
 	{
-		FName rowName;
-		FRewards* row = GI->GetRewardsData(rowName, victim->Level - 1);
-		if (row)
+		GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Orange, FString::Printf(TEXT("ROW FOUND")));
+
+		if (assist.IsValidIndex(0))
 		{
-			if (assist.IsValidIndex(0))
+			for (int32 i = 0; i < assist.Num() - 1; i++)
 			{
-				for (int32 i = 0; i < assist.Num() - 1; i++)
+				if (assist[i] != assist.Last())
 				{
-					if (assist[i] != assist.Last())
+					assist[i]->Assist += 1;
+					GState->Assist = assist[i]->Assist;
+
+					int exp;
+					int honor;
+
+					//Get victim level
+					if (UInputLibrary::CalculateRewards(HonorKill, assist.Num(), row, rowName, honor, exp))
 					{
-						assist[i]->Assist += 1;
-						GState->Assist = assist[i]->Assist;
-
-						int exp;
-						int honor;
-
-						//Get victim level
-						if (UInputLibrary::CalculateRewards(HonorKill, assist.Num(), row, rowName, honor, exp))
-						{
-							//add honor value
-							assist[i]->Honor += honor;
-							//Set assist experience point
-							assist[i]->ClientSetExp(exp);
-						}
+						//add honor value
+						assist[i]->Honor += honor;
+						//Set assist experience point
+						assist[i]->ClientSetExp(exp);
 					}
 				}
 			}
-			if (killer != victim)
+		}
+		if (killer != victim)
+		{
+			victim->Death += 1;
+			GState->Death += 1;
+			killer->Kill += 1;
+			GState->Kill += 1;
+
+			int exp;
+			int honor;
+
+			//Get victim level
+			if (UInputLibrary::CalculateRewards(HonorKill, assist.Num(), row, rowName, honor, exp))
 			{
-				victim->Death += 1;
-				GState->Death += 1;
-				killer->Kill += 1;
-				GState->Kill += 1;
-
-				int exp;
-				int honor;
-
-				//Get victim level
-				if (UInputLibrary::CalculateRewards(HonorKill, assist.Num(), row, rowName, honor, exp))
-				{
-					//add honor value
-					killer->Honor += honor;
-					//Set kill experience point
-					killer->ClientSetExp(row->ExpKills);
-				}
-				if (killer->TeamName == "Radiant")
-				{
-					GState->TeamKillA += 1;
-				}
-				else if (killer->TeamName == "Dire")
-				{
-					GState->TeamKillB += 1;
-				}
-				/*if (GState->TeamA.Contains(killer->GetPlayerName()))
-				{
-					GState->TeamKillA += 1;
-				}
-				else
-					GState->TeamKillB += 1;*/
+				//add honor value
+				killer->Honor += honor;
+				//Set kill experience point
+				killer->ClientSetExp(row->ExpKills);
+			}
+			if (killer->TeamName == "Radiant")
+			{
+				GState->TeamKillA += 1;
+			}
+			else if (killer->TeamName == "Dire")
+			{
+				GState->TeamKillB += 1;
 			}
 		}
 	}

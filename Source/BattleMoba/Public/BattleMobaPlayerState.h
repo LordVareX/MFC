@@ -181,4 +181,6 @@ public:
 	UFUNCTION(Reliable, NetMulticast, WithValidation, Category = "Exp")
 		void ClientSetRespawnTime(float time);
 	//////////////////////////////////////////////////////////////////
+
+	void SetKDAOnDeath(ABattleMobaPlayerState* victim, ABattleMobaPlayerState* killer, TArray<ABattleMobaPlayerState*> assist);
 };
