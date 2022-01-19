@@ -405,7 +405,6 @@ void ABattleMobaCharacter::BeginPlay()
 {
 	Super::BeginPlay();
 	RefreshPlayerData();
-	
 }
 
 float ABattleMobaCharacter::TakeDamage(float Damage, FDamageEvent const & DamageEvent, AController* EventInstigator, AActor* DamageCauser)
@@ -1184,7 +1183,7 @@ void ABattleMobaCharacter::GetButtonSkillAction(FKey Currkeys, FString ButtonNam
 	{
 		if (IsUpgradingSkill)
 		{
-			if (MainWidget->GetClass()->ImplementsInterface(UBattleMobaInterface::StaticClass()))
+			if (MainWidget != nullptr && MainWidget->GetClass()->ImplementsInterface(UBattleMobaInterface::StaticClass()))
 			{
 				GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("Pass through interface!")));
 				Cast<IBattleMobaInterface>(MainWidget)->Execute_LookUp(MainWidget, Currkeys.ToString());
@@ -1272,7 +1271,7 @@ void ABattleMobaCharacter::GetButtonSkillAction(FKey Currkeys, FString ButtonNam
 
 															}
 															//Calls widget for display purposes
-															if (MainWidget->GetClass()->ImplementsInterface(UBattleMobaInterface::StaticClass()))
+															if (MainWidget != nullptr && MainWidget->GetClass()->ImplementsInterface(UBattleMobaInterface::StaticClass()))
 															{
 																GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("Pass through lookup interface!")));
 																Cast<IBattleMobaInterface>(MainWidget)->Execute_CheckStringWithFloat(MainWidget, row->ButtonName, CooldownVal, cooldown);
@@ -1322,7 +1321,7 @@ void ABattleMobaCharacter::GetButtonSkillAction(FKey Currkeys, FString ButtonNam
 																	CooldownVal = row->CDDuration;
 
 																	//Calls widget for display purposes
-																	if (MainWidget->GetClass()->ImplementsInterface(UBattleMobaInterface::StaticClass()))
+																	if (MainWidget != nullptr && MainWidget->GetClass()->ImplementsInterface(UBattleMobaInterface::StaticClass()))
 																	{
 																		GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("Pass through lookup interface!")));
 																		Cast<IBattleMobaInterface>(MainWidget)->Execute_CheckStringWithFloat(MainWidget, row->ButtonName, CooldownVal, cooldown);
@@ -1925,6 +1924,11 @@ void ABattleMobaCharacter::SetupStats_Implementation()
 	ABattleMobaPlayerState* PS = Cast<ABattleMobaPlayerState>(GetPlayerState());
 	if (PS)
 	{
+		ABattleMobaPC* pc = Cast<ABattleMobaPC>(UGameplayStatics::GetPlayerController(this, 0));
+		if (pc->MainWidget)
+		{
+			MainWidget = pc->MainWidget;
+		}
 		SetupBaseStats(PS->MaxHealth, PS->Defense);
 		CharMesh = PS->CharMesh;
 		ActionTable = PS->ActionTable;

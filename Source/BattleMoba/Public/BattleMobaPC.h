@@ -47,6 +47,10 @@ public:
 	UFUNCTION(Reliable, Client, WithValidation, Category = "Respawn")
 		void SetupPawnAttribute();
 
+	//Widget holder
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "HUD", Meta = (ExposeOnSpawn = "true"))
+		UUserWidget* MainWidget = nullptr;
+
 protected:
 
 	//spectator pi

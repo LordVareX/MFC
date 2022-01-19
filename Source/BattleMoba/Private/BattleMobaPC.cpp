@@ -41,6 +41,8 @@ void ABattleMobaPC::SetupPawnAttribute_Implementation()
 	ABattleMobaCharacter* pawn = Cast<ABattleMobaCharacter>(GetPawn());
 	if (pawn)
 	{
+		/*pawn->MainWidget = MainWidget;*/
+		pawn->EnableInput(this);
 		pawn->RefreshPlayerData();
 	}
 }

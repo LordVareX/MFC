@@ -227,6 +227,9 @@ protected:
 	//SwipeToRotate
 	bool StartRotate = false;
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "HUD", Meta = (ExposeOnSpawn = "true"))
+		UUserWidget* MainWidget = nullptr;
+
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Status")
 		bool InitRotateToggle = false;
 
@@ -294,9 +297,6 @@ protected:
 
 	//TimerHandle for removing damage dealer array
 	FTimerHandle DealerTimer;
-
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "HUD", Meta = (ExposeOnSpawn = "true"))
-		UUserWidget* MainWidget;
 
 	UPROPERTY(EditAnywhere, Replicated, BlueprintReadWrite, Category = "Status")
 		bool IsHit;

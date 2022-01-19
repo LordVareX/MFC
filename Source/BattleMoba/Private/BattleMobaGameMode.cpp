@@ -1122,8 +1122,9 @@ void ABattleMobaGameMode::RespawnRequested_Implementation(APlayerController* pla
 			}
 			ABattleMobaPlayerState* PS = Cast<ABattleMobaPlayerState>(playerController->PlayerState);
 			{
+				ABattleMobaPC* pc = Cast<ABattleMobaPC>(playerController);
 				//Spawn actor
-				if (SpawnedActor)
+				if (SpawnedActor && pc)
 				{
 					//Spawn actor from SpawnedActor subclass
 					ABattleMobaCharacter* pawn = GetWorld()->SpawnActorDeferred<ABattleMobaCharacter>(SpawnedActor, SpawnTransform, nullptr, nullptr, ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn);
@@ -1140,14 +1141,9 @@ void ABattleMobaGameMode::RespawnRequested_Implementation(APlayerController* pla
 					//possess and set new rotation for newly spawned pawn
 					playerController->Possess(pawn);
 					playerController->ClientSetRotation(pawn->GetActorRotation());
-
-					ABattleMobaPC* pc = Cast<ABattleMobaPC>(playerController);
-					if (pc)
-					{
-						pc->SetupPawnAttribute();
-						pc->bShowMouseCursor = false;
-						pc->SetInputMode(FInputModeGameAndUI());
-					}
+					pc->SetupPawnAttribute();
+					/*playerController->bShowMouseCursor = false;
+					playerController->GetPawn()->EnableInput(playerController);*/
 				}
 			}
 		}

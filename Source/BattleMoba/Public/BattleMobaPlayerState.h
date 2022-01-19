@@ -9,6 +9,7 @@
 #include "BattleMobaPlayerState.generated.h"
 
 class USkeletalMesh;
+class ABattleMobaCharacter;
 //class UAnimMontage;
 /**
  *
