@@ -113,6 +113,11 @@ void ABattleMobaPlayerState::RespawnTimerCount_Implementation(ABattleMobaPlayerS
 	}
 }
 
+bool ABattleMobaPlayerState::CheckKeyInMap(FString str, bool checkValCount, int maxVal)
+{
+	return UInputLibrary::CheckKeyInTMap(&Skills, str, checkValCount, maxVal);
+}
+
 void ABattleMobaPlayerState::AddToMap(FString str)
 {
 	Skills = *UInputLibrary::AddToTMap(&Skills, str);

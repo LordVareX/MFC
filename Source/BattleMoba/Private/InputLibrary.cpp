@@ -383,23 +383,50 @@ UBattleMobaSkillComponent* UInputLibrary::AddComponentByClass(TSubclassOf<UBattl
 	return nullptr;
 }
 
-TMap<FString, int>* UInputLibrary::AddToTMap(TMap<FString, int>* Items, FString key)
+TMap<FString, int32>* UInputLibrary::AddToTMap(TMap<FString, int32>* Items, FString key)
 {
 	if (Items->Contains(key))
 	{
-		int32 val = *Items->Find(key) + 1;
-		Items->Add(key, val);
+		int32 val = *Items->Find(key);
+		Items->Remove(key);
+		Items->Add(key, val+1);
+		for (const TPair<FString, int32>& pair : *Items)
+		{
+			GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("Key : %s, Value : %d"), *pair.Key, pair.Value));
+			/*pair.Key;
+			pair.Value;*/
+		}
 	}
 	else
-		Items->Add(key, 1);
-
-	for (const TPair<FString, int>& pair : *Items)
 	{
-		GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("Key : %s, Value : %f"), *pair.Key, pair.Value));
-		/*pair.Key;
-		pair.Value;*/
+		int32 val = 1;
+		Items->Add(key, val);
+		for (const TPair<FString, int32>& pair : *Items)
+		{
+			GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Red, FString::Printf(TEXT("Key : %s, Value : %d"), *pair.Key, pair.Value));
+			/*pair.Key;
+			pair.Value;*/
+		}
 	}
 	return Items;
+}
+
+bool UInputLibrary::CheckKeyInTMap(TMap<FString, int32>* Items, FString key, bool checkValCount, int maxVal)
+{
+	if (Items->Contains(key))
+	{
+		if (checkValCount)
+		{
+			int32 val = *Items->Find(key);
+			if (val < maxVal)
+			{
+				return true;
+			}
+		}
+		else
+			return true;
+	}
+	return false;
 }
 
 bool UInputLibrary::CalculateRewards(int OriginalHonor, int PlayersCount, FRewards* row, FName RowName, int& HonorVal, int& ExpOut)

@@ -67,11 +67,11 @@ enum class EResult : uint8
 UENUM(BlueprintType)
 enum class ESkills : uint8
 {
-	None,
-	Skill1,
-	Skill2,
-	Ultimate,
-	AuraElement
+	None			UMETA(DisplayName = "None"),
+	Skill1			UMETA(DisplayName = "Skill1"),
+	Skill2			UMETA(DisplayName = "Skill2"),
+	Ultimate		UMETA(DisplayName = "Ultimate"),
+	AuraElement		UMETA(DisplayName = "AuraElement")
 };
 
 USTRUCT(BlueprintType)
@@ -265,7 +265,10 @@ public:
 		static UBattleMobaSkillComponent* AddComponentByClass(TSubclassOf<UBattleMobaSkillComponent> Class, AActor* Outer);
 
 	//UFUNCTION(BlueprintPure, Category = "Sorting Functions")
-		static TMap<FString, int>* AddToTMap(TMap<FString, int>* Items, FString key);
+		static TMap<FString, int32>* AddToTMap(TMap<FString, int32>* Items, FString key);
+
+	/*UFUNCTION(BlueprintPure, Category = "Sorting Functions")*/
+		static bool CheckKeyInTMap(TMap<FString, int32>* Items, FString key, bool checkValCount, int maxVal);
 
 	//Calculate player rewards
 		static bool CalculateRewards(int OriginalHonor, int PlayersCount, FRewards* row, FName RowName, int& HonorVal, int& ExpOut);

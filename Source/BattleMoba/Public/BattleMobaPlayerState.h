@@ -30,7 +30,7 @@ protected:
 		int ExpNeeded = 0;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "UnlockedSkill")
-		TMap<FString, int> Skills;
+		TMap<FString, int32> Skills;
 	/////////////////////////////////////////////////////////////////////
 
 public:
@@ -141,8 +141,12 @@ public:
 
 protected:
 
+	//TMap
 	UFUNCTION(BlueprintCallable)
 		void AddToMap(FString str);
+
+	UFUNCTION(BlueprintCallable)//checvalcount opt for need to current value from max value needed for a key
+		bool CheckKeyInMap(FString str, bool checkValCount, int maxVal);
 
 public:
 

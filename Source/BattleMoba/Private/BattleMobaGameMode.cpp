@@ -1027,21 +1027,21 @@ void ABattleMobaGameMode::PickAWinningTeam() {
 //#endif
 //}
 
-FRewards* ABattleMobaGameMode::GetRewardsData(FName& rowName, int rowIndex)
-{
-	if (RewardTable != nullptr)
-	{
-		GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Red, FString::Printf(TEXT("Array length : %d"), ((RewardTable->GetRowNames().Num()))));
-
-		if (RewardTable->GetRowNames().IsValidIndex(0) && RewardTable->GetRowNames().IsValidIndex(rowIndex))
-		{
-			rowName = RewardTable->GetRowNames()[rowIndex];
-			FRewards* row = RewardTable->FindRow<FRewards>(rowName, FString());
-			return row;
-		}
-	}
-	return nullptr;
-}
+//FRewards* ABattleMobaGameMode::GetRewardsData(FName& rowName, int rowIndex)
+//{
+//	if (RewardTable != nullptr)
+//	{
+//		GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Red, FString::Printf(TEXT("Array length : %d"), ((RewardTable->GetRowNames().Num()))));
+//
+//		if (RewardTable->GetRowNames().IsValidIndex(0) && RewardTable->GetRowNames().IsValidIndex(rowIndex))
+//		{
+//			rowName = RewardTable->GetRowNames()[rowIndex];
+//			FRewards* row = RewardTable->FindRow<FRewards>(rowName, FString());
+//			return row;
+//		}
+//	}
+//	return nullptr;
+//}
 
 void ABattleMobaGameMode::PlayerKilled(ABattleMobaPlayerState* victim, ABattleMobaPlayerState* killer, TArray<ABattleMobaPlayerState*> assist)
 {
