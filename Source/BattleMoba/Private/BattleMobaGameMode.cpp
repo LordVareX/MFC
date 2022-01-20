@@ -527,7 +527,7 @@ void ABattleMobaGameMode::PostLogin(APlayerController* NewPlayer)
 					//}
 				}
 			}
-			if (Players.Num() >= 2)
+			if (Players.Num() >= 8)
 			{
 				GetWorldTimerManager().SetTimer(LobbyClockTimer, this, &ABattleMobaGameMode::StartLobbyClock, 1.0f, true);
 				UpdateLobby();
