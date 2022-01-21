@@ -174,7 +174,7 @@ public:
 	UFUNCTION(BlueprintCallable, Reliable, Server, WithValidation, Category = "Exp")
 		void ServerSetExp(int EXPoint);
 
-	UFUNCTION(Reliable, Client, WithValidation, Category = "Exp")
+	UFUNCTION(Reliable, NetMulticast, WithValidation, Category = "Exp")
 		void ClientSetExp(int EXPoint);
 
 	UFUNCTION(BlueprintCallable)

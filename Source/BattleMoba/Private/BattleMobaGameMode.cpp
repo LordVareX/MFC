@@ -1045,7 +1045,7 @@ void ABattleMobaGameMode::PickAWinningTeam() {
 
 void ABattleMobaGameMode::PlayerKilled(ABattleMobaPlayerState* victim, ABattleMobaPlayerState* killer, TArray<ABattleMobaPlayerState*> assist)
 {
-	FName rowName = RewardTable->GetRowNames()[victim->Level];
+	FName rowName = RewardTable->GetRowNames()[victim->Level-1];
 	FRewards* row = RewardTable->FindRow<FRewards>(rowName, FString());
 	if (row)
 	{
