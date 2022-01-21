@@ -507,6 +507,7 @@ void ABattleMobaGameMode::PostLogin(APlayerController* NewPlayer)
 						SpawnBasedOnTeam("Dire", CharSelections[CharIndex]);
 						
 					}
+					UpdateLobby();
 					//Random unique number for character mesh array
 					//if (Chars.Num() > 0)
 					//{
@@ -530,7 +531,7 @@ void ABattleMobaGameMode::PostLogin(APlayerController* NewPlayer)
 			if (Players.Num() >= 8)
 			{
 				GetWorldTimerManager().SetTimer(LobbyClockTimer, this, &ABattleMobaGameMode::StartLobbyClock, 1.0f, true);
-				UpdateLobby();
+				//UpdateLobby();
 			}
 		}
 	}
