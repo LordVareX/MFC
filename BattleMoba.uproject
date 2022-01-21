@@ -32,9 +32,14 @@
 			"Enabled": true
 		},
 		{
-			"Name": "GameLiftSDK",
+			"Name": "BlueprintJson",
 			"Enabled": true,
-			"MarketplaceURL": "com.epicgames.launcher://ue/marketplace/content/361e3eed7f2d4862a0cb7c8f042e613b"
+			"MarketplaceURL": "com.epicgames.launcher://ue/marketplace/content/f837e4835fbc434a853fe1ead2410b84"
+		},
+		{
+			"Name": "CognitoDynamoDBGameLiftLambdaSDK",
+			"Enabled": true,
+			"MarketplaceURL": "com.epicgames.launcher://ue/marketplace/content/eee4bef24c9d429887ddcc107a5a9b4d"
 		}
 	]
 }

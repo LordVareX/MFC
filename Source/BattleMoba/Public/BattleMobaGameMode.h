@@ -198,6 +198,9 @@ public:
 	UFUNCTION(BlueprintImplementableEvent, Category = "Players")
 		void UpdateLobby();
 
+	UFUNCTION(BlueprintImplementableEvent, Category = "Players")
+		void MatchResult();
+
 private:
 
 	//Initial honor val per kill
