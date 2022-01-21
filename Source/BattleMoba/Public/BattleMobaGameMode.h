@@ -198,7 +198,7 @@ public:
 	UFUNCTION(BlueprintImplementableEvent, Category = "Players")
 		void UpdateLobby();
 
-	UFUNCTION(BlueprintImplementableEvent, Category = "Players")
+	UFUNCTION(BlueprintImplementableEvent, Category = "Server")
 		void MatchResult();
 
 private:
