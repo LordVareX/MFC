@@ -2559,13 +2559,13 @@ void ABattleMobaCharacter::ActivatePure(float a, float b)
 	if (this->IsLocallyControlled())
 	{
 		this->ServerSetupBaseStats(a, b);
-		if (MainWidget != nullptr && MainWidget->GetClass()->ImplementsInterface(UBattleMobaInterface::StaticClass()))
-		{
-			//Opens level up windows
-			Cast<IBattleMobaInterface>(MainWidget)->Execute_CheckBool(MainWidget, true);
-		}
-		UE_LOG(LogTemp, Warning, TEXT("Pure"));
 	}
+	if (MainWidget != nullptr && MainWidget->GetClass()->ImplementsInterface(UBattleMobaInterface::StaticClass()))
+	{
+		//Opens level up windows
+		Cast<IBattleMobaInterface>(MainWidget)->Execute_CheckBool(MainWidget, true);
+	}
+	UE_LOG(LogTemp, Warning, TEXT("Pure"));
 }
 
 void ABattleMobaCharacter::CheckBool_Implementation(bool check)
