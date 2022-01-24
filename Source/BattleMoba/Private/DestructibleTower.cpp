@@ -7,6 +7,7 @@
 #include "Components/WidgetComponent.h"
 #include "Blueprint/WidgetTree.h"
 #include "Components/TextBlock.h"
+#include "Components/ProgressBar.h"
 #include "Components/StaticMeshComponent.h"
 #include "Materials/MaterialInstanceDynamic.h"
 #include "Materials/MaterialInterface.h"
@@ -77,11 +78,19 @@ void ADestructibleTower::OnRep_UpdateHealth()
 		const FName hptext = FName(TEXT("HealthText"));
 		UTextBlock* HealthText = (UTextBlock*)(W_DisplayHealth->WidgetTree->FindWidget(hptext));
 
+		const FName hpbar = FName(TEXT("HPBar"));
+		UProgressBar* PBar = (UProgressBar*)(W_DisplayHealth->WidgetTree->FindWidget(hpbar));
+
 		if (HealthText)
 		{
 			FString TheFloatStr = FString::SanitizeFloat(this->CurrentHealth);
 
 			HealthText->SetText(FText::FromString(TheFloatStr));
+
+			if (PBar)
+			{
+				PBar->SetPercent(FMath::Clamp(this->CurrentHealth / this->MaxHealth, 0.0f, 1.0f));
+			}
 		}
 	}
 }
