@@ -83,7 +83,7 @@ void ADestructibleTower::OnRep_UpdateHealth()
 
 		if (HealthText)
 		{
-			FString TheFloatStr = FString::SanitizeFloat(this->CurrentHealth);
+			FString TheFloatStr = FString::FromInt((int)this->CurrentHealth);
 
 			HealthText->SetText(FText::FromString(TheFloatStr));
 
