@@ -468,6 +468,24 @@ void ABattleMobaGameMode::EndRecord() {
 #endif
 }
 
+FItem ABattleMobaGameMode::FindItem_Implementation(FName ItemID, bool& IsSuccess)
+{
+	IsSuccess = false;
+
+	FItem Item;
+
+	if (ItemDatabase == nullptr)
+	{
+		return Item;
+	}
+	if (ItemDatabase->Data.Contains(ItemID))
+	{
+		IsSuccess = true;
+		return *ItemDatabase->Data.Find(ItemID);
+	}
+	return Item;
+}
+
 void ABattleMobaGameMode::PostLogin(APlayerController* NewPlayer)
 {
 	Super::PostLogin(NewPlayer);

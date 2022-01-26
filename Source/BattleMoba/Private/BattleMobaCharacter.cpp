@@ -931,7 +931,7 @@ void ABattleMobaCharacter::HitReactionClient_Implementation(AActor* HitActor, fl
 					FTimerHandle handle;
 					FTimerDelegate TimerDelegate;
 
-					ABattleMobaGameMode* gm = Cast<ABattleMobaGameMode>(UGameplayStatics::GetGameMode(this));
+					ABattleMobaGameMode* gm = Cast<ABattleMobaGameMode>(GetWorld()->GetAuthGameMode());
 
 					//Set player's death count
 					ABattleMobaPlayerState* ps = Cast<ABattleMobaPlayerState>(this->GetPlayerState());

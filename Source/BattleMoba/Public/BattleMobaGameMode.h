@@ -1,6 +1,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "InputLibrary.h"
 #include "GameLiftServerSDK.h"
 #include "GameFramework/GameModeBase.h"
 #include "Net/UnrealNetwork.h"
@@ -114,8 +115,11 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Map")
 		FString MapName;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 		class UDataTable* RewardTable;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Item System")
+		class UItemData* ItemDatabase;
 
 protected:
 
@@ -200,6 +204,13 @@ public:
 
 	UFUNCTION(BlueprintImplementableEvent, Category = "Server")
 		void MatchResult();
+
+///////////////////////////////////////////inventory/////////////////////////////////////////////
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Item System")
+		FItem FindItem(FName ItemID, bool& IsSuccess);
+
+	FItem FindItem_Implementation(FName ItemID, bool& IsSuccess);
+/////////////////////////////////////////////////////////////////////////////////////////////////
 
 private:
 

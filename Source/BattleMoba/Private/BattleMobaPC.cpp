@@ -13,6 +13,7 @@
 #include "BattleMobaPlayerState.h"
 #include "BattleMobaGameState.h"
 #include "BattleMobaCharacter.h"
+#include "ItemInterface.h"
 
 ABattleMobaPC::ABattleMobaPC()
 {
@@ -31,6 +32,77 @@ void ABattleMobaPC::BeginPlay()
 	Super::BeginPlay();
 }
 
+void ABattleMobaPC::AddItem(FName ItemID)
+{
+	if (EquipmentArtifacts.Contains(ItemID))
+	{
+		FItem item = *EquipmentArtifacts.Find(ItemID);
+		item.Quantity += 1;
+		
+		EquipmentArtifacts.Remove(ItemID);
+		EquipmentArtifacts.Add(ItemID, item);
+
+		UE_LOG(LogTemp, Warning, TEXT("[Player:AddItem] picked %s - Quantity: %d "), *ItemID.ToString(), item.Quantity);
+
+		OnRefreshInventory();
+		return;
+	}
+	if (EquipmentArtifacts.Num() == TotalEquipmentSlots)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("[Player:AddItem] Equipment Full: %d/%d "), EquipmentArtifacts.Num()/TotalEquipmentSlots);
+		return;
+	}
+
+	//Find the item in the table on the game mode to get the information
+	GM = Cast<ABattleMobaGameMode>(GetWorld()->GetAuthGameMode());
+	if (GM != nullptr)
+	{
+		bool Found = false;
+		FItem ItemFound = GM->FindItem(ItemID, Found);
+
+		if (Found)
+		{
+			FItem NewItem;
+			NewItem.ItemID = ItemID;
+			NewItem.Name = ItemFound.Name;
+			NewItem.Description = ItemFound.Description;
+			NewItem.Quantity = 1;
+			NewItem.IsActive = ItemFound.IsActive;
+			NewItem.ItemIcon = ItemFound.ItemIcon;
+			NewItem.ItemEffects = ItemFound.ItemEffects;
+			
+			EquipmentArtifacts.Add(NewItem.ItemID, NewItem);
+		}
+	}
+	OnRefreshInventory();
+}
+
+void ABattleMobaPC::RemoveItem(FName ItemID, bool RemovedFromInventory)
+{
+	if (EquipmentArtifacts.Contains(ItemID))
+	{
+		EquipmentArtifacts.Remove(ItemID);
+		OnRefreshInventory();
+		RemovedFromInventory = true;
+		return;
+	}
+}
+
+bool ABattleMobaPC::HasFreeInventorySlots()
+{
+	return (EquipmentArtifacts.Num() < TotalEquipmentSlots);
+}
+
+FName ABattleMobaPC::GetName()
+{
+	return FName();
+}
+
+void ABattleMobaPC::OnInteract_Implementation()
+{
+
+}
+
 bool ABattleMobaPC::SetupPawnAttribute_Validate()
 {
 	return true;
@@ -45,6 +117,14 @@ void ABattleMobaPC::SetupPawnAttribute_Implementation()
 		pawn->EnableInput(this);
 		pawn->RefreshPlayerData();
 	}
+}
+
+void ABattleMobaPC::Action()
+{
+	/*if (Character != nullptr)
+	{
+		Character->Execute_Item();
+	}*/
 }
 
 int32 ABattleMobaPC::CheckIndexValidity(int32 index, TArray<ABattleMobaPC*> PlayerList, EFormula SwitchMode)
@@ -158,7 +238,7 @@ void ABattleMobaPC::SetupSpectator_Implementation(EFormula SwitchMode)
 {
 	if (this->GetPawn() == nullptr) // make sure no owning pawn present before spectating
 	{
-		GM = Cast<ABattleMobaGameMode>(UGameplayStatics::GetGameMode(this));
+		GM = Cast<ABattleMobaGameMode>(GetWorld()->GetAuthGameMode());
 		if (GM)
 		{
 			SpectateNextPlayer(GM->Players, SwitchMode);
@@ -173,8 +253,8 @@ bool ABattleMobaPC::RespawnPawn_Validate(FTransform SpawnTransform)
 
 void ABattleMobaPC::RespawnPawn_Implementation(FTransform SpawnTransform)
 {
-	ABattleMobaGameMode* thisGameMode = Cast<ABattleMobaGameMode>(UGameplayStatics::GetGameMode(this));
-	if (thisGameMode)
+	GM = Cast<ABattleMobaGameMode>(GetWorld()->GetAuthGameMode());
+	if (GM)
 	{
 		//Destroy pawn before respawning
 		if (this->GetPawn())
@@ -186,14 +266,14 @@ void ABattleMobaPC::RespawnPawn_Implementation(FTransform SpawnTransform)
 		FTimerDelegate TimerDelegate;
 
 		//set view target
-		TimerDelegate.BindLambda([this, thisGameMode]()
+		TimerDelegate.BindLambda([this]()
 		{
 			//Assigned initial spectator player before swapping to active pawn player to spectate
-			currentPlayer = thisGameMode->Players.Find(this);
-			CurrSpectator = thisGameMode->Players[currentPlayer];
+			currentPlayer = GM->Players.Find(this);
+			CurrSpectator = GM->Players[currentPlayer];
 			CurrSpectator->SpectPI = this->pi;
 
-			this->SpectateNextPlayer(thisGameMode->Players, EFormula::Addition);
+			this->SpectateNextPlayer(GM->Players, EFormula::Addition);
 
 			//Setup spectator controller that currently spectating this player to switch to another player
 			ABattleMobaPC* newPC = Cast<ABattleMobaPC>(UGameplayStatics::GetPlayerController(GetWorld(), CurrSpectator->SpectPI));
@@ -201,11 +281,11 @@ void ABattleMobaPC::RespawnPawn_Implementation(FTransform SpawnTransform)
 			{
 				if (newPC->GetPawn() == nullptr)
 				{
-					newPC->currentPlayer = thisGameMode->Players.Find(newPC);
-					newPC->CurrSpectator = thisGameMode->Players[currentPlayer];
+					newPC->currentPlayer = GM->Players.Find(newPC);
+					newPC->CurrSpectator = GM->Players[currentPlayer];
 					newPC->CurrSpectator->SpectPI = newPC->pi;
 
-					newPC->SpectateNextPlayer(thisGameMode->Players, EFormula::Addition);
+					newPC->SpectateNextPlayer(GM->Players, EFormula::Addition);
 				}
 			}
 
@@ -222,10 +302,10 @@ void ABattleMobaPC::RespawnPawn_Implementation(FTransform SpawnTransform)
 		FTimerDelegate TimerDelegate1;
 
 		//Possess a pawn
-		TimerDelegate1.BindLambda([this, thisGameMode, thisstate]()
+		TimerDelegate1.BindLambda([this, thisstate]()
 		{
 			PlayerCameraManager->BlendTimeToGo = 0.0f;
-			thisGameMode->RespawnRequested(this, thisstate->SpawnTransform);
+			GM->RespawnRequested(this, thisstate->SpawnTransform);
 		});
 		this->GetWorldTimerManager().SetTimer(handle1, TimerDelegate1, temp, false);
 	}
