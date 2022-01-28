@@ -211,7 +211,9 @@ void UMainMenuWidget::OnGetPlayerDataResponseReceived(FHttpRequestPtr Request, F
 				GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Blue, FString::Printf(TEXT("ID : %s"), *IdRef));
 
 				if (Username == "null") {
+					WebBrowser->SetVisibility(ESlateVisibility::Hidden);
 					NameCanvasPanel->SetVisibility(ESlateVisibility::Visible);
+					GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Blue, FString::Printf(TEXT("Username : %s"), *Username));
 				}
 				else {
 					UsernameCheck = true;
@@ -493,6 +495,15 @@ void UMainMenuWidget::OnCreateNameButtonClicked() {
 	RequestObj->SetStringField("IdRef", IdRef);
 	RequestObj->SetStringField("UsernameRef", UsernameRef);
 
+	UGameInstance* GameInstance = GetGameInstance();
+	if (GameInstance != nullptr) {
+		UBattleMobaGameInstance* BattleMobaGameInstance = Cast<UBattleMobaGameInstance>(GameInstance);
+		if (BattleMobaGameInstance != nullptr) {
+			BattleMobaGameInstance->PlayerId = IdRef;
+			BattleMobaGameInstance->Username = UsernameRef;
+		}
+	}
+
 	FString RequestBody;
 	TSharedRef<TJsonWriter<>> Writer = TJsonWriterFactory<>::Create(&RequestBody);
 	if (FJsonSerializer::Serialize(RequestObj.ToSharedRef(), Writer)) {
@@ -528,15 +539,15 @@ void UMainMenuWidget::OnCreateNameButtonClickedResponseReceived(FHttpRequestPtr 
 					KillTextBlock->SetText(FText::FromString("Total Kill: " + Kill));
 					DeathTextBlock->SetText(FText::FromString("Total Death: " + Death));
 					AssistTextBlock->SetText(FText::FromString("Total Assist: " + Assist));
-					UsernameTextBlock->SetText(FText::FromString(Username));
-					UsernameRef = Username;
+					UsernameTextBlock->SetText(FText::FromString(UsernameRef));
+					//UsernameRef = Username;
 					/*APlayerState* OwningPlayerState = GetOwningPlayerState();
 					if (OwningPlayerState != nullptr) {
 						PNTextBlock->SetText(FText::FromString(OwningPlayerState->GetPlayerName()));
 					}*/
 
 					WebBrowser->SetVisibility(ESlateVisibility::Hidden);
-					//MatchmakingButton->SetVisibility(ESlateVisibility::Visible);
+					MatchmakingButton->SetVisibility(ESlateVisibility::Visible);
 					WinsTextBlock->SetVisibility(ESlateVisibility::Visible);
 					LossesTextBlock->SetVisibility(ESlateVisibility::Visible);
 					PingTextBlock->SetVisibility(ESlateVisibility::Visible);
@@ -546,14 +557,14 @@ void UMainMenuWidget::OnCreateNameButtonClickedResponseReceived(FHttpRequestPtr 
 					//MatchmakingEventTextBlock->SetVisibility(ESlateVisibility::Visible);
 					UsernameTextBlock->SetVisibility(ESlateVisibility::Visible);
 
-					UGameInstance* GameInstance = GetGameInstance();
+					/*UGameInstance* GameInstance = GetGameInstance();
 					if (GameInstance != nullptr) {
 						UBattleMobaGameInstance* BattleMobaGameInstance = Cast<UBattleMobaGameInstance>(GameInstance);
 						if (BattleMobaGameInstance != nullptr) {
 							BattleMobaGameInstance->PlayerId = Id;
 							BattleMobaGameInstance->Username = Username;
 						}
-					}
+					}*/
 					//PNTextBlock->SetVisibility(ESlateVisibility::Visible);
 				}
 			}
