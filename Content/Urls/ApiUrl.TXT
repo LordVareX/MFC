@@ -1,1 +1,1 @@
-https://1mtaei3swg.execute-api.ap-northeast-2.amazonaws.com/test
+https://iehzjrd485.execute-api.ap-southeast-1.amazonaws.com/development/
