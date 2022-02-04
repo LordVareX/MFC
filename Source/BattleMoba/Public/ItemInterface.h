@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "UObject/Interface.h"
+#include "InputLibrary.h"
 #include "ItemInterface.generated.h"
 
 // This class does not need to be modified.
@@ -24,7 +25,10 @@ class BATTLEMOBA_API IItemInterface
 public:
 
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Interface")
-		void OnInteract();
+		void OnInteract(const FName& ItemName);
+
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Interface")
+		void OnGetValue(class APlayerController* pc, const FItem& ItemValue);
 
 	UFUNCTION()
 		virtual FName GetName() = 0;

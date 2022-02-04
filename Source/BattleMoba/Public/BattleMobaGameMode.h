@@ -185,6 +185,9 @@ public:
 
 	//virtual AActor* ChoosePlayerStart_Implementation(AController* Player) override;
 
+	UFUNCTION(Reliable, Server, WithValidation, Category = "ArtifactShop")
+		void PopulateShopItem(ABattleMobaPC* pc);
+
 	UFUNCTION(Reliable, Server, WithValidation, Category = "Respawn")
 		void RespawnRequested(APlayerController* playerController, FTransform SpawnTransform);
 

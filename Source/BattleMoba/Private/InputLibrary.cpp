@@ -186,7 +186,13 @@ void UInputLibrary::SetUIVisibility(UWidgetComponent* widget, AActor* FromActor)
 			}
 			else
 			{
-				widget->SetVisibility(true);
+				float dist = (start - End).Size();
+				if (dist < 1000.0f)
+				{
+					widget->SetVisibility(true);
+				}
+				else
+					widget->SetVisibility(false);
 			}
 
 			//if (FromActor->GetWorld()->LineTraceSingleByChannel(Hit, start, End, ECC_Visibility, CollisionParams) && (Hit.Distance > 100.0f))

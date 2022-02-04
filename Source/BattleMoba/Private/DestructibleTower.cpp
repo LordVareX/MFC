@@ -155,14 +155,14 @@ void ADestructibleTower::BeginPlay()
 
 	W_DisplayHealth = Cast<UUserWidget>(W_Health->GetUserWidgetObject());
 
-	GameState = Cast<ABattleMobaGameState>(UGameplayStatics::GetGameState(this));
+	GameState = Cast<ABattleMobaGameState>(GetWorld()->GetGameState());
 
-	GameMode = Cast<ABattleMobaGameMode>(UGameplayStatics::GetGameMode(this));
+	GameMode = Cast<ABattleMobaGameMode>(GetWorld()->GetAuthGameMode());
 
-	if (GameState)
+	/*if (GameState)
 	{
 		GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Blue, FString::Printf(TEXT("GameState is %s"), *GameState->GetName()));
-	}
+	}*/
 	
 	/*auto Material = TowerMesh->GetMaterial(0);
 	DynamicMaterial = UMaterialInstanceDynamic::Create(Material, NULL);

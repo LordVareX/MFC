@@ -6,6 +6,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "Net/UnrealNetwork.h"
 #include "Camera/PlayerCameraManager.h"
+#include "Blueprint/UserWidget.h"
 
 //BattleMoba
 #include "InputLibrary.h"
@@ -98,7 +99,12 @@ FName ABattleMobaPC::GetName()
 	return FName();
 }
 
-void ABattleMobaPC::OnInteract_Implementation()
+void ABattleMobaPC::OnGetValue_Implementation(APlayerController* pc, const FItem& ItemValue)
+{
+
+}
+
+void ABattleMobaPC::OnInteract_Implementation(const FName& ItemName)
 {
 
 }
@@ -125,6 +131,33 @@ void ABattleMobaPC::Action()
 	{
 		Character->Execute_Item();
 	}*/
+}
+
+bool ABattleMobaPC::RequestArtifactShops_Validate()
+{
+	return true;
+}
+
+void ABattleMobaPC::RequestArtifactShops_Implementation()
+{
+	ABattleMobaGameMode* gamemode = Cast<ABattleMobaGameMode>(GetWorld()->GetAuthGameMode());
+	if (gamemode)
+	{
+		gamemode->PopulateShopItem(this);
+	}
+}
+
+bool ABattleMobaPC::RetrieveArtifactItem_Validate(const FItem& ItemValue)
+{
+	return true;
+}
+
+void ABattleMobaPC::RetrieveArtifactItem_Implementation(const FItem& ItemValue)
+{
+	if (this->GetClass()->ImplementsInterface(UItemInterface::StaticClass()))
+	{
+		Cast<IItemInterface>(this)->Execute_OnGetValue(this, this, ItemValue);//set exist bool in player character to true
+	}
 }
 
 int32 ABattleMobaPC::CheckIndexValidity(int32 index, TArray<ABattleMobaPC*> PlayerList, EFormula SwitchMode)

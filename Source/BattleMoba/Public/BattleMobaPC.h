@@ -47,14 +47,24 @@ public:
 
 	//interface
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Interface")
-		void OnInteract();
+		void OnInteract(const FName& ItemName);
+
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Interface")
+		void OnGetValue(APlayerController* pc, const FItem& ItemValue);
 
 	//Actual implementation of the Interact event
-	void OnInteract_Implementation();
+	void OnGetValue_Implementation(APlayerController* pc, const FItem& ItemValue);
+	void OnInteract_Implementation(const FName& ItemName);
 	virtual FName GetName() override;
 
 	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable, Category = "Events")
 		void OnRefreshInventory();
+
+	UFUNCTION(BlueprintCallable, Reliable, Server, WithValidation)
+		void RequestArtifactShops();
+
+	UFUNCTION(BlueprintCallable, Reliable, Client, WithValidation)
+		void RetrieveArtifactItem(const FItem& ItemValue);
 
 //////////////////////////////////////////////////////////////////////////////////////
 
@@ -94,7 +104,7 @@ protected:
 		int32 SpectPI;
 
 	UFUNCTION(BlueprintPure, Category = "Increment")
-		static int32 CheckIndexValidity(int32 index, TArray<ABattleMobaPC*> PlayerList, EFormula SwitchMode);
+	static int32 CheckIndexValidity(int32 index, TArray<ABattleMobaPC*> PlayerList, EFormula SwitchMode);
 
 	UFUNCTION(BlueprintCallable, Reliable, Client, WithValidation, Category = "InputMode")
 		void ClientSetInputMode();

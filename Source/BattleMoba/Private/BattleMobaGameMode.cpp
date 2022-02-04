@@ -3,6 +3,7 @@
 #include "BattleMobaGameMode.h"
 #include "Engine.h"
 #include "EngineUtils.h"
+#include "Blueprint/UserWidget.h"
 #include "UObject/ConstructorHelpers.h"
 #include "GameFramework/PlayerStart.h"
 #include "Net/UnrealNetwork.h"
@@ -19,6 +20,7 @@
 #include "BattleMobaPlayerState.h"
 #include "BattleMobaGameState.h"
 #include "BattleMobaHUD.h"
+#include "BattleMobaInterface.h"
 #include "BattleMobaPC.h"
 #include "InputLibrary.h"
 #include "BattleMobaGameInstance.h"
@@ -1061,6 +1063,24 @@ void ABattleMobaGameMode::PickAWinningTeam() {
 //	}
 //	return nullptr;
 //}
+bool ABattleMobaGameMode::PopulateShopItem_Validate(ABattleMobaPC* pc)
+{
+	return true;
+}
+
+void ABattleMobaGameMode::PopulateShopItem_Implementation(ABattleMobaPC* pc)
+{
+	if (pc->GetClass()->ImplementsInterface(UItemInterface::StaticClass()))
+	{
+		for (const TPair<FName, FItem>& pair : ItemDatabase->Data)
+		{
+			GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("Key : %s"), *pair.Key.ToString()));
+			pc->RetrieveArtifactItem(pair.Value);
+			/*pair.Key;
+			pair.Value;*/
+		}
+	}
+}
 
 void ABattleMobaGameMode::PlayerKilled(ABattleMobaPlayerState* victim, ABattleMobaPlayerState* killer, TArray<ABattleMobaPlayerState*> assist)
 {
@@ -1087,6 +1107,11 @@ void ABattleMobaGameMode::PlayerKilled(ABattleMobaPlayerState* victim, ABattleMo
 					{
 						//add honor value
 						assist[i]->Honor += honor;
+						if (assist[i]->GetPawn() != nullptr && assist[i]->GetPawn()->GetClass()->ImplementsInterface(UBattleMobaInterface::StaticClass()))
+						{
+							//Opens level up windows
+							Cast<IBattleMobaInterface>(assist[i]->GetPawn())->Execute_OnActivate(assist[i]->GetPawn(), assist[i]->Username, victim->Username, honor);
+						}
 						//Set assist experience point
 						assist[i]->ClientSetExp(exp);
 					}
@@ -1108,6 +1133,11 @@ void ABattleMobaGameMode::PlayerKilled(ABattleMobaPlayerState* victim, ABattleMo
 			{
 				//add honor value
 				killer->Honor += honor;
+				if (killer->GetPawn() != nullptr && killer->GetPawn()->GetClass()->ImplementsInterface(UBattleMobaInterface::StaticClass()))
+				{
+					//Opens level up windows
+					Cast<IBattleMobaInterface>(killer->GetPawn())->Execute_OnActivate(killer->GetPawn(), killer->Username, victim->Username, honor);
+				}
 				//Set kill experience point
 				killer->ClientSetExp(row->ExpKills);
 			}
