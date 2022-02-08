@@ -364,7 +364,7 @@ protected:
 	UPROPERTY(VisibleAnywhere, Replicated, Category = "ActionSkill")
 		bool OnComboDelay = false;
 
-	UPROPERTY(VisibleAnywhere, Replicated, Category = "ActionSkill")
+	UPROPERTY(VisibleAnywhere, Category = "ActionSkill")
 		int slumberCount = 0;
 
 	//*********************Knockout and Respawn***********************************//
@@ -385,6 +385,9 @@ protected:
 
 	UPROPERTY(Replicated, VisibleAnywhere, Category = "Rotate")
 		class AActor* closestActor;
+
+	UPROPERTY(Replicated, VisibleAnywhere, Category = "Rotate")
+		class AActor* closestActorTemp;
 
 	UPROPERTY(Replicated, VisibleAnywhere, Category = "Rotate")
 		class ABattleMobaCharacter* RotateToActor;
@@ -561,6 +564,9 @@ protected:
 
 	UFUNCTION(Reliable, NetMulticast, WithValidation)
 		void MulticastEnableMovement(bool allowMove);
+
+	UFUNCTION(NetMulticast, Reliable, WithValidation, Category = "ActionSkill")
+		void MulticastCountSlumberFist();
 
 public:
 
