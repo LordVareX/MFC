@@ -17,7 +17,7 @@ class IBattleMobaInterface
 public:
 
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Interface")
-		void OnActivate();
+		void OnActivate(const FString& Killer, const FString& Pawned, int TotalHonor);
 
 	UFUNCTION()
 		virtual void ActivatePure(float a, float b) = 0;

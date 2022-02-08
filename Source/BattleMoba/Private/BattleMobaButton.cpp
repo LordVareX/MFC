@@ -16,7 +16,7 @@ UBattleMobaButton::UBattleMobaButton()
 void UBattleMobaButton::OnPress()
 {
 	//load.Broadcast(this->GetName());
-	LoadSkillFile(this->GetName());
+	LoadButtonName(this->GetName());
 	GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Blue, FString::Printf(TEXT("%s"), *this->GetName()));
 }
 

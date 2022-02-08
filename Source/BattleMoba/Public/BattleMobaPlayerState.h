@@ -122,7 +122,7 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 		class UDataTable* ActionTable;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 		class UDataTable* LevelTable;
 
 	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadWrite, Category = "HitReaction")

@@ -5,6 +5,8 @@
 #include "CoreMinimal.h"
 #include "GameFramework/PlayerController.h"
 #include "Net/UnrealNetwork.h"
+#include "InputLibrary.h"
+#include "ItemInterface.h"
 #include "BattleMobaPC.generated.h"
 
 class ABattleMobaGameMode;
@@ -12,7 +14,7 @@ class ABattleMobaGameMode;
  *
  */
 UCLASS()
-class BATTLEMOBA_API ABattleMobaPC : public APlayerController
+class BATTLEMOBA_API ABattleMobaPC : public APlayerController, public IItemInterface
 {
 	GENERATED_BODY()
 
@@ -21,9 +23,50 @@ class BATTLEMOBA_API ABattleMobaPC : public APlayerController
 	//Replicated Network setup
 	void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
+protected:
+
+	//Equipment artifacts on UI
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Artifacts")
+		TMap<FName, FItem> EquipmentArtifacts;
+
+	//Max slots
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Artifacts")
+		int32 TotalEquipmentSlots = 4;
+
 public:
 
 	virtual void BeginPlay() override;
+
+///////////////////////////////Artifacts Interaction//////////////////////////////////// 
+
+	void AddItem(FName ItemID);
+
+	void RemoveItem(FName ItemID, bool RemovedFromInventory);
+
+	bool HasFreeInventorySlots();
+
+	//interface
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Interface")
+		void OnInteract(const FName& ItemName);
+
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Interface")
+		void OnGetValue(APlayerController* pc, const FItem& ItemValue);
+
+	//Actual implementation of the Interact event
+	void OnGetValue_Implementation(APlayerController* pc, const FItem& ItemValue);
+	void OnInteract_Implementation(const FName& ItemName);
+	virtual FName GetName() override;
+
+	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable, Category = "Events")
+		void OnRefreshInventory();
+
+	UFUNCTION(BlueprintCallable, Reliable, Server, WithValidation)
+		void RequestArtifactShops();
+
+	UFUNCTION(BlueprintCallable, Reliable, Client, WithValidation)
+		void RetrieveArtifactItem(const FItem& ItemValue);
+
+//////////////////////////////////////////////////////////////////////////////////////
 
 	UPROPERTY()
 		ABattleMobaGameMode* GM;
@@ -53,12 +96,15 @@ public:
 
 protected:
 
+	UFUNCTION()
+		void Action();
+
 	//spectator pi
 	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadWrite, Category = "SpectID")
 		int32 SpectPI;
 
 	UFUNCTION(BlueprintPure, Category = "Increment")
-		static int32 CheckIndexValidity(int32 index, TArray<ABattleMobaPC*> PlayerList, EFormula SwitchMode);
+	static int32 CheckIndexValidity(int32 index, TArray<ABattleMobaPC*> PlayerList, EFormula SwitchMode);
 
 	UFUNCTION(BlueprintCallable, Reliable, Client, WithValidation, Category = "InputMode")
 		void ClientSetInputMode();

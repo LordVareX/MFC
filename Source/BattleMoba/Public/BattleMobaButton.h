@@ -28,6 +28,6 @@ public:
 	void OnPress();
 
 	UFUNCTION(BlueprintImplementableEvent, Category = "ActionSkill")
-	void LoadSkillFile(const FString &name);
+	void LoadButtonName(const FString &name);
 	//virtual void LoadSkillFile_Implementation(const FString &name);
 };

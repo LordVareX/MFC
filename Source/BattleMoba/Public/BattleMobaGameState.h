@@ -25,7 +25,7 @@ public:
 	UPROPERTY(Replicated)
 		FString CountdownTimer;
 
-	UPROPERTY(Replicated)
+	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadWrite)
 		FString WinningTeam;
 
 	UPROPERTY(Replicated)
@@ -34,7 +34,7 @@ public:
 	UPROPERTY(Replicated)
 		TArray<FString> ArrayPlayerID;
 
-	UPROPERTY()
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
 		FString GameSessionID;
 
 	//--------------------Teams setup-------------------------//
