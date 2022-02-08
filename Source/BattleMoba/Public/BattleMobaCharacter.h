@@ -364,6 +364,9 @@ protected:
 	UPROPERTY(VisibleAnywhere, Replicated, Category = "ActionSkill")
 		bool OnComboDelay = false;
 
+	UPROPERTY(VisibleAnywhere, Replicated, Category = "ActionSkill")
+		int slumberCount = 0;
+
 	//*********************Knockout and Respawn***********************************//
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Respawn")
 		FTimerHandle RespawnTimer;
@@ -495,6 +498,9 @@ protected:
 	//Skill replicate on all client
 	UFUNCTION(Reliable, NetMulticast, WithValidation, Category = "ActionSkill")
 		void MulticastExecuteAction(FActionSkill SelectedRow, FName MontageSection, bool bSpecialAttack);
+
+	UFUNCTION(Reliable, Server, WithValidation, BlueprintCallable, Category = "HitReaction")
+		void CheckDamage(UParticleSystem* ImpactEffect, FName AttachTo, USoundBase* HitSound);
 
 	UFUNCTION(Reliable, Server, WithValidation, Category = "ActionSkill")
 		void ServerLaunchChar(FVector LaunchVelocity, bool bXYOverride, bool bZOverride);

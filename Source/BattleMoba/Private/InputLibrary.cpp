@@ -77,7 +77,7 @@ float UInputLibrary::ChangeValueByPercentage(float OriginalVal, float Percent, b
 	}
 	else
 		OriginalVal -= val;
-	GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("Total original value = %f"), OriginalVal));
+	//GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("Total original value = %f"), OriginalVal));
 	return OriginalVal;
 }
 
@@ -392,7 +392,7 @@ TMap<FString, int32>* UInputLibrary::AddToTMap(TMap<FString, int32>* Items, FStr
 		Items->Add(key, val+1);
 		for (const TPair<FString, int32>& pair : *Items)
 		{
-			GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("Key : %s, Value : %d"), *pair.Key, pair.Value));
+			//GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("Key : %s, Value : %d"), *pair.Key, pair.Value));
 			/*pair.Key;
 			pair.Value;*/
 		}
@@ -403,7 +403,7 @@ TMap<FString, int32>* UInputLibrary::AddToTMap(TMap<FString, int32>* Items, FStr
 		Items->Add(key, val);
 		for (const TPair<FString, int32>& pair : *Items)
 		{
-			GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Red, FString::Printf(TEXT("Key : %s, Value : %d"), *pair.Key, pair.Value));
+			//GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Red, FString::Printf(TEXT("Key : %s, Value : %d"), *pair.Key, pair.Value));
 			/*pair.Key;
 			pair.Value;*/
 		}
