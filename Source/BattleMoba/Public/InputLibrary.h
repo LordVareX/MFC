@@ -74,6 +74,46 @@ enum class ESkills : uint8
 	AuraElement		UMETA(DisplayName = "AuraElement")
 };
 
+
+//Items//
+USTRUCT(BlueprintType)
+struct FItem :public FTableRowBase
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Item")
+		FName ItemID;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Item")
+		FText Name;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Item")
+		FText Description;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Item")
+		UTexture2D* ItemIcon;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Item")
+		int32 Quantity;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Item")
+		bool IsActive = false;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Item")
+		TSubclassOf<UBattleMobaSkillComponent> ItemEffects;
+};
+
+UCLASS(BlueprintType)
+class UItemData : public UDataAsset
+{
+	GENERATED_BODY()
+
+public:
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "ItemData")
+		TMap<FName, FItem> Data;
+};
+
 USTRUCT(BlueprintType)
 struct FLevelAttributes :public FTableRowBase
 {
@@ -92,13 +132,13 @@ struct FLevelAttributes :public FTableRowBase
 		TArray<ESkills> SkillUnlock;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Exp")
-		float HPIncrementPercent = 0;
+		float HPIncrementPercent = 0.f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Exp")
 		float DmgIncrementPercent = 4.0f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Exp")
-		float DefIncrementPercent = 0;
+		float DefIncrementPercent = 0.f;
 };
 
 USTRUCT(BlueprintType)
