@@ -77,7 +77,7 @@ void ABattleMobaCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>&
 	DOREPLIFETIME(ABattleMobaCharacter, RightHitMoveset);
 	DOREPLIFETIME(ABattleMobaCharacter, LeftHitMoveset);
 	DOREPLIFETIME(ABattleMobaCharacter, SkillComp);
-	DOREPLIFETIME(ABattleMobaCharacter, slumberCount);
+	DOREPLIFETIME(ABattleMobaCharacter, closestActorTemp);
 }
 
 ABattleMobaCharacter::ABattleMobaCharacter()
@@ -1545,8 +1545,7 @@ void ABattleMobaCharacter::DetectNearestTarget_Implementation(EResult Type, FAct
 						Distance1 = closestActor->GetDistanceTo(this);
 						Distance2 = Hit.Actor->GetDistanceTo(this);
 
-						AActor* tempPC;
-						tempPC = closestActor;
+						
 
 						if (Distance1 < Distance2)
 						{
@@ -1554,9 +1553,9 @@ void ABattleMobaCharacter::DetectNearestTarget_Implementation(EResult Type, FAct
 							if (ps->CurrentStyle == 0)
 							{
 								//		checks if the closest Actor is the same as last one
-								if (closestActor == tempPC)
+								if (closestActor == closestActorTemp)
 								{
-									GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, FString::Printf(TEXT("Slumber Count: %lld"), slumberCount));
+									GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Yellow, FString::Printf(TEXT("Slumber Count: %lld"), slumberCount));
 
 									if (slumberCount == 1)
 									{
@@ -1580,6 +1579,7 @@ void ABattleMobaCharacter::DetectNearestTarget_Implementation(EResult Type, FAct
 
 								else
 								{
+									GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Yellow, FString::Printf(TEXT("This is a different closestActor")));
 									pc->comboInterval = 1.0f;
 								}
 							}
@@ -2181,6 +2181,8 @@ void ABattleMobaCharacter::CheckDamage_Implementation(UParticleSystem * ImpactEf
 		}
 
 		PlayEffectsClient(ImpactEffect, AttachTo, HitSound);
+
+		closestActorTemp = closestActor;
 		closestActor = nullptr;
 	}
 
@@ -2626,6 +2628,16 @@ void ABattleMobaCharacter::MulticastEnableMovement_Implementation(bool allowMove
 			this->AnimInsta->CanMove = allowMove;
 		}
 	}
+}
+
+bool ABattleMobaCharacter::MulticastCountSlumberFist_Validate()
+{
+	return true;
+}
+
+void ABattleMobaCharacter::MulticastCountSlumberFist_Implementation()
+{
+
 }
 
 void ABattleMobaCharacter::Activate_Implementation()
