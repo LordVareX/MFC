@@ -26,6 +26,9 @@ public:
 		void LookUp(const FString& str);
 
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Interface")
+		void LookUpObject(const AActor* obj);
+
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Interface")
 		void CheckBool(bool check);
 
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Interface")

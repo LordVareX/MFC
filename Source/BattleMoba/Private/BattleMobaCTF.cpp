@@ -29,6 +29,9 @@ void ABattleMobaCTF::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLi
 	DOREPLIFETIME(ABattleMobaCTF, isCompleted);
 	DOREPLIFETIME(ABattleMobaCTF, GoldTimer);
 	DOREPLIFETIME(ABattleMobaCTF, ActivePlayer);
+	DOREPLIFETIME(ABattleMobaCTF, valRadiant);
+	DOREPLIFETIME(ABattleMobaCTF, valDire);
+	DOREPLIFETIME(ABattleMobaCTF, GiveGoldActors);
 }
 
 // Sets default values
