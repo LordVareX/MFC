@@ -117,7 +117,7 @@ void ADestructibleTower::OnRep_Destroy()
 		{
 			GameState->Winner = "Radiant";
 		}
-		GameMode->EndRecord();
+		GameMode->MatchResult();
 	}
 	
 	

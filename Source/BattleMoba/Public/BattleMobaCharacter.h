@@ -339,11 +339,20 @@ protected:
 	UPROPERTY(EditAnywhere, Replicated, BlueprintReadWrite, Category = "Status")
 		bool IsHit;
 
-	UPROPERTY(EditDefaultsOnly, Replicated, Category = "HitReaction")
+	UPROPERTY(VisibleAnywhere, Replicated, Category = "HitReaction")
 		bool IsStunned = false;
 
 	UPROPERTY(EditDefaultsOnly, Replicated, Category = "HitReaction")
 		bool OnSpecialAttack = false;
+
+	UPROPERTY(VisibleAnywhere, Replicated, Category = "HitReaction")
+		bool IsImmuned = false;
+
+	UPROPERTY(VisibleAnywhere, Replicated, Category = "HitReaction")
+		float ImmunityDur = 0.0f;
+
+	UPROPERTY(VisibleAnywhere, Replicated, Category = "ActionSkill")
+		FName ActionSkillName = "";
 
 	UPROPERTY(EditAnywhere, Replicated, BlueprintReadWrite, Category = "Anim")
 		bool InRagdoll;
@@ -425,7 +434,7 @@ protected:
 		class AActor* closestActor;
 
 	UPROPERTY(Replicated, VisibleAnywhere, Category = "Rotate")
-		class AActor* closestActorTemp;
+		class AActor* damagedActor;
 
 	UPROPERTY(Replicated, VisibleAnywhere, Category = "Rotate")
 		class ABattleMobaCharacter* RotateToActor;
@@ -598,13 +607,26 @@ protected:
 		void CombatCamShake();
 
 	UFUNCTION(Reliable, Server, WithValidation)
-		void ServerEnableMovement(bool allowMove);
+		void ServerEnableMovement(ABattleMobaCharacter* player, bool allowMove);
 
 	UFUNCTION(Reliable, NetMulticast, WithValidation)
-		void MulticastEnableMovement(bool allowMove);
+		void MulticastEnableMovement(ABattleMobaCharacter* player, bool allowMove);
+
+	UFUNCTION(Reliable, Server, WithValidation)
+		void ServerToggleStun(ABattleMobaCharacter* player, bool bStun);
+
+	UFUNCTION(Reliable, NetMulticast, WithValidation)
+		void MulticastToggleStun(ABattleMobaCharacter* player, bool bStun);
 
 	UFUNCTION(NetMulticast, Reliable, WithValidation, Category = "ActionSkill")
-		void MulticastCountSlumberFist();
+		void MulticastSetComboInterval(float val);
+
+	UFUNCTION(Reliable, Server, WithValidation)
+		void ServerToggleImmunity(ABattleMobaCharacter* player, bool bImmune);
+
+	UFUNCTION(Reliable, NetMulticast, WithValidation)
+		void MulticastToggleImmunity(ABattleMobaCharacter* player, bool bImmune);
+
 
 public:
 
