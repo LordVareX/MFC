@@ -84,6 +84,7 @@
 
 class ABattleMobaCharacter;
 class ABattleMobaGameState;
+class ABattleMobaPlayerState;
 
 UCLASS(minimalapi)
 class ABattleMobaGameMode : public AGameModeBase
@@ -97,6 +98,9 @@ protected:
 
 	UPROPERTY(BlueprintReadWrite, Category = "Game State")
 		ABattleMobaGameState* GState;
+
+	UPROPERTY(BlueprintReadWrite, Category = "Game State")
+		ABattleMobaPlayerState* PState;
 
 	/*Blueprint Reference of ThirdPersonCharacter class*/
 	UPROPERTY(EditDefaultsOnly, Category = "ActorSpawning")

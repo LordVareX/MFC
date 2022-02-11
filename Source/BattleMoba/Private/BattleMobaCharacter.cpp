@@ -1956,6 +1956,11 @@ void ABattleMobaCharacter::ControlFlagMulticast_Implementation(ABattleMobaCTF* c
 			{
 				cf->valRadiant = 100.0f;
 				cf->ControllerTeam = "Radiant";
+				if (MainWidget != nullptr && MainWidget->GetClass()->ImplementsInterface(UBattleMobaInterface::StaticClass()))
+				{
+					//GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("Pass through interface!")));
+					Cast<IBattleMobaInterface>(MainWidget)->Execute_LookUpObject(MainWidget, cf);
+				}
 				cf->isCompleted = true;
 			}
 		}
@@ -1985,6 +1990,11 @@ void ABattleMobaCharacter::ControlFlagMulticast_Implementation(ABattleMobaCTF* c
 			{
 				cf->valDire = 100.0f;
 				cf->ControllerTeam = "Dire";
+				if (MainWidget != nullptr && MainWidget->GetClass()->ImplementsInterface(UBattleMobaInterface::StaticClass()))
+				{
+					//GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("Pass through interface!")));
+					Cast<IBattleMobaInterface>(MainWidget)->Execute_LookUpObject(MainWidget, cf);
+				}
 				cf->isCompleted = true;
 			}
 		}

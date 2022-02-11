@@ -368,106 +368,109 @@ void ABattleMobaGameMode::StartClock()
 			{
 				GState->Winner = "Dire";
 			}
-#if WITH_GAMELIFT
-			if (GameState != nullptr) {
-				ABattleMobaGameState* BattleMobaGameState = Cast<ABattleMobaGameState>(GameState);
-				if (BattleMobaGameState != nullptr) {
-					BattleMobaGameState->LatestEvent = "GameEnded";
-					//Stops the timer and check for winners
-					GetWorldTimerManager().ClearTimer(ClockTimer);
-					if (GState->TeamKillA > GState->TeamKillB)
-					{
-						GState->Winner = "Radiant";
-					}
-					else if (GState->TeamKillB > GState->TeamKillA)
-					{
-						GState->Winner = "Dire";
-					}
-					TSharedPtr<FJsonObject> RequestObj = MakeShareable(new FJsonObject);
-					RequestObj->SetStringField("winningTeam", BattleMobaGameState->Winner);
-
-
-					auto GetGameSessionIdOutcome = Aws::GameLift::Server::GetGameSessionId();
-					if (GetGameSessionIdOutcome.IsSuccess()) {
-						RequestObj->SetStringField("gameSessionId", GetGameSessionIdOutcome.GetResult());
-						BattleMobaGameState->GameSessionID = GetGameSessionIdOutcome.GetResult();
-
-						FString RequestBody;
-						TSharedRef<TJsonWriter<>> Writer = TJsonWriterFactory<>::Create(&RequestBody);
-						if (FJsonSerializer::Serialize(RequestObj.ToSharedRef(), Writer)) {
-							TSharedRef<IHttpRequest> RecordMatchResultRequest = HttpModule->CreateRequest();
-							RecordMatchResultRequest->OnProcessRequestComplete().BindUObject(this, &ABattleMobaGameMode::OnRecordMatchResultResponseReceived);
-							RecordMatchResultRequest->SetURL(ApiUrl + "/recordmatchresult");
-							RecordMatchResultRequest->SetVerb("POST");
-							RecordMatchResultRequest->SetHeader("Authorization", ServerPassword);
-							RecordMatchResultRequest->SetHeader("Content-Type", "application/json");
-							RecordMatchResultRequest->SetContentAsString(RequestBody);
-							RecordMatchResultRequest->ProcessRequest();
-						}
-						else {
-							GetWorldTimerManager().SetTimer(EndGameHandle, this, &ABattleMobaGameMode::EndGame, 1.0f, false, 5.0f);
-						}
-					}
-					else {
-						GetWorldTimerManager().SetTimer(EndGameHandle, this, &ABattleMobaGameMode::EndGame, 1.0f, false, 5.0f);
-					}
-				}
-				else {
-					GetWorldTimerManager().SetTimer(EndGameHandle, this, &ABattleMobaGameMode::EndGame, 1.0f, false, 5.0f);
-				}
-			}
-			else {
-				GetWorldTimerManager().SetTimer(EndGameHandle, this, &ABattleMobaGameMode::EndGame, 1.0f, false, 5.0f);
-			}
-#endif
+			MatchResult();
+//#if WITH_GAMELIFT
+//			if (GameState != nullptr) {
+//				ABattleMobaGameState* BattleMobaGameState = Cast<ABattleMobaGameState>(GameState);
+//				if (BattleMobaGameState != nullptr) {
+//					BattleMobaGameState->LatestEvent = "GameEnded";
+//					//Stops the timer and check for winners
+//					GetWorldTimerManager().ClearTimer(ClockTimer);
+//					if (GState->TeamKillA > GState->TeamKillB)
+//					{
+//						GState->Winner = "Radiant";
+//					}
+//					else if (GState->TeamKillB > GState->TeamKillA)
+//					{
+//						GState->Winner = "Dire";
+//					}
+//					TSharedPtr<FJsonObject> RequestObj = MakeShareable(new FJsonObject);
+//					RequestObj->SetStringField("winningTeam", BattleMobaGameState->Winner);
+//
+//
+//					auto GetGameSessionIdOutcome = Aws::GameLift::Server::GetGameSessionId();
+//					if (GetGameSessionIdOutcome.IsSuccess()) {
+//						RequestObj->SetStringField("gameSessionId", GetGameSessionIdOutcome.GetResult());
+//						BattleMobaGameState->GameSessionID = GetGameSessionIdOutcome.GetResult();
+//
+//						FString RequestBody;
+//						TSharedRef<TJsonWriter<>> Writer = TJsonWriterFactory<>::Create(&RequestBody);
+//						if (FJsonSerializer::Serialize(RequestObj.ToSharedRef(), Writer)) {
+//							TSharedRef<IHttpRequest> RecordMatchResultRequest = HttpModule->CreateRequest();
+//							RecordMatchResultRequest->OnProcessRequestComplete().BindUObject(this, &ABattleMobaGameMode::OnRecordMatchResultResponseReceived);
+//							RecordMatchResultRequest->SetURL(ApiUrl + "/recordmatchresult");
+//							RecordMatchResultRequest->SetVerb("POST");
+//							RecordMatchResultRequest->SetHeader("Authorization", ServerPassword);
+//							RecordMatchResultRequest->SetHeader("Content-Type", "application/json");
+//							RecordMatchResultRequest->SetContentAsString(RequestBody);
+//							RecordMatchResultRequest->ProcessRequest();
+//						}
+//						else {
+//							GetWorldTimerManager().SetTimer(EndGameHandle, this, &ABattleMobaGameMode::EndGame, 1.0f, false, 5.0f);
+//						}
+//					}
+//					else {
+//						GetWorldTimerManager().SetTimer(EndGameHandle, this, &ABattleMobaGameMode::EndGame, 1.0f, false, 5.0f);
+//					}
+//				}
+//				else {
+//					GetWorldTimerManager().SetTimer(EndGameHandle, this, &ABattleMobaGameMode::EndGame, 1.0f, false, 5.0f);
+//				}
+//			}
+//			else {
+//				GetWorldTimerManager().SetTimer(EndGameHandle, this, &ABattleMobaGameMode::EndGame, 1.0f, false, 5.0f);
+//			}
+//#endif
 		}
 	}
 
 }
 
 void ABattleMobaGameMode::EndRecord() {
-#if WITH_GAMELIFT
-	if (GameState != nullptr) {
-		ABattleMobaGameState* BattleMobaGameState = Cast<ABattleMobaGameState>(GameState);
-		if (BattleMobaGameState != nullptr) {
+	MatchResult();
+//#if WITH_GAMELIFT
+//	if (GameState != nullptr) {
+//		ABattleMobaGameState* BattleMobaGameState = Cast<ABattleMobaGameState>(GameState);
+//		if (BattleMobaGameState != nullptr) {
+//
+//			TSharedPtr<FJsonObject> RequestObj = MakeShareable(new FJsonObject);
+//			RequestObj->SetStringField("winningTeam", BattleMobaGameState->Winner);
+//
+//
+//			auto GetGameSessionIdOutcome = Aws::GameLift::Server::GetGameSessionId();
+//			if (GetGameSessionIdOutcome.IsSuccess()) {
+//				RequestObj->SetStringField("gameSessionId", GetGameSessionIdOutcome.GetResult());
+//				BattleMobaGameState->GameSessionID = GetGameSessionIdOutcome.GetResult();
+//
+//				FString RequestBody;
+//				TSharedRef<TJsonWriter<>> Writer = TJsonWriterFactory<>::Create(&RequestBody);
+//				if (FJsonSerializer::Serialize(RequestObj.ToSharedRef(), Writer)) {
+//					TSharedRef<IHttpRequest> RecordMatchResultRequest = HttpModule->CreateRequest();
+//					RecordMatchResultRequest->OnProcessRequestComplete().BindUObject(this, &ABattleMobaGameMode::OnRecordMatchResultResponseReceived);
+//					RecordMatchResultRequest->SetURL(ApiUrl + "/recordmatchresult");
+//					RecordMatchResultRequest->SetVerb("POST");
+//					RecordMatchResultRequest->SetHeader("Authorization", ServerPassword);
+//					RecordMatchResultRequest->SetHeader("Content-Type", "application/json");
+//					RecordMatchResultRequest->SetContentAsString(RequestBody);
+//					RecordMatchResultRequest->ProcessRequest();
+//				}
+//				else {
+//					GetWorldTimerManager().SetTimer(EndGameHandle, this, &ABattleMobaGameMode::EndGame, 1.0f, false, 5.0f);
+//				}
+//			}
+//			else {
+//				GetWorldTimerManager().SetTimer(EndGameHandle, this, &ABattleMobaGameMode::EndGame, 1.0f, false, 5.0f);
+//			}
+//		}
+//		else {
+//			GetWorldTimerManager().SetTimer(EndGameHandle, this, &ABattleMobaGameMode::EndGame, 1.0f, false, 5.0f);
+//		}
+//	}
+//	else {
+//		GetWorldTimerManager().SetTimer(EndGameHandle, this, &ABattleMobaGameMode::EndGame, 1.0f, false, 5.0f);
+//	}
+//#endif
 
-			TSharedPtr<FJsonObject> RequestObj = MakeShareable(new FJsonObject);
-			RequestObj->SetStringField("winningTeam", BattleMobaGameState->Winner);
-
-
-			auto GetGameSessionIdOutcome = Aws::GameLift::Server::GetGameSessionId();
-			if (GetGameSessionIdOutcome.IsSuccess()) {
-				RequestObj->SetStringField("gameSessionId", GetGameSessionIdOutcome.GetResult());
-				BattleMobaGameState->GameSessionID = GetGameSessionIdOutcome.GetResult();
-
-				FString RequestBody;
-				TSharedRef<TJsonWriter<>> Writer = TJsonWriterFactory<>::Create(&RequestBody);
-				if (FJsonSerializer::Serialize(RequestObj.ToSharedRef(), Writer)) {
-					TSharedRef<IHttpRequest> RecordMatchResultRequest = HttpModule->CreateRequest();
-					RecordMatchResultRequest->OnProcessRequestComplete().BindUObject(this, &ABattleMobaGameMode::OnRecordMatchResultResponseReceived);
-					RecordMatchResultRequest->SetURL(ApiUrl + "/recordmatchresult");
-					RecordMatchResultRequest->SetVerb("POST");
-					RecordMatchResultRequest->SetHeader("Authorization", ServerPassword);
-					RecordMatchResultRequest->SetHeader("Content-Type", "application/json");
-					RecordMatchResultRequest->SetContentAsString(RequestBody);
-					RecordMatchResultRequest->ProcessRequest();
-				}
-				else {
-					GetWorldTimerManager().SetTimer(EndGameHandle, this, &ABattleMobaGameMode::EndGame, 1.0f, false, 5.0f);
-				}
-			}
-			else {
-				GetWorldTimerManager().SetTimer(EndGameHandle, this, &ABattleMobaGameMode::EndGame, 1.0f, false, 5.0f);
-			}
-		}
-		else {
-			GetWorldTimerManager().SetTimer(EndGameHandle, this, &ABattleMobaGameMode::EndGame, 1.0f, false, 5.0f);
-		}
-	}
-	else {
-		GetWorldTimerManager().SetTimer(EndGameHandle, this, &ABattleMobaGameMode::EndGame, 1.0f, false, 5.0f);
-	}
-#endif
 }
 
 FItem ABattleMobaGameMode::FindItem_Implementation(FName ItemID, bool& IsSuccess)
