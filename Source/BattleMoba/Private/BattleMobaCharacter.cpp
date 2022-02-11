@@ -2237,26 +2237,22 @@ void ABattleMobaCharacter::CheckDamage_Implementation(UParticleSystem * ImpactEf
 {
 	if (IsValid(closestActor))
 	{
-		float damageDistance = closestActor->GetDistanceTo(this);
+		ABattleMobaCharacter* damagedChar = Cast<ABattleMobaCharacter>(closestActor);
+		ADestructibleTower* damagedTower = Cast<ADestructibleTower>(closestActor);
 
-		GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Yellow, FString::Printf(TEXT("Damage Distance: %f"), damageDistance));
-
-		if (damageDistance < 130.0f)
+		if (IsValid(damagedChar))
 		{
-			//        apply damage to closestActor if the damageDistance is valid
+			float distanceToChar = damagedChar->GetDistanceTo(this);
 
+			GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Yellow, FString::Printf(TEXT("Damage Distance: %f"), distanceToChar));
 
-			ABattleMobaCharacter* damagedChar = Cast<ABattleMobaCharacter>(closestActor);
-			ADestructibleTower* damagedTower = Cast<ADestructibleTower>(closestActor);
-
-			//		applying damage to enemy character
-			if (IsValid(damagedChar))
+			if (distanceToChar < 130.0f)
 			{
 				if (damagedChar->GetMesh()->GetAnimInstance()->Montage_IsPlaying(CounterMoveset))
 				{
 					ServerRotateHitActor(damagedChar, this);
 					ServerCounterAttack(damagedChar);
-					
+
 					/*damagedChar->MulticastRotateHitActor(damagedChar, this);
 					damagedChar->MulticastCounterAttack(damagedChar);
 					*/
@@ -2295,13 +2291,20 @@ void ABattleMobaCharacter::CheckDamage_Implementation(UParticleSystem * ImpactEf
 				}
 			}
 
-			//		applying damage to enemy's tower
-			else
+		}
+
+		else if (IsValid(damagedTower))
+		{
+			float distanceToTower = damagedTower->GetDistanceTo(this);
+
+			GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Yellow, FString::Printf(TEXT("Damage Distance: %f"), distanceToTower));
+
+			if (distanceToTower < 600.0f)
 			{
 				TowerReceiveDamage(damagedTower, this->BaseDamage);
 			}
-
 		}
+		
 		PlayEffectsClient(ImpactEffect, AttachTo, HitSound);
 
 		damagedActor = closestActor;
