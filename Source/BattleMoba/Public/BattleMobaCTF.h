@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Engine/TriggerSphere.h"
+#include "Components/PrimitiveComponent.h"
 #include "InputLibrary.h"
 #include "BattleMobaCTF.generated.h"
 
@@ -15,8 +16,18 @@ UCLASS()
 class BATTLEMOBA_API ABattleMobaCTF : public ATriggerSphere
 {
 	GENERATED_BODY()
-		//Replicated Network setup
-		void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+
+	//Replicated Network setup
+	void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = Components, meta = (AllowPrivateAccess = "true"))
+		class USphereComponent* FogCol;
+
+private:
+	float Rad = 0.0f;
+
+	//Get radius of visible area from sphere mask radius
+	UMaterialParameterCollectionInstance* inst_Fog;
 
 public:
 	// Sets default values for this actor's properties
@@ -26,6 +37,8 @@ protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
+	virtual void Tick(float DeltaTime) override;
+
 	//overlap begin function
 	UFUNCTION()
 		void OnOverlapBegin(class AActor* OverlappedActor, class AActor* OtherActor);
@@ -34,13 +47,20 @@ protected:
 	UFUNCTION()
 		void OnOverlapEnd(class AActor* OverlappedActor, class AActor* OtherActor);
 
-	////overlap begin function
-	//UFUNCTION()
-	//	void OnOverlapBegin(UPrimitiveComponent * OverlappedActor, AActor * OtherActor, UPrimitiveComponent * OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult & SweepResult);
+	//Fog area overlap begin function
+	UFUNCTION()
+		void OnComponentOverlapBegin(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
 
-	////overlap end function
-	//UFUNCTION()
-	//	void OnOverlapEnd(UPrimitiveComponent * OverlappedActor, AActor * OtherActor, UPrimitiveComponent * OtherComp, int32 OtherBodyIndex);
+	//Fog area overlap end function
+	UFUNCTION()
+		void OnComponentOverlapEnd(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
+
+	//Call out server to set visibility status of overlapping actor/s
+	UFUNCTION(Reliable, Server, WithValidation, Category = "VisibleOnFog")
+		void ServerSetVisibility(ABattleMobaCTF* owningActor, class ABattleMobaCharacter* Actor, const TArray<AActor*>& Actors, float MaxDrawDist, bool Entering);
+
+	UFUNCTION(Reliable, NetMulticast, WithValidation, Category = "VisibleOnFog")
+		void MulticastSetVisibility(ABattleMobaCTF* owningActor, class ABattleMobaCharacter* Actor, const TArray<AActor*>& Actors, float MaxDrawDist, bool Entering);
 
 public:
 
@@ -98,8 +118,6 @@ public:
 		FTimerHandle GoldTimer;
 
 
-
-
 public:
 
 	void TimerFunction();
@@ -130,4 +148,16 @@ protected:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Perks")
 		float ExpVal = 0.0f;
+
+	//Toggle to collect overlapping actors on OnBeginOverlap FogCol
+	UPROPERTY(Replicated)
+		bool IsOverlapFog = false;
+
+	//Get overlapping actors from within FogCol
+	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadWrite, Category = "FogActors")
+		TArray<AActor*> ActorsInVision;
+
+	//Material Parameter Collection asset
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+		UMaterialParameterCollection* Mat_Fog;
 };

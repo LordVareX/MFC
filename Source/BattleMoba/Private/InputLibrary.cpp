@@ -10,6 +10,8 @@
 #include "BattleMobaSkillComponent.h"
 #include "DrawDebugHelpers.h"
 
+#include "BattleMobaCharacter.h"
+
 FString UInputLibrary::EditSpaceAfterUppercase(FString str, bool AddSpace)
 { 
 	if (AddSpace)
@@ -226,6 +228,78 @@ void UInputLibrary::AbsoluteValueOfTwoVectors(FVector2D StartValue, FVector2D En
 
 	AbsX = FGenericPlatformMath::Abs(Total.X);
 	AbsY = FGenericPlatformMath::Abs(Total.Y);
+}
+
+void UInputLibrary::SetActorVisibility(ABattleMobaCharacter* actor, TArray<AActor*> Actors, float MaxDrawDist, bool Visible, AActor* Outer)
+{
+	if (Visible == true)
+	{
+		for (AActor* pChar : Actors)
+		{
+			if (pChar != nullptr)
+			{
+				ABattleMobaCharacter* pc = Cast<ABattleMobaCharacter>(pChar);
+				if (pc != nullptr && pc == actor)
+				{
+					if (pc->GetMesh()->CachedMaxDrawDistance != MaxDrawDist)
+					{
+						pc->GetMesh()->SetCullDistance(MaxDrawDist);
+						pc->Outline->SetCullDistance(MaxDrawDist);
+						if (Outer->GetClass() != pc->GetClass())
+						{
+							pc->IsCurrentlyVisible = true;
+						}
+					}
+				}
+			}
+		}
+	}
+	else
+	{
+		if (actor != nullptr)
+		{
+			if (Actors.IsValidIndex(0))
+			{
+				if (Actors.Contains(actor))
+				{
+					Actors.Remove(actor);
+				}
+				for (APlayerState* ps : Outer->GetWorld()->GetGameState()->PlayerArray)
+				{
+					if (ps->GetPawn() != nullptr)
+					{
+						ABattleMobaCharacter* pc = Cast<ABattleMobaCharacter>(ps->GetPawn());
+						if (pc != nullptr && pc->IsLocallyControlled())
+						{
+							if (pc->TeamName != actor->TeamName)
+							{
+								if (Outer->GetClass() == actor->GetClass())
+								{
+									if (actor->IsCurrentlyVisible == false)
+									{
+										if (actor->GetMesh()->CachedMaxDrawDistance != MaxDrawDist)
+										{
+											actor->GetMesh()->SetCullDistance(MaxDrawDist);
+											actor->Outline->SetCullDistance(MaxDrawDist);
+										}
+									}
+								}
+								else
+								{
+									if (actor->GetMesh()->CachedMaxDrawDistance != MaxDrawDist)
+									{
+										actor->GetMesh()->SetCullDistance(MaxDrawDist);
+										actor->Outline->SetCullDistance(MaxDrawDist);
+										actor->IsCurrentlyVisible = false;
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
 }
 
 bool UInputLibrary::DetectLinearSwipe(FVector2D Line1Start, FVector2D Line1End, EInputType& Branches, bool Dos)

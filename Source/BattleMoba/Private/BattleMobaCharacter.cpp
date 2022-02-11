@@ -78,6 +78,9 @@ void ABattleMobaCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>&
 	DOREPLIFETIME(ABattleMobaCharacter, LeftHitMoveset);
 	DOREPLIFETIME(ABattleMobaCharacter, SkillComp);
 	DOREPLIFETIME(ABattleMobaCharacter, closestActorTemp);
+	DOREPLIFETIME(ABattleMobaCharacter, IsOverlapFog);
+	DOREPLIFETIME(ABattleMobaCharacter, ActorsInVision);
+	DOREPLIFETIME(ABattleMobaCharacter, IsCurrentlyVisible);
 }
 
 ABattleMobaCharacter::ABattleMobaCharacter()
@@ -87,6 +90,15 @@ ABattleMobaCharacter::ABattleMobaCharacter()
 	Outline->SetupAttachment(RootComponent);
 	Outline->SetRelativeLocation(FVector(0.00f, 0.000000f, -98.000000f));
 	Outline->SetVisibility(false);
+
+	//FogCollider
+	FogCol = CreateDefaultSubobject<USphereComponent>(TEXT("FogCol"));
+	FogCol->SetupAttachment(RootComponent);
+	FogCol->SetRelativeLocation(FVector(0.0f, 0.0f, -200.0f));
+	FogCol->SetCollisionProfileName("Custom");
+
+	FogCol->OnComponentBeginOverlap.AddDynamic(this, &ABattleMobaCharacter::OnComponentOverlapBegin);
+	FogCol->OnComponentEndOverlap.AddDynamic(this, &ABattleMobaCharacter::OnComponentOverlapEnd);
 
 	//this->GetMesh()->SetVisibility(false);
 	// Set size for collision capsule
@@ -405,6 +417,11 @@ void ABattleMobaCharacter::PossessedBy(AController* NewController)
 void ABattleMobaCharacter::BeginPlay()
 {
 	Super::BeginPlay();
+
+	inst_Fog = GetWorld()->GetParameterCollectionInstance(Mat_Fog);
+	inst_Fog->GetScalarParameterValue("Radius", Rad);
+	FogCol->SetSphereRadius(Rad, true);
+
 	RefreshPlayerData();
 }
 
@@ -680,6 +697,16 @@ void ABattleMobaCharacter::Tick(float DeltaTime)
 	if (WithinVicinity)
 	{
 		UInputLibrary::SetUIVisibility(W_DamageOutput, this);
+	}
+
+	//Check for overlapping actors within fogcol
+	if (IsOverlapFog == true)
+	{
+		FogCol->GetOverlappingActors(this->ActorsInVision, ABattleMobaCharacter::StaticClass());
+		if (!this->ActorsInVision.IsValidIndex(0))
+		{
+			IsOverlapFog = false;
+		}
 	}
 
 	////////////////Mobile Input/////////////////////////////
@@ -1084,6 +1111,54 @@ void ABattleMobaCharacter::OnHRMontageEnd(UAnimMontage * animMontage, bool bInte
 	{
 		ServerEnableMovement(true);
 	}
+}
+
+void ABattleMobaCharacter::OnComponentOverlapBegin(UPrimitiveComponent * OverlappedComponent, AActor * OtherActor, UPrimitiveComponent * OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult & SweepResult)
+{
+	ABattleMobaCharacter* pChar = Cast<ABattleMobaCharacter>(OtherActor);
+	if (pChar != nullptr && pChar != this && pChar->TeamName != this->TeamName)
+	{
+		if (IsOverlapFog == false)
+		{
+			IsOverlapFog = true;
+		}
+		if (this->IsLocallyControlled())
+		{
+			ServerSetVisibility(this, pChar, ActorsInVision, .0f, true);
+		}
+	}
+}
+
+void ABattleMobaCharacter::OnComponentOverlapEnd(UPrimitiveComponent * OverlappedComponent, AActor * OtherActor, UPrimitiveComponent * OtherComp, int32 OtherBodyIndex)
+{
+	ABattleMobaCharacter* pChar = Cast<ABattleMobaCharacter>(OtherActor);
+	if (pChar != nullptr && pChar != this && pChar->TeamName != this->TeamName)
+	{
+		if (this->IsLocallyControlled())
+		{
+			ServerSetVisibility(this, pChar, ActorsInVision, Rad, false);
+		}
+	}
+}
+
+bool ABattleMobaCharacter::ServerSetVisibility_Validate(ABattleMobaCharacter* owningActor, ABattleMobaCharacter * Actor, const TArray<AActor*>& Actors, float MaxDrawDist, bool Entering)
+{
+	return true;
+}
+
+void ABattleMobaCharacter::ServerSetVisibility_Implementation(ABattleMobaCharacter* owningActor, ABattleMobaCharacter * Actor, const TArray<AActor*>& Actors, float MaxDrawDist, bool Entering)
+{
+	MulticastSetVisibility(owningActor, Actor, Actors, MaxDrawDist, Entering);
+}
+
+bool ABattleMobaCharacter::MulticastSetVisibility_Validate(ABattleMobaCharacter* owningActor, ABattleMobaCharacter * Actor, const TArray<AActor*>& Actors, float MaxDrawDist, bool Entering)
+{
+	return true;
+}
+
+void ABattleMobaCharacter::MulticastSetVisibility_Implementation(ABattleMobaCharacter* owningActor, ABattleMobaCharacter * Actor, const TArray<AActor*>& Actors, float MaxDrawDist, bool Entering)
+{
+	UInputLibrary::SetActorVisibility(Actor, Actors, MaxDrawDist, Entering, owningActor);
 }
 
 bool ABattleMobaCharacter::ServerRotateHitActor_Validate(AActor * HitActor, AActor * Attacker)

@@ -294,6 +294,9 @@ public:
 	UFUNCTION(BlueprintPure, Category = "Math|Gesture Utils")
 		static void AbsoluteValueOfTwoVectors(FVector2D StartValue, FVector2D EndValue, float & x, float & y, float & AbsX, float & AbsY);
 
+	UFUNCTION(BlueprintCallable, Category = "Fog Utils")
+		static void SetActorVisibility(class ABattleMobaCharacter* actor, TArray<AActor*> Actors, float MaxDrawDist, bool Visible, AActor* Outer);
+
 	//Check if current point is on the left side of the screen
 	static bool PointOnLeftHalfOfScreen(FVector2D Point);
 

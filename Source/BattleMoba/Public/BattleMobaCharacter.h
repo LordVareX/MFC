@@ -19,8 +19,11 @@ class ABattleMobaCharacter : public ACharacter, public IBattleMobaInterface
 {
 	GENERATED_BODY()
 
-		//Replicated Network setup
-		void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+	//Replicated Network setup
+	void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = Components, meta = (AllowPrivateAccess = "true"))
+		class USphereComponent* FogCol;
 
 	/** Camera boom positioning the camera behind the character */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
@@ -32,11 +35,6 @@ class ABattleMobaCharacter : public ACharacter, public IBattleMobaInterface
 	/** Follow camera */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
 		class UCameraComponent* FollowCamera;
-
-	//Outline
-	//Setting up character mesh for player
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = Components, Meta = (AllowPrivateAccess = "true"))
-		class UStaticMeshComponent* Outline;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = Components, meta = (AllowPrivateAccess = "true"))
 		class UBoxComponent* LeftKickCol;
@@ -141,8 +139,16 @@ class ABattleMobaCharacter : public ACharacter, public IBattleMobaInterface
 	private:
 		bool IsExist = false;
 
+		float Rad = 0.0f;
+
+		//Get radius of visible area from sphere mask radius
+		UMaterialParameterCollectionInstance* inst_Fog;
+
 public:
 	ABattleMobaCharacter();
+
+	UPROPERTY(Replicated, VisibleAnywhere, BlueprintReadOnly)
+		bool IsCurrentlyVisible = false;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "LevelUp")
 		bool IsUpgradingSkill = false;
@@ -167,6 +173,11 @@ public:
 	//Setting up character mesh for player
 	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadWrite, Category = "Status", Meta = (ExposeOnSpawn = "true"))
 		USkeletalMesh* CharMesh;
+
+	//Outline
+	//Setting up character mesh for player
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = Components, Meta = (AllowPrivateAccess = "true"))
+		class UStaticMeshComponent* Outline;
 
 	UFUNCTION()
 		void OnRep_Team();
@@ -214,6 +225,21 @@ protected:
 	void OnCameraShake();
 
 	void OnHRMontageEnd(UAnimMontage* animMontage, bool bInterrupted);
+
+	//Fog area overlap begin function
+	UFUNCTION()
+		void OnComponentOverlapBegin(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
+
+	//Fog area overlap end function
+	UFUNCTION()
+		void OnComponentOverlapEnd(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
+
+	//Call out server to set visibility status of overlapping actor/s
+	UFUNCTION(Reliable, Server, WithValidation, Category = "VisibleOnFog")
+		void ServerSetVisibility(ABattleMobaCharacter* owningActor, ABattleMobaCharacter* Actor, const TArray<AActor*>& Actors, float MaxDrawDist, bool Entering);
+
+	UFUNCTION(Reliable, NetMulticast, WithValidation, Category = "VisibleOnFog")
+		void MulticastSetVisibility(ABattleMobaCharacter* owningActor, ABattleMobaCharacter* Actor, const TArray<AActor*>& Actors, float MaxDrawDist, bool Entering);
 	
 
 protected:
@@ -226,6 +252,18 @@ protected:
 
 	//SwipeToRotate
 	bool StartRotate = false;
+
+	//Toggle to collect overlapping actors on OnBeginOverlap FogCol
+	UPROPERTY(Replicated)
+		bool IsOverlapFog = false;
+
+	//Get overlapping actors from within FogCol
+	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadWrite, Category = "FogActors")
+		TArray<AActor*> ActorsInVision;
+
+	//Material Parameter Collection asset
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+		UMaterialParameterCollection* Mat_Fog;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "HUD", Meta = (ExposeOnSpawn = "true"))
 		UUserWidget* MainWidget = nullptr;

@@ -4,7 +4,7 @@
 #include "BattleMobaCTF.h"
 #include "Net/UnrealNetwork.h"
 #include "Components/StaticMeshComponent.h"
-#include "Components/SphereComponent.h"
+#include "Components/PrimitiveComponent.h"
 #include "Blueprint/WidgetTree.h"
 #include "Components/TextBlock.h"
 #include "Components/ProgressBar.h"
@@ -32,6 +32,8 @@ void ABattleMobaCTF::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLi
 	DOREPLIFETIME(ABattleMobaCTF, valRadiant);
 	DOREPLIFETIME(ABattleMobaCTF, valDire);
 	DOREPLIFETIME(ABattleMobaCTF, GiveGoldActors);
+	DOREPLIFETIME(ABattleMobaCTF, IsOverlapFog);
+	DOREPLIFETIME(ABattleMobaCTF, ActorsInVision);
 }
 
 // Sets default values
@@ -47,8 +49,13 @@ ABattleMobaCTF::ABattleMobaCTF()
 	OnActorBeginOverlap.AddDynamic(this, &ABattleMobaCTF::OnOverlapBegin);
 	OnActorEndOverlap.AddDynamic(this, &ABattleMobaCTF::OnOverlapEnd);
 
-	/*TriggerSphere->OnComponentBeginOverlap.AddDynamic(this, &ABattleMobaCF::OnOverlapBegin);
-	TriggerSphere->OnComponentEndOverlap.AddDynamic(this, &ABattleMobaCF::OnOverlapEnd);*/
+	FogCol = CreateDefaultSubobject<USphereComponent>(TEXT("FogCol"));
+	FogCol->SetupAttachment(RootComponent);
+	FogCol->SetRelativeLocation(FVector(0.0f, 0.0f, -200.0f));
+	FogCol->SetCollisionProfileName("Custom");
+
+	FogCol->OnComponentBeginOverlap.AddDynamic(this, &ABattleMobaCTF::OnComponentOverlapBegin);
+	FogCol->OnComponentEndOverlap.AddDynamic(this, &ABattleMobaCTF::OnComponentOverlapEnd);
 
 
 	MeshFlag = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Flag"));
@@ -77,6 +84,24 @@ void ABattleMobaCTF::BeginPlay()
 {
 	Super::BeginPlay();
 
+	/////////////////Get flag names that valid in current Level///////////////////////////////
+	int32 i;
+	TArray<AActor*> FlagList;
+	UGameplayStatics::GetAllActorsOfClass(GetWorld(), ABattleMobaCTF::StaticClass(), FlagList);
+
+	inst_Fog = GetWorld()->GetParameterCollectionInstance(Mat_Fog);
+
+	if (FlagList.Find(this, i))
+	{
+		if (inst_Fog->GetScalarParameterValue(FName(*FlagList[i]->GetName()), Rad))
+		{
+			GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("CTFName is: %s"), (*FlagList[i]->GetName())));
+			FogCol->SetSphereRadius(Rad, true);
+		}
+	}
+
+	///////////////////////////////////////////////////////////////////////////////////////////
+
 	//		Run TimerFunction every ControllingSpeed after 1 second the game has started
 	//this->GetWorldTimerManager().SetTimer(FlagTimer, this, &ABattleMobaCTF::TimerFunction, ControllingSpeed, true, 1.0f);
 
@@ -88,6 +113,24 @@ void ABattleMobaCTF::BeginPlay()
 
 	//		Init FlagTimer to run on begin play so it will always run until game finishes
 	this->GetWorldTimerManager().SetTimer(FlagTimer, this, &ABattleMobaCTF::TimerFunction, ControllingSpeed, false, 30.0f);
+}
+
+void ABattleMobaCTF::Tick(float DeltaTime)
+{
+	Super::Tick(DeltaTime);
+
+	//Set size of widget on vision
+	UInputLibrary::SetUIVisibility(W_ValControl, this);
+
+	//Check for overlapping actors within fogcol
+	if (IsOverlapFog == true)
+	{
+		FogCol->GetOverlappingActors(this->ActorsInVision, ABattleMobaCharacter::StaticClass());
+		if (!this->ActorsInVision.IsValidIndex(0))
+		{
+			IsOverlapFog = false;
+		}
+	}
 }
 
 void ABattleMobaCTF::OnOverlapBegin(AActor* OverlappedActor, AActor* OtherActor)
@@ -103,7 +146,7 @@ void ABattleMobaCTF::OnOverlapBegin(AActor* OverlappedActor, AActor* OtherActor)
 	}
 }
 
-void ABattleMobaCTF::OnOverlapEnd(AActor * OverlappedActor, AActor * OtherActor)
+void ABattleMobaCTF::OnOverlapEnd(AActor* OverlappedActor, AActor* OtherActor)
 {
 	if (OtherActor && (OtherActor != this))
 	{
@@ -114,6 +157,48 @@ void ABattleMobaCTF::OnOverlapEnd(AActor * OverlappedActor, AActor * OtherActor)
 			pe->CTFentering = false;
 		}
 	}
+}
+
+void ABattleMobaCTF::OnComponentOverlapBegin(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult & SweepResult)
+{
+	ABattleMobaCharacter* pChar = Cast<ABattleMobaCharacter>(OtherActor);
+	if (pChar != nullptr)
+	{
+		if (IsOverlapFog == false)
+		{
+			IsOverlapFog = true;
+		}
+		ServerSetVisibility(this, pChar, ActorsInVision, .0f, true);
+	}
+}
+
+void ABattleMobaCTF::OnComponentOverlapEnd(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
+{
+	ABattleMobaCharacter* pChar = Cast<ABattleMobaCharacter>(OtherActor);
+	if (pChar != nullptr)
+	{
+		ServerSetVisibility(this, pChar, ActorsInVision, Rad, false);
+	}
+}
+
+bool ABattleMobaCTF::ServerSetVisibility_Validate(ABattleMobaCTF* owningActor, ABattleMobaCharacter* Actor, const TArray<AActor*>& Actors, float MaxDrawDist, bool Entering)
+{
+	return true;
+}
+
+void ABattleMobaCTF::ServerSetVisibility_Implementation(ABattleMobaCTF* owningActor, ABattleMobaCharacter* Actor, const TArray<AActor*>& Actors, float MaxDrawDist, bool Entering)
+{
+	MulticastSetVisibility(owningActor, Actor, Actors, MaxDrawDist, Entering);
+}
+
+bool ABattleMobaCTF::MulticastSetVisibility_Validate(ABattleMobaCTF* owningActor, ABattleMobaCharacter * Actor, const TArray<AActor*>& Actors, float MaxDrawDist, bool Entering)
+{
+	return true;
+}
+
+void ABattleMobaCTF::MulticastSetVisibility_Implementation(ABattleMobaCTF* owningActor, ABattleMobaCharacter * Actor, const TArray<AActor*>& Actors, float MaxDrawDist, bool Entering)
+{
+	UInputLibrary::SetActorVisibility(Actor, Actors, MaxDrawDist, Entering, owningActor);
 }
 
 void ABattleMobaCTF::OnRep_Val()
