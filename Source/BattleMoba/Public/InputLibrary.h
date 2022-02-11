@@ -160,6 +160,9 @@ struct FActionSkill : public FTableRowBase
 
 	UPROPERTY()
 		bool isOnCD = false;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "General")
+		FName SkillName = "";
 
 	//If cooldown mechanic is applied
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Cooldown")
@@ -177,7 +180,7 @@ struct FActionSkill : public FTableRowBase
 
 	//If cooldown mechanic is applied
 	//If combo mechanic is applied
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "UseSection")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Section")
 		bool UseSection = false;
 
 	//How many sections are used in this montage

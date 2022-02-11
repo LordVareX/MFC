@@ -77,7 +77,10 @@ void ABattleMobaCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>&
 	DOREPLIFETIME(ABattleMobaCharacter, RightHitMoveset);
 	DOREPLIFETIME(ABattleMobaCharacter, LeftHitMoveset);
 	DOREPLIFETIME(ABattleMobaCharacter, SkillComp);
-	DOREPLIFETIME(ABattleMobaCharacter, closestActorTemp);
+	DOREPLIFETIME(ABattleMobaCharacter, damagedActor);
+	DOREPLIFETIME(ABattleMobaCharacter, IsImmuned);
+	DOREPLIFETIME(ABattleMobaCharacter, ImmunityDur);
+	DOREPLIFETIME(ABattleMobaCharacter, ActionSkillName);
 }
 
 ABattleMobaCharacter::ABattleMobaCharacter()
@@ -428,9 +431,36 @@ float ABattleMobaCharacter::TakeDamage(float Damage, FDamageEvent const & Damage
 				FVector MakeVector = FVector(DirectionDiff.X, DirectionDiff.Y, DirectionDiff.Z + 0.2);
 				FVector StunVector = MakeVector * damageChar->StunImpulse;
 
+				MulticastRotateHitActor(this, damageChar);
 				//GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Black, FString::Printf(TEXT("Attacker StunImpulse: %f"), damageChar->StunImpulse));
 
-				MulticastRotateHitActor(this, damageChar);
+				if (IsValid(ps))
+				{
+					if (ps->CurrentStyle == 0)
+					{
+						if (damageChar->ActionSkillName == "Ultimate")
+						{
+							if (this->IsLocallyControlled() == true)
+							{
+								GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Magenta, FString::Printf(TEXT("Enemy Char is Stun until Attacker finishes their ultimate.")));
+
+								FTimerHandle TimerHandle;
+								FTimerDelegate TimerDel;
+
+								ServerToggleStun(this, true);
+								
+								TimerDel.BindLambda([this]()
+								{
+									ServerToggleStun(this, false);
+									
+								});
+
+								float montageLength = damageChar->GetMesh()->GetAnimInstance()->GetCurrentActiveMontage()->GetPlayLength();
+								this->GetWorldTimerManager().SetTimer(TimerHandle, TimerDel, montageLength, false);
+							}
+						}
+					}
+				}
 				HitReactionClient(this, Damage, this->HitReactionMoveset, "NormalHit01", damageChar->StunDuration, StunVector, true);
 			}
 
@@ -1082,7 +1112,7 @@ void ABattleMobaCharacter::OnHRMontageEnd(UAnimMontage * animMontage, bool bInte
 {
 	if (this->IsLocallyControlled())
 	{
-		ServerEnableMovement(true);
+		ServerEnableMovement(this, true);
 	}
 }
 
@@ -1180,179 +1210,191 @@ void ABattleMobaCharacter::CheckInputValidity()
 
 void ABattleMobaCharacter::GetButtonSkillAction(FKey Currkeys, FString ButtonName, bool& cooldown, float& CooldownVal)
 {
-	if (Health > 0.0f)
+	if (this->GetMesh()->SkeletalMesh != nullptr)
 	{
-		if (IsUpgradingSkill)
+		if (this->AnimInsta != nullptr && this->IsStunned == false)
 		{
-			if (MainWidget != nullptr && MainWidget->GetClass()->ImplementsInterface(UBattleMobaInterface::StaticClass()))
+			//		only allows cooldown triggers when action/movement is enabled
+			if (this->AnimInsta->CanMove == true)
 			{
-				//GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("Pass through interface!")));
-				Cast<IBattleMobaInterface>(MainWidget)->Execute_LookUp(MainWidget, Currkeys.ToString());
-			}
-		}
-		else
-		{
-			if (ActionEnabled == true)
-			{
-				if (ActionTable != nullptr)
+				if (Health > 0.0f)
 				{
-					//Used in error reporting
-					FString Context;
-					for (auto& name : ActionTable->GetRowNames())
+					if (IsUpgradingSkill)
 					{
-						FActionSkill* row = ActionTable->FindRow<FActionSkill>(name, Context);
-
-						if (row)
+						if (MainWidget != nullptr && MainWidget->GetClass()->ImplementsInterface(UBattleMobaInterface::StaticClass()))
 						{
-							if (row->keys == Currkeys || row->ButtonName == ButtonName)
+							//GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("Pass through interface!")));
+							Cast<IBattleMobaInterface>(MainWidget)->Execute_LookUp(MainWidget, Currkeys.ToString());
+						}
+					}
+					else
+					{
+						if (ActionEnabled == true)
+						{
+							if (ActionTable != nullptr)
 							{
-								//Look up through Skills TMap to check for unlocked spells
-								if (GetPlayerState()->GetClass()->ImplementsInterface(UBattleMobaInterface::StaticClass()))
+								//Used in error reporting
+								FString Context;
+								for (auto& name : ActionTable->GetRowNames())
 								{
-									//GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("Pass through lookup interface!")));
-									Cast<IBattleMobaInterface>(GetPlayerState())->Execute_LookUp(GetPlayerState(), row->ButtonName);
+									FActionSkill* row = ActionTable->FindRow<FActionSkill>(name, Context);
 
-									//If the spell is already unlocked
-									if (IsExist)
+									if (row)
 									{
-										//		SpecialAttack01 & SpecialAttack02
-										if (row->IsUsingCD && !row->UseTranslate)
+										if (row->keys == Currkeys || row->ButtonName == ButtonName)
 										{
-											//GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Blue, FString::Printf(TEXT("row->isOnCD: %s"), row->isOnCD ? TEXT("true") : TEXT("false")));
+											//Look up through Skills TMap to check for unlocked spells
+											if (GetPlayerState()->GetClass()->ImplementsInterface(UBattleMobaInterface::StaticClass()))
+											{
+												//GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("Pass through lookup interface!")));
+												Cast<IBattleMobaInterface>(GetPlayerState())->Execute_LookUp(GetPlayerState(), row->ButtonName);
 
-											//if the skill is on cooldown, stop playing the animation, else play the skill animation
-											if (row->isOnCD == true)
-											{
-												//GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("Current %s skill is on cooldown!!"), ((*name.ToString()))));
-												cooldown = row->isOnCD;
-												//row->isOnCD = false;
-												break;
-											}
-											else if (row->isOnCD == false)
-											{
-												cooldown = row->isOnCD;
-												row->isOnCD = true;
-												//GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Emerald, FString::Printf(TEXT("Current key is %s"), ((*row->keys.ToString()))));
-												if (row->SkillMoveset != nullptr)
+												//If the spell is already unlocked
+												if (IsExist)
 												{
-
-													if (this->IsLocallyControlled())
+													//		Those skills which use CD except dash
+													if (row->IsUsingCD && !row->UseTranslate)
 													{
-														/*DetectNearestTarget(EResult::Cooldown, *row);
-														AttackSection = "NormalAttack01";*/
-														//play the animation that visible to all clients
-														//ServerExecuteAction(*row, CurrentSection, AttackSection, true);
-														FTimerHandle handle;
-														FTimerDelegate TimerDelegate;
+														//GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Blue, FString::Printf(TEXT("row->isOnCD: %s"), row->isOnCD ? TEXT("true") : TEXT("false")));
 
-														//set the row boolean to false after finish cooldown timer
-														TimerDelegate.BindLambda([row, this]()
+														//if the skill is on cooldown, stop playing the animation, else play the skill animation
+														if (row->isOnCD == true)
 														{
-															UE_LOG(LogTemp, Warning, TEXT("DELAY BEFORE SETTING UP COOLDOWN TO FALSE"));
-															row->isOnCD = false;
-
-															//GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Blue, FString::Printf(TEXT("row->isOnCD: %s"), row->isOnCD ? TEXT("true") : TEXT("false")));
-														});
-
-														//start cooldown the skill
-														this->GetWorldTimerManager().SetTimer(handle, TimerDelegate, row->CDDuration, false);
-														CooldownVal = row->CDDuration;
-														//break;
-													}
-													//setting up for cooldown properties
-
-													DetectNearestTarget(EResult::Cooldown, *row);
-													AttackSection = "NormalAttack01";
-
-												}
-												//Calls widget for display purposes
-												if (MainWidget != nullptr && MainWidget->GetClass()->ImplementsInterface(UBattleMobaInterface::StaticClass()))
-												{
-													//GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("Pass through lookup interface!")));
-													Cast<IBattleMobaInterface>(MainWidget)->Execute_CheckStringWithFloat(MainWidget, row->ButtonName, CooldownVal, cooldown);
-												}
-												break;
-											}
-										}
-
-										//		Dash
-										else if (row->IsUsingCD && row->UseTranslate)
-										{
-											if (row->isOnCD == true)
-											{
-												//GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("Current %s skill is on cooldown!!"), ((*name.ToString()))));
-												cooldown = row->isOnCD;
-												break;
-											}
-											else if (row->isOnCD == false)
-											{
-												cooldown = row->isOnCD;
-												row->isOnCD = true;
-												//GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("Current key is %s"), ((*row->keys.ToString()))));
-												if (row->SkillMoveset != nullptr)
-												{
-													if (this->IsLocallyControlled())
-													{
-														AttackSection = "NormalAttack01";
-
-														//play the animation that visible to all clients
-														ServerExecuteAction(*row, AttackSection, false);
-
-														//setting up for cooldown properties
-														FTimerHandle handle;
-														FTimerDelegate TimerDelegate;
-
-														//set the row boolean to false after finish cooldown timer
-														TimerDelegate.BindLambda([row, this]()
-														{
-															UE_LOG(LogTemp, Warning, TEXT("DELAY BEFORE SETTING UP COOLDOWN TO FALSE"));
-															row->isOnCD = false;
-
-															//GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Blue, FString::Printf(TEXT("row->isOnCD: %s"), row->isOnCD ? TEXT("true") : TEXT("false")));
-														});
-
-														//start cooldown the skill
-														this->GetWorldTimerManager().SetTimer(handle, TimerDelegate, row->CDDuration, false);
-														CooldownVal = row->CDDuration;
-
-														//Calls widget for display purposes
-														if (MainWidget != nullptr && MainWidget->GetClass()->ImplementsInterface(UBattleMobaInterface::StaticClass()))
-														{
-															//GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("Pass through lookup interface!")));
-															Cast<IBattleMobaInterface>(MainWidget)->Execute_CheckStringWithFloat(MainWidget, row->ButtonName, CooldownVal, cooldown);
+															//GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("Current %s skill is on cooldown!!"), ((*name.ToString()))));
+															cooldown = row->isOnCD;
+															//row->isOnCD = false;
+															break;
 														}
-														break;
+														else if (row->isOnCD == false)
+														{
+															cooldown = row->isOnCD;
+															row->isOnCD = true;
+															//GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Emerald, FString::Printf(TEXT("Current key is %s"), ((*row->keys.ToString()))));
+															if (row->SkillMoveset != nullptr)
+															{
+																if (this->IsLocallyControlled())
+																{
+																	/*DetectNearestTarget(EResult::Cooldown, *row);
+																	AttackSection = "NormalAttack01";*/
+																	//play the animation that visible to all clients
+																	//ServerExecuteAction(*row, CurrentSection, AttackSection, true);
+																	FTimerHandle handle;
+																	FTimerDelegate TimerDelegate;
+
+																	//set the row boolean to false after finish cooldown timer
+																	TimerDelegate.BindLambda([row, this]()
+																	{
+																		UE_LOG(LogTemp, Warning, TEXT("DELAY BEFORE SETTING UP COOLDOWN TO FALSE"));
+																		row->isOnCD = false;
+
+																		//GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Blue, FString::Printf(TEXT("row->isOnCD: %s"), row->isOnCD ? TEXT("true") : TEXT("false")));
+																	});
+
+																	//start cooldown the skill
+																	this->GetWorldTimerManager().SetTimer(handle, TimerDelegate, row->CDDuration, false);
+																	CooldownVal = row->CDDuration;
+																	//break;
+
+																	//setting up for cooldown properties
+
+																	DetectNearestTarget(EResult::Cooldown, *row);
+																	AttackSection = "NormalAttack01";
+																}
+
+
+															}
+															//Calls widget for display purposes
+															if (MainWidget != nullptr && MainWidget->GetClass()->ImplementsInterface(UBattleMobaInterface::StaticClass()))
+															{
+																//GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("Pass through lookup interface!")));
+																Cast<IBattleMobaInterface>(MainWidget)->Execute_CheckStringWithFloat(MainWidget, row->ButtonName, CooldownVal, cooldown);
+															}
+															break;
+														}
+													}
+
+													//		Dash
+													else if (row->IsUsingCD && row->UseTranslate)
+													{
+														if (row->isOnCD == true)
+														{
+															//GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("Current %s skill is on cooldown!!"), ((*name.ToString()))));
+															cooldown = row->isOnCD;
+															break;
+														}
+														else if (row->isOnCD == false)
+														{
+															cooldown = row->isOnCD;
+															row->isOnCD = true;
+															//GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("Current key is %s"), ((*row->keys.ToString()))));
+															if (row->SkillMoveset != nullptr)
+															{
+																if (this->IsLocallyControlled())
+																{
+																	AttackSection = "NormalAttack01";
+
+																	//play the animation that visible to all clients
+																	ServerExecuteAction(*row, AttackSection, false);
+
+																	//setting up for cooldown properties
+																	FTimerHandle handle;
+																	FTimerDelegate TimerDelegate;
+
+																	//set the row boolean to false after finish cooldown timer
+																	TimerDelegate.BindLambda([row, this]()
+																	{
+																		UE_LOG(LogTemp, Warning, TEXT("DELAY BEFORE SETTING UP COOLDOWN TO FALSE"));
+																		row->isOnCD = false;
+
+																		//GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Blue, FString::Printf(TEXT("row->isOnCD: %s"), row->isOnCD ? TEXT("true") : TEXT("false")));
+																	});
+
+																	//start cooldown the skill
+																	this->GetWorldTimerManager().SetTimer(handle, TimerDelegate, row->CDDuration, false);
+																	CooldownVal = row->CDDuration;
+
+																	//Calls widget for display purposes
+																	if (MainWidget != nullptr && MainWidget->GetClass()->ImplementsInterface(UBattleMobaInterface::StaticClass()))
+																	{
+																		//GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("Pass through lookup interface!")));
+																		Cast<IBattleMobaInterface>(MainWidget)->Execute_CheckStringWithFloat(MainWidget, row->ButtonName, CooldownVal, cooldown);
+																	}
+																	break;
+																}
+															}
+															break;
+														}
+													}
+
+													/**   current skill has combo */
+													else if (row->UseSection)
+													{
+														//GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("Current key is %s"), ((*row->keys.ToString()))));
+														if (row->SkillMoveset != nullptr)
+														{
+															if (this->IsLocallyControlled())
+															{
+																DetectNearestTarget(EResult::Section, *row);
+															}
+															/*AttackCombo(*row);*/
+															break;
+
+														}
 													}
 												}
-												break;
-											}
-										}
-
-										/**   current skill has combo */
-										else if (row->UseSection)
-										{
-											//GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("Current key is %s"), ((*row->keys.ToString()))));
-											if (row->SkillMoveset != nullptr)
-											{
-												if (this->IsLocallyControlled())
-												{
-													DetectNearestTarget(EResult::Section, *row);
-												}
-												/*AttackCombo(*row);*/
-												break;
-
 											}
 										}
 									}
 								}
+								IsExist = false;
 							}
 						}
 					}
-					IsExist = false;
 				}
 			}
 		}
 	}
+	
 }
 
 void ABattleMobaCharacter::AttackCombo(FActionSkill SelectedRow)
@@ -1501,133 +1543,139 @@ bool ABattleMobaCharacter::DetectNearestTarget_Validate(EResult Type, FActionSki
 
 void ABattleMobaCharacter::DetectNearestTarget_Implementation(EResult Type, FActionSkill SelectedRow)
 {
-	//		create tarray for hit results
-	TArray<FHitResult> hitResults;
-
-	//		start and end locations
-	FVector Start = this->GetActorLocation();
-	FVector End = FVector(this->GetActorLocation().X + 0.1f, this->GetActorLocation().Y + 0.1f, this->GetActorLocation().Z + 0.1f);
-
-	//		create a collision sphere with radius of RotateRadius
-	FCollisionShape SphereCol = FCollisionShape::MakeSphere(RotateRadius);
-
-	FCollisionQueryParams TraceParams;
-	TraceParams.AddIgnoredActor(this);
-
-	float Distance1;
-	float Distance2;
-
-	//TArray< TEnumAsByte<EObjectTypeQuery> > ObjectTypes;
-	//ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECC_PhysicsBody));
-
-	//		check if something got hit in the sweep
-	bool isHit = GetWorld()->SweepMultiByChannel(hitResults, Start, End, FQuat::Identity, ECC_PhysicsBody, SphereCol, TraceParams);
-
-	//		draw a purple collision sphere for 0.5 seconds
-	DrawDebugSphere(GetWorld(), GetActorLocation(), SphereCol.GetSphereRadius(), 8, FColor::Purple, false, 0.5);
-
-	//bool isHit = UKismetSystemLibrary::SphereTraceMultiForObjects(GetWorld(), Start, End, RotateRadius, ObjectTypes, true, IgnoreActors, EDrawDebugTrace::ForDuration, hitResults, true);
-	if (isHit)
+	if (this->GetMesh()->SkeletalMesh != nullptr)
 	{
-		for (auto& Hit : hitResults)
+		if (this->AnimInsta != nullptr && this->IsStunned == false)
 		{
-			ABattleMobaCharacter* pc = Cast<ABattleMobaCharacter>(Hit.Actor);
-			ADestructibleTower* tower = Cast<ADestructibleTower>(Hit.Actor);
-
-			if (pc != nullptr)
+			//		check canMove again to detect nearest target and allow actionskill
+			if (this->AnimInsta->CanMove == true)
 			{
-				if (pc->InRagdoll == false && pc->TeamName != this->TeamName)
+				//		create tarray for hit results
+				TArray<FHitResult> hitResults;
+
+				//		start and end locations
+				FVector Start = this->GetActorLocation();
+				FVector End = FVector(this->GetActorLocation().X + 0.1f, this->GetActorLocation().Y + 0.1f, this->GetActorLocation().Z + 0.1f);
+
+				//		create a collision sphere with radius of RotateRadius
+				FCollisionShape SphereCol = FCollisionShape::MakeSphere(RotateRadius);
+
+				FCollisionQueryParams TraceParams;
+				TraceParams.AddIgnoredActor(this);
+
+				float Distance1;
+				float Distance2;
+
+				//TArray< TEnumAsByte<EObjectTypeQuery> > ObjectTypes;
+				//ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECC_PhysicsBody));
+
+				//		check if something got hit in the sweep
+				bool isHit = GetWorld()->SweepMultiByChannel(hitResults, Start, End, FQuat::Identity, ECC_PhysicsBody, SphereCol, TraceParams);
+
+				//		draw a purple collision sphere for 0.5 seconds
+				DrawDebugSphere(GetWorld(), GetActorLocation(), SphereCol.GetSphereRadius(), 8, FColor::Purple, false, 0.5);
+
+				//bool isHit = UKismetSystemLibrary::SphereTraceMultiForObjects(GetWorld(), Start, End, RotateRadius, ObjectTypes, true, IgnoreActors, EDrawDebugTrace::ForDuration, hitResults, true);
+				if (isHit)
 				{
-					ABattleMobaPlayerState* ps = Cast<ABattleMobaPlayerState>(pc->GetPlayerState());
-					//		check current closestActor is still the closest or change to new one
-					if (IsValid(closestActor))
+
+					for (auto& Hit : hitResults)
 					{
-						Distance1 = closestActor->GetDistanceTo(this);
-						Distance2 = Hit.Actor->GetDistanceTo(this);
+						ABattleMobaCharacter* pc = Cast<ABattleMobaCharacter>(Hit.Actor);
+						ADestructibleTower* tower = Cast<ADestructibleTower>(Hit.Actor);
 
-						
-
-						if (Distance1 < Distance2)
+						if (pc != nullptr)
 						{
-							//		checks if Boxing for Slumber Fist
-							if (ps->CurrentStyle == 0)
+							if (pc->InRagdoll == false && pc->TeamName != this->TeamName)
 							{
-								//		checks if the closest Actor is the same as last one
-								if (closestActor == closestActorTemp)
+
+								//		check current closestActor is still the closest or change to new one
+								if (IsValid(closestActor))
 								{
-									GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Yellow, FString::Printf(TEXT("Slumber Count: %lld"), slumberCount));
+									Distance1 = closestActor->GetDistanceTo(this);
+									Distance2 = Hit.Actor->GetDistanceTo(this);
 
-									if (slumberCount == 1)
+									if (Distance1 >= Distance2)
 									{
-										pc->comboInterval = 0.9f;
+										closestActor = pc;
 									}
+								}
 
-									else if (slumberCount == 2)
-									{
-										pc->comboInterval = 0.85f;
-									}
+								//		if no closestActor exists, set one
+								else
+								{
+									closestActor = pc;
+									//GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, FString::Printf(TEXT("Closest Actor: %s"), *closestActor->GetName()));
+								}
+							}
+						}
 
-									else 
-									{
-										slumberCount = 0;
-										pc->comboInterval = 0.95f;
-									}
+						else if (tower != nullptr && pc == nullptr)
+						{
+							if (tower->TeamName != this->TeamName)
+							{
+								//		prioritise player, only then set closest actor to tower
+								if (IsValid(closestActor) == false)
+								{
+									closestActor = tower;
+									//closestActor = Cast<AActor>(Hit.Actor);
+								}
 
-									slumberCount += 1;
+							}
+						}
+						//GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Green, FString::Printf(TEXT("Hit Result: %s"), *Hit.Actor->GetName()));
+					}
+
+					ABattleMobaPlayerState* ps = Cast<ABattleMobaPlayerState>(this->GetPlayerState());
+
+					//		checks if Boxing for Slumber Fist
+					if (ps->CurrentStyle == 0)
+					{
+						if (this->OnComboDelay == false)
+						{
+							//		checks if the closest Actor is the same as last one
+							if (closestActor == damagedActor)
+							{
+								slumberCount += 1;
+								GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Yellow, FString::Printf(TEXT("Slumber Count: %lld"), slumberCount));
+
+								if (slumberCount == 1)
+								{
+									MulticastSetComboInterval(0.5f);
+									
+								}
+
+								else if (slumberCount == 2)
+								{
+									MulticastSetComboInterval(0.4f);
 									
 								}
 
 								else
 								{
-									GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Yellow, FString::Printf(TEXT("This is a different closestActor")));
-									pc->comboInterval = 1.0f;
+									slumberCount = 0;
+									MulticastSetComboInterval(0.3f);
+									
 								}
+								
 							}
 
-							//		any other style besides Boxing
 							else
 							{
-
+								GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Yellow, FString::Printf(TEXT("This is a different closestActor")));
+								MulticastSetComboInterval(1.0f);
+								
 							}
-							
-						}
 
-						//		if distance is larger or same set new closest actor
-						else
-						{
-							closestActor = pc;
-
-							//closestActor = Cast<AActor>(Hit.Actor);
-							//GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, FString::Printf(TEXT("Closest Actor: %s"), *closestActor->GetName()));
-
+							GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Yellow, FString::Printf(TEXT("Combo Interval: %f"), this->comboInterval));
 						}
 					}
-
-					else
-					{
-						closestActor = pc;
-						//GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, FString::Printf(TEXT("Closest Actor: %s"), *closestActor->GetName()));
-					}
+					RotateNearestTarget(closestActor, Type, SelectedRow);
 				}
 			}
-
-			else if (tower != nullptr && pc == nullptr)
-			{
-				if (tower->TeamName != this->TeamName)
-				{
-					//		prioritise player, only then set closest actor to tower
-					if (IsValid(closestActor) == false)
-					{
-						closestActor = tower;
-						//closestActor = Cast<AActor>(Hit.Actor);
-					}
-
-				}
-			}
-			//GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Green, FString::Printf(TEXT("Hit Result: %s"), *Hit.Actor->GetName()));
 		}
-		RotateNearestTarget(closestActor, Type, SelectedRow);
 	}
+	
 }
 
 bool ABattleMobaCharacter::RotateNearestTarget_Validate(AActor* Target, EResult Type, FActionSkill SelectedRow)
@@ -2019,139 +2067,153 @@ void ABattleMobaCharacter::MulticastExecuteAction_Implementation(FActionSkill Se
 {
 	ABattleMobaPlayerState* ps = Cast<ABattleMobaPlayerState>(this->GetPlayerState());
 
+	this->AnimInsta->CanMove = false;
+	this->OnSpecialAttack = bSpecialAttack;
+
 	if (IsValid(ps))
 	{
-		//		Boxing Style
-		if (ps->CurrentStyle == 0)
+		//		player is executing Special attacks or Ultimate skill
+		if (bSpecialAttack == true)
 		{
-			if (this->GetMesh()->SkeletalMesh != nullptr)
+			ActionSkillName = SelectedRow.SkillName;
+			//		Boxing
+			if (ps->CurrentStyle == 0)
 			{
-				if (this->AnimInsta != nullptr && this->IsStunned == false)
+				ABattleMobaCharacter* enemyChar = Cast<ABattleMobaCharacter>(closestActor);
+
+				if (this->IsLocallyControlled())
 				{
-					//		only allows cooldown triggers when action/movement is enabled
-					if (this->AnimInsta->CanMove == true)
-					{
-						this->AnimInsta->CanMove = false;
-						this->OnSpecialAttack = bSpecialAttack;
-
-						if (bSpecialAttack == true)
-						{
-							if (this->IsLocallyControlled())
-							{
-								ServerPlayMontage(SelectedRow.SkillMoveset, 1.0f, MontageSection);
-
-							}
-						}
-
-						else
-						{
-							//		player is executing Dash
-							if (SelectedRow.UseTranslate)
-							{
-								FTimerHandle dashTimer;
-								FTimerDelegate dashTimerDel;
-
-								/*int32 sectionIndex = SelectedRow.SkillMoveset->GetSectionIndex(MontageSection);
-								float sectionLength = SelectedRow.SkillMoveset->GetSectionLength(sectionIndex);*/
-
-								//FOnMontageEnded MontageEndDel;
-
-								FVector dashVector = FVector(this->GetCapsuleComponent()->GetForwardVector().X*SelectedRow.TranslateDist, this->GetCapsuleComponent()->GetForwardVector().Y*SelectedRow.TranslateDist, this->GetCapsuleComponent()->GetForwardVector().Z);
-
-								if (this->IsLocallyControlled())
-								{
-									ServerPlayMontage(SelectedRow.SkillMoveset, 1.0f, MontageSection);
-									ServerLaunchChar(dashVector, false, false);
-									
-								}
-
-								dashTimerDel.BindLambda([this, SelectedRow, dashVector]()
-								{
-									if (this->IsLocallyControlled())
-									{
-										
-										ServerPlayMontage(SelectedRow.SkillMoveset, 1.0f, "GetUp");
-									}
-								});
-
-								this->GetWorldTimerManager().SetTimer(dashTimer, dashTimerDel, 0.2f, false);
-								
-							}
-							//		player is executing Normal Attack 1
-							else if (SelectedRow.UseSection)
-							{
-								FTimerHandle delay;
-								FTimerDelegate timerDel;
-
-								this->OnComboDelay = true;
-
-								if (this->IsLocallyControlled())
-								{
-									ServerPlayMontage(SelectedRow.SkillMoveset, 1.0f, MontageSection);
-								}
-
-								int32 sectionIndex = SelectedRow.SkillMoveset->GetSectionIndex(MontageSection);
-								float sectionLength = SelectedRow.SkillMoveset->GetSectionLength(sectionIndex);
-
-								//GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Magenta, FString::Printf(TEXT("section Length: %f"), sectionLength));
-
-								timerDel.BindLambda([this]()
-								{
-									this->OnComboDelay = false;
-
-								});
-
-								this->GetWorldTimerManager().SetTimer(delay, timerDel, sectionLength + comboInterval, false);
+					//	hook enemy player then gives a barrage of punch combos
+					//	enemy player is stunned (play animation stunned) until finish punching
+					//	call AttackTrace once in montage
+					ServerPlayMontage(SelectedRow.SkillMoveset, 1.0f, MontageSection);
 
 
-							}
-						}
-						this->MinDamage = SelectedRow.MinDamage;
-						this->MaxDamage = SelectedRow.MaxDamage;
-						this->BaseDamage = float(FMath::RandRange(this->MinDamage, this->MaxDamage));
-
-						//Increase base damage by level
-						this->BaseDamage = UInputLibrary::ChangeValueByPercentage(this->BaseDamage, ps->BaseDamagePercent, true);
-
-						this->HitReactionMoveset = SelectedRow.HitMoveset;
-						this->StunDuration = SelectedRow.StunTime;
-						this->StunImpulse = SelectedRow.StunImpulse;
-
-					}
 				}
 			}
-		}
-
-		//		Silat Style
-		else if (ps->CurrentStyle == 1)
-		{
-			if (this->GetMesh()->SkeletalMesh != nullptr)
+			
+			//		Silat
+			else if (ps->CurrentStyle == 1)
 			{
-				if (this->AnimInsta != nullptr && this->IsStunned == false)
+				if (this->IsLocallyControlled())
 				{
-					if (this->AnimInsta->CanMove == true)
-					{
-						this->AnimInsta->CanMove = false;
-
-						if (bSpecialAttack == true)
-						{
-
-						}
-
-						else if (bSpecialAttack == false)
-						{
-
-						}
-					}
+					ServerPlayMontage(SelectedRow.SkillMoveset, 1.0f, MontageSection);
 				}
 			}
+
+			//		Shao Lin Kungfu
+			else if (ps->CurrentStyle == 2)
+			{
+				if (this->IsLocallyControlled())
+				{
+					ServerPlayMontage(SelectedRow.SkillMoveset, 1.0f, MontageSection);
+				}
+
+				if (SelectedRow.SkillName == "Ultimate")
+				{
+					FTimerHandle TimerHandle;
+					FTimerDelegate TimerDel;
+
+					//	player execute skill
+					//	becomes immune for a duration
+					//	damage increase, attack speed increase and slow down enemy
+					if (this->IsLocallyControlled())
+					{
+						ServerToggleImmunity(this, true);
+
+
+					}
+
+					TimerDel.BindLambda([this, SelectedRow]()
+					{
+						if (this->IsLocallyControlled())
+						{
+							ServerToggleImmunity(this, false);
+						}
+					});
+
+					this->GetWorldTimerManager().SetTimer(TimerHandle, TimerDel, 3.0f, false);
+				}
+
+			}
+
 		}
 
-		//		Shaolin Style
-		else if (ps->CurrentStyle == 2)
+		else
 		{
+			//		player is executing Dash
+			if (SelectedRow.UseTranslate)
+			{
+				FTimerHandle dashTimer;
+				FTimerDelegate dashTimerDel;
 
+				/*int32 sectionIndex = SelectedRow.SkillMoveset->GetSectionIndex(MontageSection);
+				float sectionLength = SelectedRow.SkillMoveset->GetSectionLength(sectionIndex);*/
+
+				//FOnMontageEnded MontageEndDel;
+
+				FVector dashVector = FVector(this->GetCapsuleComponent()->GetForwardVector().X*SelectedRow.TranslateDist, this->GetCapsuleComponent()->GetForwardVector().Y*SelectedRow.TranslateDist, this->GetCapsuleComponent()->GetForwardVector().Z);
+
+				if (this->IsLocallyControlled())
+				{
+					ServerPlayMontage(SelectedRow.SkillMoveset, 1.0f, MontageSection);
+					ServerLaunchChar(dashVector, false, false);
+
+				}
+
+				dashTimerDel.BindLambda([this, SelectedRow, dashVector]()
+				{
+					if (this->IsLocallyControlled())
+					{
+
+						ServerPlayMontage(SelectedRow.SkillMoveset, 1.0f, "GetUp");
+					}
+				});
+
+				this->GetWorldTimerManager().SetTimer(dashTimer, dashTimerDel, 0.2f, false);
+
+			}
+			//		player is executing Normal Attack 1
+			else if (SelectedRow.UseSection)
+			{
+				FTimerHandle delay;
+				FTimerDelegate timerDel;
+
+				this->OnComboDelay = true;
+
+				if (this->IsLocallyControlled())
+				{
+					ServerPlayMontage(SelectedRow.SkillMoveset, 1.0f, MontageSection);
+				}
+
+				int32 sectionIndex = SelectedRow.SkillMoveset->GetSectionIndex(MontageSection);
+				float sectionLength = SelectedRow.SkillMoveset->GetSectionLength(sectionIndex);
+
+				//GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Magenta, FString::Printf(TEXT("section Length: %f"), sectionLength));
+
+				timerDel.BindLambda([this]()
+				{
+					this->OnComboDelay = false;
+
+				});
+
+				this->GetWorldTimerManager().SetTimer(delay, timerDel, sectionLength + comboInterval, false);
+
+
+			}
 		}
+			
+
+		this->MinDamage = SelectedRow.MinDamage;
+		this->MaxDamage = SelectedRow.MaxDamage;
+		this->BaseDamage = float(FMath::RandRange(this->MinDamage, this->MaxDamage));
+
+		//Increase base damage by level
+		this->BaseDamage = UInputLibrary::ChangeValueByPercentage(this->BaseDamage, ps->BaseDamagePercent, true);
+
+		this->HitReactionMoveset = SelectedRow.HitMoveset;
+		this->StunDuration = SelectedRow.StunTime;
+		this->StunImpulse = SelectedRow.StunImpulse;
 	}
 	
 }
@@ -2173,20 +2235,68 @@ void ABattleMobaCharacter::CheckDamage_Implementation(UParticleSystem * ImpactEf
 		{
 			//        apply damage to closestActor if the damageDistance is valid
 
-			ABattleMobaCharacter* damagedChar = Cast<ABattleMobaCharacter>(closestActor);
-			damagedChar->HitReactionMoveset = this->HitReactionMoveset;
-			DoDamage(damagedChar);
-			
-			
-		}
 
+			ABattleMobaCharacter* damagedChar = Cast<ABattleMobaCharacter>(closestActor);
+			ADestructibleTower* damagedTower = Cast<ADestructibleTower>(closestActor);
+
+			//		applying damage to enemy character
+			if (IsValid(damagedChar))
+			{
+				if (damagedChar->GetMesh()->GetAnimInstance()->Montage_IsPlaying(CounterMoveset))
+				{
+					ServerRotateHitActor(damagedChar, this);
+					ServerCounterAttack(damagedChar);
+					
+					/*damagedChar->MulticastRotateHitActor(damagedChar, this);
+					damagedChar->MulticastCounterAttack(damagedChar);
+					*/
+				}
+
+				else
+				{
+					damagedChar->HitReactionMoveset = this->HitReactionMoveset;
+
+					if (this->OnSpecialAttack == true)
+					{
+						ABattleMobaPlayerState* ps = Cast<ABattleMobaPlayerState>(this->GetPlayerState());
+
+						if (IsValid(ps))
+						{
+							if (ps->CurrentStyle == 0)
+							{
+
+							}
+
+							else if (ps->CurrentStyle == 1)
+							{
+
+							}
+
+							else if (ps->CurrentStyle == 2)
+							{
+							}
+						}
+					}
+
+					else
+					{
+						DoDamage(damagedChar);
+					}
+				}
+			}
+
+			//		applying damage to enemy's tower
+			else
+			{
+				TowerReceiveDamage(damagedTower, this->BaseDamage);
+			}
+
+		}
 		PlayEffectsClient(ImpactEffect, AttachTo, HitSound);
 
-		closestActorTemp = closestActor;
+		damagedActor = closestActor;
 		closestActor = nullptr;
 	}
-
-	
 }
 
 bool ABattleMobaCharacter::AttackTrace_Validate(bool traceStart, int activeAttack, UParticleSystem* ImpactEffect, FName AttachTo, USoundBase* HitSound)
@@ -2452,14 +2562,20 @@ void ABattleMobaCharacter::DoDamage_Implementation(AActor* HitActor)
 {
 	if (this != HitActor)
 	{
-		/**		Calculate Damage Dealt by Enemy and set precision to tenth */
-		this->ActualDamage = (this->BaseDamage * this->BuffDamage) * (100 / (100 + ((Defence * BuffDefence) * ((1 - ReducedDefence) * 0.84))));
-		this->ActualDamage = FMath::RoundToInt(ActualDamage);
+		ABattleMobaCharacter* damageChar = Cast<ABattleMobaCharacter>(HitActor);
 
-		/**		Apply Damage */
-		//GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Magenta, FString::Printf(TEXT("Damage Applied: %f"), this->ActualDamage));
-		UE_LOG(LogTemp, Warning, TEXT("Damage Applied: %f"), this->ActualDamage);
-		this->ActualDamage = UGameplayStatics::ApplyDamage(HitActor, this->ActualDamage, nullptr, this, nullptr);
+		if (damageChar->IsImmuned == false)
+		{
+			/**		Calculate Damage Dealt by Enemy and set precision to tenth */
+			this->ActualDamage = (this->BaseDamage * this->BuffDamage) * (100 / (100 + ((Defence * BuffDefence) * ((1 - ReducedDefence) * 0.84))));
+			this->ActualDamage = FMath::RoundToInt(ActualDamage);
+
+			/**		Apply Damage */
+			//GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Magenta, FString::Printf(TEXT("Damage Applied: %f"), this->ActualDamage));
+			UE_LOG(LogTemp, Warning, TEXT("Damage Applied: %f"), this->ActualDamage);
+			this->ActualDamage = UGameplayStatics::ApplyDamage(HitActor, this->ActualDamage, nullptr, this, nullptr);
+		}
+		
 	}
 }
 
@@ -2604,40 +2720,87 @@ void ABattleMobaCharacter::MoveRight(float Value)
 	}
 }
 
-bool ABattleMobaCharacter::ServerEnableMovement_Validate(bool allowMove)
+bool ABattleMobaCharacter::ServerEnableMovement_Validate(ABattleMobaCharacter* player, bool allowMove)
 {
 	return true;
 }
 
-void ABattleMobaCharacter::ServerEnableMovement_Implementation(bool allowMove)
+void ABattleMobaCharacter::ServerEnableMovement_Implementation(ABattleMobaCharacter* player, bool allowMove)
 {
-	MulticastEnableMovement(allowMove);
+	MulticastEnableMovement(player, allowMove);
 }
 
-bool ABattleMobaCharacter::MulticastEnableMovement_Validate(bool allowMove)
+bool ABattleMobaCharacter::MulticastEnableMovement_Validate(ABattleMobaCharacter* player, bool allowMove)
 {
 	return true;
 }
 
-void ABattleMobaCharacter::MulticastEnableMovement_Implementation(bool allowMove)
+void ABattleMobaCharacter::MulticastEnableMovement_Implementation(ABattleMobaCharacter* player, bool allowMove)
 {
-	if (this->GetMesh()->SkeletalMesh != nullptr)
+	if (player->GetMesh()->SkeletalMesh != nullptr)
 	{
-		if (this->AnimInsta != nullptr)
+		if (player->AnimInsta != nullptr)
 		{
-			this->AnimInsta->CanMove = allowMove;
+			player->AnimInsta->CanMove = allowMove;
 		}
 	}
 }
 
-bool ABattleMobaCharacter::MulticastCountSlumberFist_Validate()
+bool ABattleMobaCharacter::MulticastSetComboInterval_Validate(float val)
 {
 	return true;
 }
 
-void ABattleMobaCharacter::MulticastCountSlumberFist_Implementation()
+void ABattleMobaCharacter::MulticastSetComboInterval_Implementation(float val)
 {
+	this->comboInterval = val;
+}
 
+bool ABattleMobaCharacter::ServerToggleStun_Validate(ABattleMobaCharacter * player, bool bStun)
+{
+	return true;
+}
+
+void ABattleMobaCharacter::ServerToggleStun_Implementation(ABattleMobaCharacter * player, bool bStun)
+{
+	MulticastToggleStun(player, bStun);
+}
+
+bool ABattleMobaCharacter::MulticastToggleStun_Validate(ABattleMobaCharacter * player, bool bStun)
+{
+	return true;
+}
+
+void ABattleMobaCharacter::MulticastToggleStun_Implementation(ABattleMobaCharacter * player, bool bStun)
+{
+	if (IsValid(player))
+	{
+		player->IsStunned = bStun;
+	}
+}
+
+bool ABattleMobaCharacter::ServerToggleImmunity_Validate(ABattleMobaCharacter * player, bool bImmune)
+{
+	return true;
+}
+
+void ABattleMobaCharacter::ServerToggleImmunity_Implementation(ABattleMobaCharacter * player, bool bImmune)
+{
+	MulticastToggleImmunity(player, bImmune);
+}
+
+bool ABattleMobaCharacter::MulticastToggleImmunity_Validate(ABattleMobaCharacter * player, bool bImmune)
+{
+	return true;
+}
+
+void ABattleMobaCharacter::MulticastToggleImmunity_Implementation(ABattleMobaCharacter * player, bool bImmune)
+{
+	if (IsValid(player))
+	{
+		player->IsImmuned = bImmune;
+	}
+	
 }
 
 void ABattleMobaCharacter::Activate_Implementation()
