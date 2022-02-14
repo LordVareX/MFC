@@ -149,10 +149,6 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Perks")
 		float ExpVal = 0.0f;
 
-	//Toggle to collect overlapping actors on OnBeginOverlap FogCol
-	UPROPERTY(Replicated)
-		bool IsOverlapFog = false;
-
 	//Get overlapping actors from within FogCol
 	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadWrite, Category = "FogActors")
 		TArray<AActor*> ActorsInVision;

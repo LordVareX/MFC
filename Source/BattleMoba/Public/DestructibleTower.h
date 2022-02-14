@@ -14,12 +14,24 @@ class BATTLEMOBA_API ADestructibleTower : public AActor
 		//Replicated Network setup
 		void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = Components, meta = (AllowPrivateAccess = "true"))
+		class USphereComponent* FogCol;
+
+private:
+	float Rad = 0.0f;
+
+	//Get radius of visible area from sphere mask radius
+	UMaterialParameterCollectionInstance* inst_Fog;
+
 public:
 	// Sets default values for this actor's properties
 	ADestructibleTower();
 
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
+
+	// Called every frame
+	virtual void Tick(float DeltaTime) override;
 
 
 protected:
@@ -54,12 +66,13 @@ protected:
 	UPROPERTY(BlueprintReadOnly, Category = UI)
 		class ABattleMobaGameMode* GameMode;
 
+	//Get overlapping actors from within FogCol
+	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadWrite, Category = "FogActors")
+		TArray<AActor*> ActorsInVision;
 
-	UFUNCTION(BlueprintCallable)
-		virtual float TakeDamage(float value, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser) override;
-
-
-
+	//Material Parameter Collection asset
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+		UMaterialParameterCollection* Mat_Fog;
 
 public:
 
@@ -93,7 +106,24 @@ public:
 	UPROPERTY(EditDefaultsOnly)
 		class UMaterialInstanceDynamic* DynamicMaterial;
 
-	// Called every frame
-	virtual void Tick(float DeltaTime) override;
+protected:
+
+	UFUNCTION(BlueprintCallable)
+		virtual float TakeDamage(float value, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser) override;
+
+	//Fog area overlap begin function
+	UFUNCTION()
+		void OnComponentOverlapBegin(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
+
+	//Fog area overlap end function
+	UFUNCTION()
+		void OnComponentOverlapEnd(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
+
+	//Call out server to set visibility status of overlapping actor/s
+	UFUNCTION(Reliable, Server, WithValidation, Category = "VisibleOnFog")
+		void ServerSetVisibility(ADestructibleTower* owningActor, class ABattleMobaCharacter* Actor, const TArray<AActor*>& Actors, float MaxDrawDist, bool Entering);
+
+	UFUNCTION(Reliable, NetMulticast, WithValidation, Category = "VisibleOnFog")
+		void MulticastSetVisibility(ADestructibleTower* owningActor, class ABattleMobaCharacter* Actor, const TArray<AActor*>& Actors, float MaxDrawDist, bool Entering);
 
 };

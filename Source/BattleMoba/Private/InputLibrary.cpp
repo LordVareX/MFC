@@ -236,6 +236,7 @@ void UInputLibrary::SetActorVisibility(ABattleMobaCharacter* actor, TArray<AActo
 	{
 		for (AActor* pChar : Actors)
 		{
+			GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Purple, FString::Printf(TEXT("ActorName is: %s"), ((*actor->GetName()))));
 			if (pChar != nullptr)
 			{
 				ABattleMobaCharacter* pc = Cast<ABattleMobaCharacter>(pChar);

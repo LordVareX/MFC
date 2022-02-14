@@ -77,8 +77,6 @@ void ABattleMobaCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>&
 	DOREPLIFETIME(ABattleMobaCharacter, RightHitMoveset);
 	DOREPLIFETIME(ABattleMobaCharacter, LeftHitMoveset);
 	DOREPLIFETIME(ABattleMobaCharacter, SkillComp);
-	DOREPLIFETIME(ABattleMobaCharacter, closestActorTemp);
-	DOREPLIFETIME(ABattleMobaCharacter, IsOverlapFog);
 	DOREPLIFETIME(ABattleMobaCharacter, ActorsInVision);
 	DOREPLIFETIME(ABattleMobaCharacter, IsCurrentlyVisible);
 	DOREPLIFETIME(ABattleMobaCharacter, damagedActor);
@@ -622,6 +620,21 @@ void ABattleMobaCharacter::RefreshPlayerData()
 	CreateCPHUD();
 
 	FinishSetupBeginPlay();
+
+	if (IsLocallyControlled() == true)
+	{
+		// Iterate over all actors, can also supply a different base class if needed
+		for(TActorIterator<ABattleMobaCharacter> ActorItr(GetWorld()); ActorItr; ++ActorItr)
+		{
+			// Follow iterator object to my actual actor pointer
+			ABattleMobaCharacter* MyActor = *ActorItr;
+			if (MyActor->TeamName != this->TeamName)
+			{
+				MyActor->GetMesh()->SetCullDistance(1000.f);
+				MyActor->Outline->SetCullDistance(1000.f);
+			}
+		}
+	}
 }
 
 void ABattleMobaCharacter::CheckSwipeType(EInputType Type, FVector2D Location, TEnumAsByte<ETouchIndex::Type> TouchIndex)
@@ -731,14 +744,14 @@ void ABattleMobaCharacter::Tick(float DeltaTime)
 	}
 
 	//Check for overlapping actors within fogcol
-	if (IsOverlapFog == true)
+	/*if (IsOverlapFog == true)
 	{
 		FogCol->GetOverlappingActors(this->ActorsInVision, ABattleMobaCharacter::StaticClass());
 		if (!this->ActorsInVision.IsValidIndex(0))
 		{
 			IsOverlapFog = false;
 		}
-	}
+	}*/
 
 	////////////////Mobile Input/////////////////////////////
 	if (this->GetNetMode() != ENetMode::NM_DedicatedServer)
@@ -1149,10 +1162,7 @@ void ABattleMobaCharacter::OnComponentOverlapBegin(UPrimitiveComponent * Overlap
 	ABattleMobaCharacter* pChar = Cast<ABattleMobaCharacter>(OtherActor);
 	if (pChar != nullptr && pChar != this && pChar->TeamName != this->TeamName)
 	{
-		if (IsOverlapFog == false)
-		{
-			IsOverlapFog = true;
-		}
+		ActorsInVision.AddUnique(pChar);
 		if (this->IsLocallyControlled())
 		{
 			ServerSetVisibility(this, pChar, ActorsInVision, .0f, true);
