@@ -1781,52 +1781,75 @@ void ABattleMobaCharacter::RotateNearestTarget_Implementation(AActor* Target, ER
 		//FMath::RInterpTo(this->GetCapsuleComponent()->GetComponentRotation(), RotateTo, this->GetWorld()->GetDeltaSeconds(), 100.0f);
 
 		//Check for Character to move the component target, else just rotate
-		ABattleMobaCharacter* characterActor = Cast<ABattleMobaCharacter>(Target);
+		//ABattleMobaCharacter* characterActor = Cast<ABattleMobaCharacter>(Target);
 
 		//If the distance between two character is outside range
-		if (this->GetDistanceTo(Target) > RotateRadius && characterActor)
+		if (this->GetDistanceTo(Target) > (RotateRadius / 1.5) && Target != nullptr)
 		{
 			//Get Vector from player minus target
 			FVector FromOriginToTarget = this->GetCapsuleComponent()->GetComponentLocation() - Target->GetActorLocation();
 
 			//To avoid overlapping actors
 			//Multiply by Radius and divided by distance
-			FromOriginToTarget *= RotateRadius / this->GetDistanceTo(Target);
+			FromOriginToTarget *= (RotateRadius / 1.5) / this->GetDistanceTo(Target);
 
-			UBattleMobaAnimInstance* inst = Cast<UBattleMobaAnimInstance>(this->GetMesh()->GetAnimInstance());
-			inst->bMoving = true;
-			inst->Speed = FromOriginToTarget.Size();
-
-			//GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Green, FString::Printf(TEXT("Hit Speed: %f"), inst->Speed));
-
-			//rotate and move the component towards target
-			UKismetSystemLibrary::MoveComponentTo(this->GetCapsuleComponent(), Target->GetActorLocation() + FromOriginToTarget, RotateTo, true, true, 0.1f, true, EMoveComponentAction::Type::Move, LatentInfo);
-
-			//setting up delay properties
-			FTimerHandle handle;
-			FTimerDelegate TimerDelegate;
-			
-			TimerDelegate.BindLambda([this, inst, Type, SelectedRow]()
+			if (Type == EResult::Cooldown && SelectedRow.isOnCD == false)
 			{
-				//inst->Speed = 0.0f;
+				UBattleMobaAnimInstance* inst = Cast<UBattleMobaAnimInstance>(this->GetMesh()->GetAnimInstance());
 
-				//execute action skill
-				if (this->IsLocallyControlled())
+				inst->bMoving = true;
+				inst->Speed = FromOriginToTarget.Size();
+
+				GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Green, FString::Printf(TEXT("Hit Speed: %f"), inst->Speed));
+				//rotate and move the component towards target
+				UKismetSystemLibrary::MoveComponentTo(this->GetCapsuleComponent(), Target->GetActorLocation() + FromOriginToTarget, RotateTo, true, true, 0.1f, true, EMoveComponentAction::Type::Move, LatentInfo);
+
+				//setting up delay properties
+				FTimerHandle handle;
+				FTimerDelegate TimerDelegate;
+
+				TimerDelegate.BindLambda([this, inst, Type, SelectedRow]()
 				{
-					if (Type == EResult::Cooldown)
+
+					//execute action skill
+					if (this->IsLocallyControlled())
 					{
 						ServerExecuteAction(SelectedRow, AttackSection, true);
 					}
-					else if (Type == EResult::Section)
+					inst->bMoving = false;
+				});
+				/*Start delay to reset speed*/
+				this->GetWorldTimerManager().SetTimer(handle, TimerDelegate, 0.15f, false);
+			}
+			else if (Type == EResult::Section && this->OnComboDelay == false)
+			{
+				UBattleMobaAnimInstance* inst = Cast<UBattleMobaAnimInstance>(this->GetMesh()->GetAnimInstance());
+
+				inst->bMoving = true;
+				inst->Speed = FromOriginToTarget.Size();
+
+				GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Green, FString::Printf(TEXT("Hit Speed: %f"), inst->Speed));
+				//rotate and move the component towards target
+				UKismetSystemLibrary::MoveComponentTo(this->GetCapsuleComponent(), Target->GetActorLocation() + FromOriginToTarget, RotateTo, true, true, 0.1f, true, EMoveComponentAction::Type::Move, LatentInfo);
+
+				//setting up delay properties
+				FTimerHandle handle;
+				FTimerDelegate TimerDelegate;
+
+				TimerDelegate.BindLambda([this, inst, Type, SelectedRow]()
+				{
+					//inst->Speed = 0.0f;
+
+					//execute action skill
+					if (this->IsLocallyControlled())
 					{
 						AttackCombo(SelectedRow);
 					}
-				}
-				inst->bMoving = false;
-			});
-			/*Start delay to reset speed*/
-			this->GetWorldTimerManager().SetTimer(handle, TimerDelegate, 0.15f, false);
-
+					inst->bMoving = false;
+				});
+				/*Start delay to reset speed*/
+				this->GetWorldTimerManager().SetTimer(handle, TimerDelegate, 0.15f, false);
+			}
 		}
 		else
 		{
