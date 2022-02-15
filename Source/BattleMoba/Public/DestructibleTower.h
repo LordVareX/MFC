@@ -36,6 +36,9 @@ public:
 
 protected:
 
+	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadWrite, Category = "Fog")
+		bool IsOverlapFog = false;
+
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Destructible)
 		class USceneComponent* TriggerComponent;
 
@@ -121,9 +124,9 @@ protected:
 
 	//Call out server to set visibility status of overlapping actor/s
 	UFUNCTION(Reliable, Server, WithValidation, Category = "VisibleOnFog")
-		void ServerSetVisibility(ADestructibleTower* owningActor, class ABattleMobaCharacter* Actor, const TArray<AActor*>& Actors, float MaxDrawDist, bool Entering);
+		void ServerSetVisibility(ADestructibleTower* owningActor, class ABattleMobaCharacter* Actor, float MaxDrawDist, bool Entering);
 
 	UFUNCTION(Reliable, NetMulticast, WithValidation, Category = "VisibleOnFog")
-		void MulticastSetVisibility(ADestructibleTower* owningActor, class ABattleMobaCharacter* Actor, const TArray<AActor*>& Actors, float MaxDrawDist, bool Entering);
+		void MulticastSetVisibility(ADestructibleTower* owningActor, class ABattleMobaCharacter* Actor, float MaxDrawDist, bool Entering);
 
 };

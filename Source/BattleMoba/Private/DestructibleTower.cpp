@@ -29,6 +29,7 @@ void ADestructibleTower::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& O
 	DOREPLIFETIME(ADestructibleTower, IsHit);
 	DOREPLIFETIME(ADestructibleTower, isDestroyed);
 	DOREPLIFETIME(ADestructibleTower, ActorsInVision);
+	DOREPLIFETIME(ADestructibleTower, IsOverlapFog);
 }
 
 // Sets default values
@@ -202,8 +203,7 @@ void ADestructibleTower::OnComponentOverlapBegin(UPrimitiveComponent* Overlapped
 	ABattleMobaCharacter* pChar = Cast<ABattleMobaCharacter>(OtherActor);
 	if (pChar != nullptr)
 	{
-		ActorsInVision.AddUnique(pChar);
-		ServerSetVisibility(this, pChar, ActorsInVision, .0f, true);
+		ServerSetVisibility(this, pChar, .0f, true);
 	}
 }
 
@@ -212,28 +212,29 @@ void ADestructibleTower::OnComponentOverlapEnd(UPrimitiveComponent * OverlappedC
 	ABattleMobaCharacter* pChar = Cast<ABattleMobaCharacter>(OtherActor);
 	if (pChar != nullptr)
 	{
-		ServerSetVisibility(this, pChar, ActorsInVision, Rad, false);
+		ServerSetVisibility(this, pChar, Rad, false);
 	}
 }
 
-bool ADestructibleTower::ServerSetVisibility_Validate(ADestructibleTower * owningActor, ABattleMobaCharacter * Actor, const TArray<AActor*>& Actors, float MaxDrawDist, bool Entering)
+bool ADestructibleTower::ServerSetVisibility_Validate(ADestructibleTower * owningActor, ABattleMobaCharacter * Actor, float MaxDrawDist, bool Entering)
 {
 	return true;
 }
 
-void ADestructibleTower::ServerSetVisibility_Implementation(ADestructibleTower * owningActor, ABattleMobaCharacter * Actor, const TArray<AActor*>& Actors, float MaxDrawDist, bool Entering)
+void ADestructibleTower::ServerSetVisibility_Implementation(ADestructibleTower * owningActor, ABattleMobaCharacter * Actor, float MaxDrawDist, bool Entering)
 {
-	MulticastSetVisibility(owningActor, Actor, Actors, MaxDrawDist, Entering);
+	MulticastSetVisibility(owningActor, Actor, MaxDrawDist, Entering);
 }
 
-bool ADestructibleTower::MulticastSetVisibility_Validate(ADestructibleTower * owningActor, ABattleMobaCharacter * Actor, const TArray<AActor*>& Actors, float MaxDrawDist, bool Entering)
+bool ADestructibleTower::MulticastSetVisibility_Validate(ADestructibleTower * owningActor, ABattleMobaCharacter * Actor, float MaxDrawDist, bool Entering)
 {
 	return true;
 }
 
-void ADestructibleTower::MulticastSetVisibility_Implementation(ADestructibleTower * owningActor, ABattleMobaCharacter * Actor, const TArray<AActor*>& Actors, float MaxDrawDist, bool Entering)
+void ADestructibleTower::MulticastSetVisibility_Implementation(ADestructibleTower * owningActor, ABattleMobaCharacter * Actor, float MaxDrawDist, bool Entering)
 {
-	UInputLibrary::SetActorVisibility(Actor, Actors, MaxDrawDist, Entering, owningActor);
+	ActorsInVision.AddUnique(Actor);
+	UInputLibrary::SetActorVisibility(Actor, ActorsInVision, MaxDrawDist, Entering, owningActor);
 }
 
 
@@ -244,6 +245,12 @@ void ADestructibleTower::Tick(float DeltaTime)
 
 	//Set size of widget on vision
 	UInputLibrary::SetUIVisibility(W_Health, this);
+
+	FogCol->GetOverlappingActors(ActorsInVision, ABattleMobaCharacter::StaticClass());
+	if (!ActorsInVision.IsValidIndex(0))
+	{
+		IsOverlapFog = false;
+	}
 }
 
 

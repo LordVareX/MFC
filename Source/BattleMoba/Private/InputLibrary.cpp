@@ -236,9 +236,13 @@ void UInputLibrary::SetActorVisibility(ABattleMobaCharacter* actor, TArray<AActo
 	{
 		if (actor != nullptr)
 		{
+			if (Actors.IsValidIndex(0))
+			{
+				GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Purple, FString::Printf(TEXT("VALID")));
+			}
 			for (AActor* pChar : Actors)
 			{
-				GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Purple, FString::Printf(TEXT("ActorName is: %s"), ((*actor->GetName()))));
+				//GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Purple, FString::Printf(TEXT("ActorName is: %s"), ((*actor->GetName()))));
 				if (pChar != nullptr)
 				{
 					ABattleMobaCharacter* pc = Cast<ABattleMobaCharacter>(pChar);
@@ -257,16 +261,6 @@ void UInputLibrary::SetActorVisibility(ABattleMobaCharacter* actor, TArray<AActo
 				}
 			}
 		}
-		else
-		{
-			if (Actors.IsValidIndex(0))
-			{
-				if (Actors.Contains(actor))
-				{
-					Actors.Remove(actor);
-				}
-			}
-		}
 	}
 	else
 	{
@@ -274,6 +268,7 @@ void UInputLibrary::SetActorVisibility(ABattleMobaCharacter* actor, TArray<AActo
 		{
 			if (Actors.IsValidIndex(0))
 			{
+				GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Purple, FString::Printf(TEXT(" OUT VALID")));
 				if (Actors.Contains(actor))
 				{
 					Actors.Remove(actor);

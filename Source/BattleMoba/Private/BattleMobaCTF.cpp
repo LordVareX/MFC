@@ -160,8 +160,10 @@ void ABattleMobaCTF::OnComponentOverlapBegin(UPrimitiveComponent* OverlappedComp
 	ABattleMobaCharacter* pChar = Cast<ABattleMobaCharacter>(OtherActor);
 	if (pChar != nullptr)
 	{
-		ActorsInVision.AddUnique(pChar);
-		ServerSetVisibility(this, pChar, ActorsInVision, .0f, true);
+		if (HasAuthority())
+		{
+			ServerSetVisibility(this, pChar, .0f, true);
+		}
 	}
 }
 
@@ -170,28 +172,32 @@ void ABattleMobaCTF::OnComponentOverlapEnd(UPrimitiveComponent* OverlappedCompon
 	ABattleMobaCharacter* pChar = Cast<ABattleMobaCharacter>(OtherActor);
 	if (pChar != nullptr)
 	{
-		ServerSetVisibility(this, pChar, ActorsInVision, Rad, false);
+		if (HasAuthority())
+		{
+			ServerSetVisibility(this, pChar, Rad, false);
+		}
 	}
 }
 
-bool ABattleMobaCTF::ServerSetVisibility_Validate(ABattleMobaCTF* owningActor, ABattleMobaCharacter* Actor, const TArray<AActor*>& Actors, float MaxDrawDist, bool Entering)
+bool ABattleMobaCTF::ServerSetVisibility_Validate(ABattleMobaCTF* owningActor, ABattleMobaCharacter* Actor, float MaxDrawDist, bool Entering)
 {
 	return true;
 }
 
-void ABattleMobaCTF::ServerSetVisibility_Implementation(ABattleMobaCTF* owningActor, ABattleMobaCharacter* Actor, const TArray<AActor*>& Actors, float MaxDrawDist, bool Entering)
+void ABattleMobaCTF::ServerSetVisibility_Implementation(ABattleMobaCTF* owningActor, ABattleMobaCharacter* Actor, float MaxDrawDist, bool Entering)
 {
-	MulticastSetVisibility(owningActor, Actor, Actors, MaxDrawDist, Entering);
+	MulticastSetVisibility(owningActor, Actor, MaxDrawDist, Entering);
 }
 
-bool ABattleMobaCTF::MulticastSetVisibility_Validate(ABattleMobaCTF* owningActor, ABattleMobaCharacter * Actor, const TArray<AActor*>& Actors, float MaxDrawDist, bool Entering)
+bool ABattleMobaCTF::MulticastSetVisibility_Validate(ABattleMobaCTF* owningActor, ABattleMobaCharacter * Actor, float MaxDrawDist, bool Entering)
 {
 	return true;
 }
 
-void ABattleMobaCTF::MulticastSetVisibility_Implementation(ABattleMobaCTF* owningActor, ABattleMobaCharacter * Actor, const TArray<AActor*>& Actors, float MaxDrawDist, bool Entering)
+void ABattleMobaCTF::MulticastSetVisibility_Implementation(ABattleMobaCTF* owningActor, ABattleMobaCharacter * Actor, float MaxDrawDist, bool Entering)
 {
-	UInputLibrary::SetActorVisibility(Actor, Actors, MaxDrawDist, Entering, owningActor);
+	ActorsInVision.AddUnique(Actor);
+	UInputLibrary::SetActorVisibility(Actor, ActorsInVision, MaxDrawDist, Entering, owningActor);
 }
 
 void ABattleMobaCTF::OnRep_Val()

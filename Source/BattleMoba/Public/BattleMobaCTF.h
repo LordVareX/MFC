@@ -57,10 +57,10 @@ protected:
 
 	//Call out server to set visibility status of overlapping actor/s
 	UFUNCTION(Reliable, Server, WithValidation, Category = "VisibleOnFog")
-		void ServerSetVisibility(ABattleMobaCTF* owningActor, class ABattleMobaCharacter* Actor, const TArray<AActor*>& Actors, float MaxDrawDist, bool Entering);
+		void ServerSetVisibility(ABattleMobaCTF* owningActor, class ABattleMobaCharacter* Actor, float MaxDrawDist, bool Entering);
 
 	UFUNCTION(Reliable, NetMulticast, WithValidation, Category = "VisibleOnFog")
-		void MulticastSetVisibility(ABattleMobaCTF* owningActor, class ABattleMobaCharacter* Actor, const TArray<AActor*>& Actors, float MaxDrawDist, bool Entering);
+		void MulticastSetVisibility(ABattleMobaCTF* owningActor, class ABattleMobaCharacter* Actor, float MaxDrawDist, bool Entering);
 
 public:
 

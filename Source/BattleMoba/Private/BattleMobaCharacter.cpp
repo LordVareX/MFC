@@ -657,77 +657,77 @@ void ABattleMobaCharacter::CheckSwipeType(EInputType Type, FVector2D Location, T
 				}
 				else if (!UInputLibrary::PointOnLeftHalfOfScreen(Location))
 				{
-					InitRotateToggle = true;
+				InitRotateToggle = true;
 				}
 			}
 			else if (TouchIndex == ETouchIndex::Touch2)
 			{
-				//if current Location is on the left side of screen, set swipe mechanic to move the player, else set to rotate the camera
-				if (UInputLibrary::PointOnLeftHalfOfScreen(Location))
-				{
-					//GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Blue, FString::Printf(TEXT("Move")));
+			//if current Location is on the left side of screen, set swipe mechanic to move the player, else set to rotate the camera
+			if (UInputLibrary::PointOnLeftHalfOfScreen(Location))
+			{
+				//GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Blue, FString::Printf(TEXT("Move")));
 
-					TouchStart = Location;
-					MoveTouchIndex = TouchIndex;
-					IsPressed = true;
-				}
-				else if (!UInputLibrary::PointOnLeftHalfOfScreen(Location))
-				{
-					InitRotateToggle = true;
-				}
+				TouchStart = Location;
+				MoveTouchIndex = TouchIndex;
+				IsPressed = true;
+			}
+			else if (!UInputLibrary::PointOnLeftHalfOfScreen(Location))
+			{
+				InitRotateToggle = true;
+			}
 			}
 		}
 		//If the pressed touch is swiping
 		else if (Type == EInputType::Hold)
 		{
-			if (TouchIndex == ETouchIndex::Touch1)
+		if (TouchIndex == ETouchIndex::Touch1)
+		{
+			//if current Location is on the left side of screen, set swipe mechanic to move the player, else set to rotate the camera
+			if (UInputLibrary::PointOnLeftHalfOfScreen(Location))
 			{
-				//if current Location is on the left side of screen, set swipe mechanic to move the player, else set to rotate the camera
-				if (UInputLibrary::PointOnLeftHalfOfScreen(Location))
-				{
-					//GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Blue, FString::Printf(TEXT("Move")));
+				//GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Blue, FString::Printf(TEXT("Move")));
 
-					TouchEnd = Location;
-					MoveTouchIndex = TouchIndex;
-				}
-				else if (!UInputLibrary::PointOnLeftHalfOfScreen(Location))
-				{
-					RotTouchIndex = TouchIndex;
-				}
+				TouchEnd = Location;
+				MoveTouchIndex = TouchIndex;
 			}
-			if (TouchIndex == ETouchIndex::Touch2)
+			else if (!UInputLibrary::PointOnLeftHalfOfScreen(Location))
 			{
-				//if current Location is on the left side of screen, set swipe mechanic to move the player, else set to rotate the camera
-				if (UInputLibrary::PointOnLeftHalfOfScreen(Location))
-				{
-					//GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Blue, FString::Printf(TEXT("Move")));
-
-					TouchEnd = Location;
-					MoveTouchIndex = TouchIndex;
-				}
-				else if (!UInputLibrary::PointOnLeftHalfOfScreen(Location))
-				{
-					RotTouchIndex = TouchIndex;
-				}
+				RotTouchIndex = TouchIndex;
 			}
+		}
+		if (TouchIndex == ETouchIndex::Touch2)
+		{
+			//if current Location is on the left side of screen, set swipe mechanic to move the player, else set to rotate the camera
+			if (UInputLibrary::PointOnLeftHalfOfScreen(Location))
+			{
+				//GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Blue, FString::Printf(TEXT("Move")));
+
+				TouchEnd = Location;
+				MoveTouchIndex = TouchIndex;
+			}
+			else if (!UInputLibrary::PointOnLeftHalfOfScreen(Location))
+			{
+				RotTouchIndex = TouchIndex;
+			}
+		}
 		}
 		//if the current touch index is being released
 		else if (Type == EInputType::Released)
 		{
-			if (TouchIndex == ETouchIndex::Touch1)
+		if (TouchIndex == ETouchIndex::Touch1)
+		{
+			if (MoveTouchIndex == TouchIndex)
 			{
-				if (MoveTouchIndex == TouchIndex)
-				{
-					IsPressed = false;
-				}
+				IsPressed = false;
 			}
-			if (TouchIndex == ETouchIndex::Touch2)
+		}
+		if (TouchIndex == ETouchIndex::Touch2)
+		{
+			if (MoveTouchIndex == TouchIndex)
 			{
-				if (MoveTouchIndex == TouchIndex)
-				{
-					IsPressed = false;
-				}
+				IsPressed = false;
 			}
+		}
 
 		}
 	}
@@ -742,16 +742,6 @@ void ABattleMobaCharacter::Tick(float DeltaTime)
 	{
 		UInputLibrary::SetUIVisibility(W_DamageOutput, this);
 	}
-
-	//Check for overlapping actors within fogcol
-	/*if (IsOverlapFog == true)
-	{
-		FogCol->GetOverlappingActors(this->ActorsInVision, ABattleMobaCharacter::StaticClass());
-		if (!this->ActorsInVision.IsValidIndex(0))
-		{
-			IsOverlapFog = false;
-		}
-	}*/
 
 	////////////////Mobile Input/////////////////////////////
 	if (this->GetNetMode() != ENetMode::NM_DedicatedServer)
@@ -1162,10 +1152,9 @@ void ABattleMobaCharacter::OnComponentOverlapBegin(UPrimitiveComponent * Overlap
 	ABattleMobaCharacter* pChar = Cast<ABattleMobaCharacter>(OtherActor);
 	if (pChar != nullptr && pChar != this && pChar->TeamName != this->TeamName)
 	{
-		ActorsInVision.AddUnique(pChar);
 		if (this->IsLocallyControlled())
 		{
-			ServerSetVisibility(this, pChar, ActorsInVision, .0f, true);
+			ServerSetVisibility(this, pChar, .0f, true);
 		}
 	}
 }
@@ -1177,29 +1166,30 @@ void ABattleMobaCharacter::OnComponentOverlapEnd(UPrimitiveComponent * Overlappe
 	{
 		if (this->IsLocallyControlled())
 		{
-			ServerSetVisibility(this, pChar, ActorsInVision, Rad, false);
+			ServerSetVisibility(this, pChar, Rad, false);
 		}
 	}
 }
 
-bool ABattleMobaCharacter::ServerSetVisibility_Validate(ABattleMobaCharacter* owningActor, ABattleMobaCharacter * Actor, const TArray<AActor*>& Actors, float MaxDrawDist, bool Entering)
+bool ABattleMobaCharacter::ServerSetVisibility_Validate(ABattleMobaCharacter* owningActor, ABattleMobaCharacter* Actor, float MaxDrawDist, bool Entering)
 {
 	return true;
 }
 
-void ABattleMobaCharacter::ServerSetVisibility_Implementation(ABattleMobaCharacter* owningActor, ABattleMobaCharacter * Actor, const TArray<AActor*>& Actors, float MaxDrawDist, bool Entering)
+void ABattleMobaCharacter::ServerSetVisibility_Implementation(ABattleMobaCharacter* owningActor, ABattleMobaCharacter* Actor, float MaxDrawDist, bool Entering)
 {
-	MulticastSetVisibility(owningActor, Actor, Actors, MaxDrawDist, Entering);
+	MulticastSetVisibility(owningActor, Actor, MaxDrawDist, Entering);
 }
 
-bool ABattleMobaCharacter::MulticastSetVisibility_Validate(ABattleMobaCharacter* owningActor, ABattleMobaCharacter * Actor, const TArray<AActor*>& Actors, float MaxDrawDist, bool Entering)
+bool ABattleMobaCharacter::MulticastSetVisibility_Validate(ABattleMobaCharacter* owningActor, ABattleMobaCharacter* Actor, float MaxDrawDist, bool Entering)
 {
 	return true;
 }
 
-void ABattleMobaCharacter::MulticastSetVisibility_Implementation(ABattleMobaCharacter* owningActor, ABattleMobaCharacter * Actor, const TArray<AActor*>& Actors, float MaxDrawDist, bool Entering)
+void ABattleMobaCharacter::MulticastSetVisibility_Implementation(ABattleMobaCharacter* owningActor, ABattleMobaCharacter* Actor, float MaxDrawDist, bool Entering)
 {
-	UInputLibrary::SetActorVisibility(Actor, Actors, MaxDrawDist, Entering, owningActor);
+	ActorsInVision.AddUnique(Actor);
+	UInputLibrary::SetActorVisibility(Actor, ActorsInVision, MaxDrawDist, Entering, owningActor);
 }
 
 bool ABattleMobaCharacter::ServerRotateHitActor_Validate(AActor * HitActor, AActor * Attacker)
@@ -1802,7 +1792,7 @@ void ABattleMobaCharacter::RotateNearestTarget_Implementation(AActor* Target, ER
 
 				GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Green, FString::Printf(TEXT("Hit Speed: %f"), inst->Speed));
 				//rotate and move the component towards target
-				UKismetSystemLibrary::MoveComponentTo(this->GetCapsuleComponent(), Target->GetActorLocation() + FromOriginToTarget, RotateTo, true, true, 0.1f, true, EMoveComponentAction::Type::Move, LatentInfo);
+				UKismetSystemLibrary::MoveComponentTo(this->GetCapsuleComponent(), Target->GetActorLocation() + FromOriginToTarget, RotateTo, true, true, inst->Speed/ (Target->GetActorLocation() + FromOriginToTarget).Size(), true, EMoveComponentAction::Type::Move, LatentInfo);
 
 				//setting up delay properties
 				FTimerHandle handle;
@@ -1810,7 +1800,6 @@ void ABattleMobaCharacter::RotateNearestTarget_Implementation(AActor* Target, ER
 
 				TimerDelegate.BindLambda([this, inst, Type, SelectedRow]()
 				{
-
 					//execute action skill
 					if (this->IsLocallyControlled())
 					{
@@ -1819,7 +1808,7 @@ void ABattleMobaCharacter::RotateNearestTarget_Implementation(AActor* Target, ER
 					inst->bMoving = false;
 				});
 				/*Start delay to reset speed*/
-				this->GetWorldTimerManager().SetTimer(handle, TimerDelegate, 0.15f, false);
+				this->GetWorldTimerManager().SetTimer(handle, TimerDelegate, inst->Speed / (Target->GetActorLocation() + FromOriginToTarget).Size(), false);
 			}
 			else if (Type == EResult::Section && this->OnComboDelay == false)
 			{
@@ -1830,7 +1819,7 @@ void ABattleMobaCharacter::RotateNearestTarget_Implementation(AActor* Target, ER
 
 				GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Green, FString::Printf(TEXT("Hit Speed: %f"), inst->Speed));
 				//rotate and move the component towards target
-				UKismetSystemLibrary::MoveComponentTo(this->GetCapsuleComponent(), Target->GetActorLocation() + FromOriginToTarget, RotateTo, true, true, 0.1f, true, EMoveComponentAction::Type::Move, LatentInfo);
+				UKismetSystemLibrary::MoveComponentTo(this->GetCapsuleComponent(), Target->GetActorLocation() + FromOriginToTarget, RotateTo, true, true, inst->Speed / (Target->GetActorLocation() + FromOriginToTarget).Size(), true, EMoveComponentAction::Type::Move, LatentInfo);
 
 				//setting up delay properties
 				FTimerHandle handle;
@@ -1848,7 +1837,7 @@ void ABattleMobaCharacter::RotateNearestTarget_Implementation(AActor* Target, ER
 					inst->bMoving = false;
 				});
 				/*Start delay to reset speed*/
-				this->GetWorldTimerManager().SetTimer(handle, TimerDelegate, 0.15f, false);
+				this->GetWorldTimerManager().SetTimer(handle, TimerDelegate, inst->Speed / (Target->GetActorLocation() + FromOriginToTarget).Size(), false);
 			}
 		}
 		else
