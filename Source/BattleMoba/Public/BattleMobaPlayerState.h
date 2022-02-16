@@ -164,6 +164,9 @@ protected:
 	UFUNCTION(BlueprintCallable)//checvalcount opt for need to current value from max value needed for a key
 		bool CheckKeyInMap(FString str, bool checkValCount, int maxVal);
 
+	//UPROPERTY(Replicated, VisibleAnywhere, BlueprintReadOnly)
+	//	bool IsCurrentlyVisible = false;
+
 public:
 
 	virtual void LookUp_Implementation(const FString& str); //interface

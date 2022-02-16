@@ -84,8 +84,9 @@ void ABattleMobaCTF::BeginPlay()
 	Super::BeginPlay();
 
 	//remove excess character and rename the owning actor in the Level
-	[this](FString temp)
+	/*[this](FString temp)
 	{
+		GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("CTFName is: %s"), (*this->GetName())));
 		temp = this->GetName();
 		for (int i = temp.Len() - 1; i > 0; i--)
 		{
@@ -100,11 +101,15 @@ void ABattleMobaCTF::BeginPlay()
 				}
 			}
 		}
-	};
+	};*/
 	
 	/////////////////Get flag names that valid in current Level///////////////////////////////
 	inst_Fog = GetWorld()->GetParameterCollectionInstance(Mat_Fog);
 
+	if (this->GetClass()->GetFName().ToString() == this->GetName())
+	{
+		UInputLibrary::RenameObject(this->GetClass()->GetFName().ToString(), this);
+	}
 	if (inst_Fog->GetScalarParameterValue(FName(*this->GetName()), Rad))
 	{
 		GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("CTFName is: %s"), (*this->GetName())));
@@ -160,8 +165,9 @@ void ABattleMobaCTF::OnComponentOverlapBegin(UPrimitiveComponent* OverlappedComp
 	ABattleMobaCharacter* pChar = Cast<ABattleMobaCharacter>(OtherActor);
 	if (pChar != nullptr)
 	{
-		if (HasAuthority())
+		if (HasAuthority()/* && this->GetNetMode() != ENetMode::NM_DedicatedServer*/)
 		{
+			GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("Actor name is: %s"), ((*pChar->GetName()))));
 			ServerSetVisibility(this, pChar, .0f, true);
 		}
 	}
@@ -172,7 +178,7 @@ void ABattleMobaCTF::OnComponentOverlapEnd(UPrimitiveComponent* OverlappedCompon
 	ABattleMobaCharacter* pChar = Cast<ABattleMobaCharacter>(OtherActor);
 	if (pChar != nullptr)
 	{
-		if (HasAuthority())
+		if (HasAuthority()/* && this->GetNetMode() != ENetMode::NM_DedicatedServer*/)
 		{
 			ServerSetVisibility(this, pChar, Rad, false);
 		}
@@ -194,8 +200,9 @@ bool ABattleMobaCTF::MulticastSetVisibility_Validate(ABattleMobaCTF* owningActor
 	return true;
 }
 
-void ABattleMobaCTF::MulticastSetVisibility_Implementation(ABattleMobaCTF* owningActor, ABattleMobaCharacter * Actor, float MaxDrawDist, bool Entering)
+void ABattleMobaCTF::MulticastSetVisibility_Implementation(ABattleMobaCTF* owningActor, ABattleMobaCharacter* Actor, float MaxDrawDist, bool Entering)
 {
+	GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Red, FString::Printf(TEXT("Actor name is: %s"), ((*Actor->GetName()))));
 	ActorsInVision.AddUnique(Actor);
 	UInputLibrary::SetActorVisibility(Actor, ActorsInVision, MaxDrawDist, Entering, owningActor);
 }

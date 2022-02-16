@@ -26,6 +26,7 @@ void ABattleMobaPC::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLif
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	DOREPLIFETIME(ABattleMobaPC, pi);
+	DOREPLIFETIME(ABattleMobaPC, SpectPI);
 }
 
 void ABattleMobaPC::BeginPlay()

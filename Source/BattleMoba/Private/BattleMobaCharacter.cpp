@@ -77,7 +77,6 @@ void ABattleMobaCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>&
 	DOREPLIFETIME(ABattleMobaCharacter, RightHitMoveset);
 	DOREPLIFETIME(ABattleMobaCharacter, LeftHitMoveset);
 	DOREPLIFETIME(ABattleMobaCharacter, SkillComp);
-	DOREPLIFETIME(ABattleMobaCharacter, IsOverlapFog);
 	DOREPLIFETIME(ABattleMobaCharacter, ActorsInVision);
 	DOREPLIFETIME(ABattleMobaCharacter, IsCurrentlyVisible);
 	DOREPLIFETIME(ABattleMobaCharacter, damagedActor);
@@ -650,35 +649,35 @@ void ABattleMobaCharacter::CheckSwipeType(EInputType Type, FVector2D Location, T
 		{
 			if (TouchIndex == ETouchIndex::Touch1)
 			{
-				//if current Location is on the left side of screen, set swipe mechanic to move the player, else set to rotate the camera
-				if (UInputLibrary::PointOnLeftHalfOfScreen(Location))
-				{
-					//GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Blue, FString::Printf(TEXT("Move")));
+				////if current Location is on the left side of screen, set swipe mechanic to move the player, else set to rotate the camera
+				//if (UInputLibrary::PointOnLeftHalfOfScreen(Location))
+				//{
+				//	//GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Blue, FString::Printf(TEXT("Move")));
 
-					TouchStart = Location;
-					MoveTouchIndex = TouchIndex;
-					IsPressed = true;
-				}
-				else if (!UInputLibrary::PointOnLeftHalfOfScreen(Location))
+				//	TouchStart = Location;
+				//	MoveTouchIndex = TouchIndex;
+				//	IsPressed = true;
+				//}
+				/*else*/ if (!UInputLibrary::PointOnLeftHalfOfScreen(Location))
 				{
 				InitRotateToggle = true;
 				}
 			}
 			else if (TouchIndex == ETouchIndex::Touch2)
 			{
-			//if current Location is on the left side of screen, set swipe mechanic to move the player, else set to rotate the camera
-			if (UInputLibrary::PointOnLeftHalfOfScreen(Location))
-			{
-				//GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Blue, FString::Printf(TEXT("Move")));
+				//if current Location is on the left side of screen, set swipe mechanic to move the player, else set to rotate the camera
+				//if (UInputLibrary::PointOnLeftHalfOfScreen(Location))
+				//{
+				//	//GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Blue, FString::Printf(TEXT("Move")));
 
-				TouchStart = Location;
-				MoveTouchIndex = TouchIndex;
-				IsPressed = true;
-			}
-			else if (!UInputLibrary::PointOnLeftHalfOfScreen(Location))
-			{
-				InitRotateToggle = true;
-			}
+				//	TouchStart = Location;
+				//	MoveTouchIndex = TouchIndex;
+				//	IsPressed = true;
+				//}
+				/*else */if (!UInputLibrary::PointOnLeftHalfOfScreen(Location))
+				{
+					InitRotateToggle = true;
+				}
 			}
 		}
 		//If the pressed touch is swiping
@@ -687,14 +686,14 @@ void ABattleMobaCharacter::CheckSwipeType(EInputType Type, FVector2D Location, T
 		if (TouchIndex == ETouchIndex::Touch1)
 		{
 			//if current Location is on the left side of screen, set swipe mechanic to move the player, else set to rotate the camera
-			if (UInputLibrary::PointOnLeftHalfOfScreen(Location))
-			{
-				//GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Blue, FString::Printf(TEXT("Move")));
+			//if (UInputLibrary::PointOnLeftHalfOfScreen(Location))
+			//{
+			//	//GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Blue, FString::Printf(TEXT("Move")));
 
-				TouchEnd = Location;
-				MoveTouchIndex = TouchIndex;
-			}
-			else if (!UInputLibrary::PointOnLeftHalfOfScreen(Location))
+			//	TouchEnd = Location;
+			//	MoveTouchIndex = TouchIndex;
+			//}
+			/*else */if (!UInputLibrary::PointOnLeftHalfOfScreen(Location))
 			{
 				RotTouchIndex = TouchIndex;
 			}
@@ -702,14 +701,14 @@ void ABattleMobaCharacter::CheckSwipeType(EInputType Type, FVector2D Location, T
 		if (TouchIndex == ETouchIndex::Touch2)
 		{
 			//if current Location is on the left side of screen, set swipe mechanic to move the player, else set to rotate the camera
-			if (UInputLibrary::PointOnLeftHalfOfScreen(Location))
-			{
-				//GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Blue, FString::Printf(TEXT("Move")));
+			//if (UInputLibrary::PointOnLeftHalfOfScreen(Location))
+			//{
+			//	//GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Blue, FString::Printf(TEXT("Move")));
 
-				TouchEnd = Location;
-				MoveTouchIndex = TouchIndex;
-			}
-			else if (!UInputLibrary::PointOnLeftHalfOfScreen(Location))
+			//	TouchEnd = Location;
+			//	MoveTouchIndex = TouchIndex;
+			//}
+			/*else */if (!UInputLibrary::PointOnLeftHalfOfScreen(Location))
 			{
 				RotTouchIndex = TouchIndex;
 			}
