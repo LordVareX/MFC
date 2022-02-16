@@ -20,7 +20,7 @@ public:
 		void OnActivate(const FString& Killer, const FString& Pawned, int TotalHonor);
 
 	UFUNCTION()
-		virtual void ActivatePure(float a, float b) = 0;
+		virtual void ActivatePure(float a, float b, float c, float d, float e, float f, float g) = 0;
 
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Interface")
 		void LookUp(const FString& str);

@@ -281,7 +281,7 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Status")
 		int OrbsAmount = 0;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Damage")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Status")
 		float BaseDamage = 0.0f;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Damage")
@@ -296,7 +296,7 @@ protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Damage")
 		float BuffDamage = 1.0f;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Damage")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Status")
 		float Defence = 110.0f;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Damage")
@@ -327,10 +327,10 @@ protected:
 	UPROPERTY(EditAnywhere, Replicated, BlueprintReadWrite, Category = "HitReaction")
 		UAnimMontage* LeftHitMoveset;
 
-	UPROPERTY(VisibleAnywhere, Replicated, Category = "HitReaction")
+	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadWrite, Category = "Status")
 		float StunDuration;
 
-	UPROPERTY(VisibleAnywhere, Replicated, Category = "HitReaction")
+	UPROPERTY(VisibleAnywhere, Replicated, Category = "Status")
 		float StunImpulse;
 
 	//TimerHandle for removing damage dealer array
@@ -339,16 +339,16 @@ protected:
 	UPROPERTY(EditAnywhere, Replicated, BlueprintReadWrite, Category = "Status")
 		bool IsHit;
 
-	UPROPERTY(VisibleAnywhere, Replicated, Category = "HitReaction")
+	UPROPERTY(VisibleAnywhere, Replicated, Category = "Status")
 		bool IsStunned = false;
 
-	UPROPERTY(EditDefaultsOnly, Replicated, Category = "HitReaction")
+	UPROPERTY(EditDefaultsOnly, Replicated, Category = "Status")
 		bool OnSpecialAttack = false;
 
-	UPROPERTY(VisibleAnywhere, Replicated, Category = "HitReaction")
+	UPROPERTY(VisibleAnywhere, Replicated, Category = "Status")
 		bool IsImmuned = false;
 
-	UPROPERTY(VisibleAnywhere, Replicated, Category = "HitReaction")
+	UPROPERTY(VisibleAnywhere, Replicated, Category = "Status")
 		float ImmunityDur = 0.0f;
 
 	UPROPERTY(VisibleAnywhere, Replicated, Category = "ActionSkill")
@@ -402,8 +402,15 @@ protected:
 	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadWrite, Category = "ActionSkill")
 		FName AttackSection = "NormalAttack01";
 
-	UPROPERTY(EditAnywhere, Category = "ActionSkill")
-		float comboInterval = 1.0f;
+	//		time interval between each normal attack combo
+	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadWrite, Category = "Status")
+		float AtkSpeed = 1.0f;
+
+	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadWrite, Category = "Status")
+		float MoveSpeed = 1.0f;
+
+	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadWrite, Category = "Status")
+		float KnockbackVector = 0.0f;
 
 	UPROPERTY(VisibleAnywhere, Replicated, Category = "ActionSkill")
 		int comboCount = 0;
@@ -527,10 +534,10 @@ protected:
 		void DoDamage(AActor* HitActor);
 
 	UFUNCTION(Reliable, Server, WithValidation, Category = "ReceiveDamage")
-		void HitReactionServer(AActor* HitActor, float DamageReceived, UAnimMontage* HitMoveset, FName MontageSection, float StunTime, FVector KnockbackVector, bool isKnockback);
+		void HitReactionServer(AActor* HitActor, float DamageReceived, UAnimMontage* HitMoveset, FName MontageSection, float StunTime, FVector KnockbackImpulse, bool isKnockback);
 
 	UFUNCTION(Reliable, NetMulticast, WithValidation, Category = "ReceiveDamage")
-		void HitReactionClient(AActor* HitActor, float DamageReceived, UAnimMontage* HitMoveset, FName MontageSection, float StunTime, FVector KnockbackVector, bool isKnockback);
+		void HitReactionClient(AActor* HitActor, float DamageReceived, UAnimMontage* HitMoveset, FName MontageSection, float StunTime, FVector KnockbackImpulse, bool isKnockback);
 
 	UFUNCTION(Reliable, Server, WithValidation, BlueprintCallable, Category = "HitReaction")
 		void ServerRotateHitActor(AActor* HitActor, AActor* Attacker);
@@ -583,7 +590,7 @@ protected:
 		void EnableMovementMode();
 
 	UFUNCTION(NetMulticast, Reliable, WithValidation, Category = "BaseStats")//HP, Damage, Defense
-		void SetupBaseStats(float HealthMax, float Def);
+		void SetupBaseStats(float HealthMax, float Def, float MvSpeed, float AttSpeed, float StunDur, float knockBack, float ImmDur);
 
 	UFUNCTION(BlueprintCallable, Server, Reliable, WithValidation)
 		void ServerSetupStats();
@@ -619,7 +626,7 @@ protected:
 		void MulticastToggleStun(ABattleMobaCharacter* player, bool bStun);
 
 	UFUNCTION(NetMulticast, Reliable, WithValidation, Category = "ActionSkill")
-		void MulticastSetComboInterval(float val);
+		void MulticastSetAtkSpeed(ABattleMobaCharacter* player, float val);
 
 	UFUNCTION(Reliable, Server, WithValidation)
 		void ServerToggleImmunity(ABattleMobaCharacter* player, bool bImmune);
@@ -632,7 +639,7 @@ public:
 
 	/*******************Interfaces***********************/
 	virtual void Activate_Implementation(); // include a blueprint function
-	virtual void ActivatePure(float a, float b) override; //c++ only function
+	virtual void ActivatePure(float a, float b, float c, float d, float e, float f, float g) override; //c++ only function
 
 	virtual void CheckBool_Implementation(bool check);
 
@@ -651,7 +658,7 @@ public:
 		void RefreshPlayerData();
 
 	UFUNCTION(BlueprintCallable, Server, Reliable, WithValidation)
-		void ServerSetupBaseStats(float HealthMax, float Def);
+		void ServerSetupBaseStats(float HealthMax, float Def, float MvSpeed, float AttSpeed, float StunDur, float knockBack, float ImmDur);
 
 	UFUNCTION(Reliable, NetMulticast, WithValidation, BlueprintCallable, Category = "ReceiveDamage")
 		void TowerReceiveDamage(ADestructibleTower* Tower, float DamageApply);

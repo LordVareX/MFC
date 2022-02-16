@@ -26,7 +26,7 @@ void UBattleMobaSkillComponent::BeginPlay()
 	
 }
 
-void UBattleMobaSkillComponent::ActivatePure(float a, float b)
+void UBattleMobaSkillComponent::ActivatePure(float a, float b, float c, float d, float e, float f, float g)
 {
 }
 

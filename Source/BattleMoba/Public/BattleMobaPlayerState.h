@@ -70,6 +70,21 @@ public:
 		float BaseDamagePercent = 0.0f;
 
 	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadWrite, Category = "Status")
+		float AtkSpeed = 1.0f;
+
+	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadWrite, Category = "Status")
+		float MoveSpeed = 1.0f;
+
+	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadWrite, Category = "Status")
+		float ImmunityDur = 1.0f;
+
+	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadWrite, Category = "Status")
+		float StunDuration = 1.0f;
+
+	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadWrite, Category = "Status")
+		float KnockbackVector = 0.0f;
+
+	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadWrite, Category = "Status")
 		FName TeamName;
 
 	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadWrite, Category = "Status")
@@ -152,7 +167,7 @@ protected:
 public:
 
 	virtual void LookUp_Implementation(const FString& str); //interface
-	virtual void ActivatePure(float a, float b) override; //c++ only function
+	virtual void ActivatePure(float a, float b, float c, float d, float e, float f, float g) override; //c++ only function
 
 	UFUNCTION(Reliable, Server, WithValidation, Category = "Timer")
 	void StartRespawnTimer(ABattleMobaPlayerState* ps);

@@ -43,6 +43,13 @@ void ABattleMobaPlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty
 	DOREPLIFETIME(ABattleMobaPlayerState, RightHitMoveset);
 	DOREPLIFETIME(ABattleMobaPlayerState, LeftHitMoveset);
 	DOREPLIFETIME(ABattleMobaPlayerState, SkillComponent);
+	DOREPLIFETIME(ABattleMobaPlayerState, AtkSpeed);
+	DOREPLIFETIME(ABattleMobaPlayerState, MoveSpeed);
+	DOREPLIFETIME(ABattleMobaPlayerState, ImmunityDur);
+	DOREPLIFETIME(ABattleMobaPlayerState, StunDuration);
+	DOREPLIFETIME(ABattleMobaPlayerState, KnockbackVector);
+
+
 }
 
 void ABattleMobaPlayerState::OnRep_InitTimer()
@@ -136,7 +143,7 @@ void ABattleMobaPlayerState::LookUp_Implementation(const FString& str)
 	}
 }
 
-void ABattleMobaPlayerState::ActivatePure(float a, float b)
+void ABattleMobaPlayerState::ActivatePure(float a, float b, float c, float d, float e, float f, float g)
 {
 }
 
@@ -215,7 +222,7 @@ void ABattleMobaPlayerState::AddExp(int EXPoint, int& OutLevel)
 
 					if (GetPawn()->GetClass()->ImplementsInterface(UBattleMobaInterface::StaticClass()))
 					{
-						Cast<IBattleMobaInterface>(GetPawn())->ActivatePure(MaxHealth, Defense);
+						Cast<IBattleMobaInterface>(GetPawn())->ActivatePure(MaxHealth, Defense, MoveSpeed, AtkSpeed, StunDuration, KnockbackVector, ImmunityDur);
 					}
 				}
 			}

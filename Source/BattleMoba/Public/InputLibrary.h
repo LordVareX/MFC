@@ -139,6 +139,21 @@ struct FLevelAttributes :public FTableRowBase
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Exp")
 		float DefIncrementPercent = 0.f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Exp")
+		float AtkSpeedIncrementPercent = 0.f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Exp")
+		float SlowMoveIncrementPercent = 0.f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Exp")
+		float StunIncrementPercent = 0.f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Exp")
+		float KnockbackIncrementPercent = 0.f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Exp")
+		float ImmIncrementPercent = 0.f;
 };
 
 USTRUCT(BlueprintType)

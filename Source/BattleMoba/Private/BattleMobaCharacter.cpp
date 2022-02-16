@@ -77,7 +77,6 @@ void ABattleMobaCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>&
 	DOREPLIFETIME(ABattleMobaCharacter, RightHitMoveset);
 	DOREPLIFETIME(ABattleMobaCharacter, LeftHitMoveset);
 	DOREPLIFETIME(ABattleMobaCharacter, SkillComp);
-	DOREPLIFETIME(ABattleMobaCharacter, closestActorTemp);
 	DOREPLIFETIME(ABattleMobaCharacter, IsOverlapFog);
 	DOREPLIFETIME(ABattleMobaCharacter, ActorsInVision);
 	DOREPLIFETIME(ABattleMobaCharacter, IsCurrentlyVisible);
@@ -85,6 +84,9 @@ void ABattleMobaCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>&
 	DOREPLIFETIME(ABattleMobaCharacter, IsImmuned);
 	DOREPLIFETIME(ABattleMobaCharacter, ImmunityDur);
 	DOREPLIFETIME(ABattleMobaCharacter, ActionSkillName);
+	DOREPLIFETIME(ABattleMobaCharacter, AtkSpeed);
+	DOREPLIFETIME(ABattleMobaCharacter, MoveSpeed);
+	DOREPLIFETIME(ABattleMobaCharacter, KnockbackVector);
 }
 
 ABattleMobaCharacter::ABattleMobaCharacter()
@@ -929,28 +931,28 @@ void ABattleMobaCharacter::HideHPBar()
 	}
 }
 
-bool ABattleMobaCharacter::HitReactionServer_Validate(AActor * HitActor, float DamageReceived, UAnimMontage* HitMoveset, FName MontageSection, float StunTime, FVector KnockbackVector, bool isKnockback)
+bool ABattleMobaCharacter::HitReactionServer_Validate(AActor * HitActor, float DamageReceived, UAnimMontage* HitMoveset, FName MontageSection, float StunTime, FVector KnockbackImpulse, bool isKnockback)
 {
 	return true;
 }
 
-void ABattleMobaCharacter::HitReactionServer_Implementation(AActor* HitActor, float DamageReceived, UAnimMontage* HitMoveset, FName MontageSection, float StunTime, FVector KnockbackVector, bool isKnockback)
+void ABattleMobaCharacter::HitReactionServer_Implementation(AActor* HitActor, float DamageReceived, UAnimMontage* HitMoveset, FName MontageSection, float StunTime, FVector KnockbackImpulse, bool isKnockback)
 {
 	if (this->GetLocalRole() == ROLE_Authority)
 	{
 		if (HitActor == this)
 		{
-			HitReactionClient(HitActor, DamageReceived, HitMoveset, MontageSection, StunTime, KnockbackVector, isKnockback);
+			HitReactionClient(HitActor, DamageReceived, HitMoveset, MontageSection, StunTime, KnockbackImpulse, isKnockback);
 		}
 	}
 }
 
-bool ABattleMobaCharacter::HitReactionClient_Validate(AActor* HitActor, float DamageReceived, UAnimMontage* HitMoveset, FName MontageSection, float StunTime, FVector KnockbackVector, bool isKnockback)
+bool ABattleMobaCharacter::HitReactionClient_Validate(AActor* HitActor, float DamageReceived, UAnimMontage* HitMoveset, FName MontageSection, float StunTime, FVector KnockbackImpulse, bool isKnockback)
 {
 	return true;
 }
 
-void ABattleMobaCharacter::HitReactionClient_Implementation(AActor* HitActor, float DamageReceived, UAnimMontage* HitMoveset, FName MontageSection, float StunTime, FVector KnockbackVector, bool isKnockback)
+void ABattleMobaCharacter::HitReactionClient_Implementation(AActor* HitActor, float DamageReceived, UAnimMontage* HitMoveset, FName MontageSection, float StunTime, FVector KnockbackImpulse, bool isKnockback)
 {
 	if (HitActor == this)
 	{
@@ -1056,7 +1058,7 @@ void ABattleMobaCharacter::HitReactionClient_Implementation(AActor* HitActor, fl
 						this->GetMesh()->GetAnimInstance()->Montage_JumpToSection(MontageSection);
 
 						//		trigger knockback on enemy
-						this->LaunchCharacter(KnockbackVector, false, false);
+						this->LaunchCharacter(KnockbackImpulse, false, false);
 
 						/*int32 sectionIndex = GetCurrentMontage()->GetSectionIndex(MontageSection);
 						float sectionLength = GetCurrentMontage()->GetSectionLength(sectionIndex);*/
@@ -1578,22 +1580,22 @@ void ABattleMobaCharacter::EnableMovementMode()
 	}
 }
 
-bool ABattleMobaCharacter::ServerSetupBaseStats_Validate(float HealthMax, float Def)
+bool ABattleMobaCharacter::ServerSetupBaseStats_Validate(float HealthMax, float Def, float MvSpeed, float AttSpeed, float StunDur, float knockBack, float ImmDur)
 {
 	return true;
 }
 
-void ABattleMobaCharacter::ServerSetupBaseStats_Implementation(float HealthMax, float Def)
+void ABattleMobaCharacter::ServerSetupBaseStats_Implementation(float HealthMax, float Def, float MvSpeed, float AttSpeed, float StunDur, float knockBack, float ImmDur)
 {
-	SetupBaseStats(HealthMax, Def);
+	SetupBaseStats(HealthMax, Def, MvSpeed, AttSpeed, StunDur, knockBack, ImmDur);
 }
 
-bool ABattleMobaCharacter::SetupBaseStats_Validate(float HealthMax, float Def)
+bool ABattleMobaCharacter::SetupBaseStats_Validate(float HealthMax, float Def, float MvSpeed, float AttSpeed, float StunDur, float knockBack, float ImmDur)
 {
 	return true;
 }
 
-void ABattleMobaCharacter::SetupBaseStats_Implementation(float HealthMax, float Def)
+void ABattleMobaCharacter::SetupBaseStats_Implementation(float HealthMax, float Def, float MvSpeed, float AttSpeed, float StunDur, float knockBack, float ImmDur)
 {
 	float hpPercent = UInputLibrary::CalculatePercentageFromValue(Health, MaxHealth, 100.0f);
 	Health = UInputLibrary::CalculateValueFromPercentage(hpPercent, HealthMax, 100.0f);
@@ -1715,22 +1717,27 @@ void ABattleMobaCharacter::DetectNearestTarget_Implementation(EResult Type, FAct
 								slumberCount += 1;
 								GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Yellow, FString::Printf(TEXT("Slumber Count: %lld"), slumberCount));
 
+								//		decrease the attack interval from increment percentage
+								
 								if (slumberCount == 1)
 								{
-									MulticastSetComboInterval(0.5f);
+									float newAtkSpeed = UInputLibrary::ChangeValueByPercentage(AtkSpeed, 5.0f, false);
+									MulticastSetAtkSpeed(this, newAtkSpeed);
 									
 								}
 
 								else if (slumberCount == 2)
 								{
-									MulticastSetComboInterval(0.4f);
+									float newAtkSpeed = UInputLibrary::ChangeValueByPercentage(AtkSpeed, 10.0f, false);
+									MulticastSetAtkSpeed(this, newAtkSpeed);
 									
 								}
 
 								else
 								{
+									float newAtkSpeed = UInputLibrary::ChangeValueByPercentage(AtkSpeed, 15.0f, false);
 									slumberCount = 0;
-									MulticastSetComboInterval(0.3f);
+									MulticastSetAtkSpeed(this, newAtkSpeed);
 									
 								}
 								
@@ -1739,11 +1746,11 @@ void ABattleMobaCharacter::DetectNearestTarget_Implementation(EResult Type, FAct
 							else
 							{
 								GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Yellow, FString::Printf(TEXT("This is a different closestActor")));
-								MulticastSetComboInterval(1.0f);
+								MulticastSetAtkSpeed(this, AtkSpeed);
 								
 							}
 
-							GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Yellow, FString::Printf(TEXT("Combo Interval: %f"), this->comboInterval));
+							GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Yellow, FString::Printf(TEXT("Combo Interval: %f"), this->AtkSpeed));
 						}
 					}
 					RotateNearestTarget(closestActor, Type, SelectedRow);
@@ -2101,7 +2108,7 @@ void ABattleMobaCharacter::SetupStats_Implementation()
 		{
 			MainWidget = pc->MainWidget;
 		}
-		SetupBaseStats(PS->MaxHealth, PS->Defense);
+		SetupBaseStats(PS->MaxHealth, PS->Defense, PS->MoveSpeed, PS->AtkSpeed, PS->StunDuration, PS->KnockbackVector, PS->ImmunityDur);
 		CharMesh = PS->CharMesh;
 		ActionTable = PS->ActionTable;
 		Health = MaxHealth;
@@ -2221,6 +2228,11 @@ void ABattleMobaCharacter::MulticastExecuteAction_Implementation(FActionSkill Se
 					this->GetWorldTimerManager().SetTimer(TimerHandle, TimerDel, 3.0f, false);
 				}
 
+				else if (SelectedRow.SkillName == "SpecialAttack2")
+				{
+					//		flying kick
+				}
+
 			}
 
 		}
@@ -2283,7 +2295,7 @@ void ABattleMobaCharacter::MulticastExecuteAction_Implementation(FActionSkill Se
 
 				});
 
-				this->GetWorldTimerManager().SetTimer(delay, timerDel, sectionLength + comboInterval, false);
+				this->GetWorldTimerManager().SetTimer(delay, timerDel, sectionLength + AtkSpeed, false);
 
 
 			}
@@ -2324,6 +2336,7 @@ void ABattleMobaCharacter::CheckDamage_Implementation(UParticleSystem * ImpactEf
 
 			if (distanceToChar < 130.0f)
 			{
+				//		when attacker is damaging enemy who is on Silat counter skill
 				if (damagedChar->GetMesh()->GetAnimInstance()->Montage_IsPlaying(CounterMoveset))
 				{
 					ServerRotateHitActor(damagedChar, this);
@@ -2336,34 +2349,43 @@ void ABattleMobaCharacter::CheckDamage_Implementation(UParticleSystem * ImpactEf
 
 				else
 				{
-					damagedChar->HitReactionMoveset = this->HitReactionMoveset;
-
-					if (this->OnSpecialAttack == true)
+					if (damagedChar->IsImmuned == false)
 					{
-						ABattleMobaPlayerState* ps = Cast<ABattleMobaPlayerState>(this->GetPlayerState());
+						damagedChar->HitReactionMoveset = this->HitReactionMoveset;
 
-						if (IsValid(ps))
+						//		triggers status effect if there is one when attacker is on special attack
+						if (this->OnSpecialAttack == true)
 						{
-							if (ps->CurrentStyle == 0)
+							ABattleMobaPlayerState* ps = Cast<ABattleMobaPlayerState>(this->GetPlayerState());
+
+							if (IsValid(ps))
 							{
+								if (ps->CurrentStyle == 0)
+								{
 
+								}
+
+								else if (ps->CurrentStyle == 1)
+								{
+
+								}
+
+								else if (ps->CurrentStyle == 2)
+								{
+								}
 							}
+						}
 
-							else if (ps->CurrentStyle == 1)
-							{
+						//		apply regular damage to enemy on valid if the attacker is on normal attack
+						else
+						{
+							DoDamage(damagedChar);
 
-							}
-
-							else if (ps->CurrentStyle == 2)
-							{
-							}
+							//		display visual effect and produce sound effect on enemy hit
+							PlayEffectsClient(ImpactEffect, AttachTo, HitSound);
 						}
 					}
 
-					else
-					{
-						DoDamage(damagedChar);
-					}
 				}
 			}
 
@@ -2378,11 +2400,13 @@ void ABattleMobaCharacter::CheckDamage_Implementation(UParticleSystem * ImpactEf
 			if (distanceToTower < 600.0f)
 			{
 				TowerReceiveDamage(damagedTower, this->BaseDamage);
+
+				//		display visual effect and produce sound effect on enemy hit
+				PlayEffectsClient(ImpactEffect, AttachTo, HitSound);
 			}
 		}
-		
-		PlayEffectsClient(ImpactEffect, AttachTo, HitSound);
 
+		//		store current closestActor in a temp and clear the value
 		damagedActor = closestActor;
 		closestActor = nullptr;
 	}
@@ -2651,20 +2675,14 @@ void ABattleMobaCharacter::DoDamage_Implementation(AActor* HitActor)
 {
 	if (this != HitActor)
 	{
-		ABattleMobaCharacter* damageChar = Cast<ABattleMobaCharacter>(HitActor);
+		/**		Calculate Damage Dealt by Enemy and set precision to tenth */
+		this->ActualDamage = (this->BaseDamage * this->BuffDamage) * (100 / (100 + ((Defence * BuffDefence) * ((1 - ReducedDefence) * 0.84))));
+		this->ActualDamage = FMath::RoundToInt(ActualDamage);
 
-		if (damageChar->IsImmuned == false)
-		{
-			/**		Calculate Damage Dealt by Enemy and set precision to tenth */
-			this->ActualDamage = (this->BaseDamage * this->BuffDamage) * (100 / (100 + ((Defence * BuffDefence) * ((1 - ReducedDefence) * 0.84))));
-			this->ActualDamage = FMath::RoundToInt(ActualDamage);
-
-			/**		Apply Damage */
-			//GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Magenta, FString::Printf(TEXT("Damage Applied: %f"), this->ActualDamage));
-			UE_LOG(LogTemp, Warning, TEXT("Damage Applied: %f"), this->ActualDamage);
-			this->ActualDamage = UGameplayStatics::ApplyDamage(HitActor, this->ActualDamage, nullptr, this, nullptr);
-		}
-		
+		/**		Apply Damage */
+		//GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Magenta, FString::Printf(TEXT("Damage Applied: %f"), this->ActualDamage));
+		UE_LOG(LogTemp, Warning, TEXT("Damage Applied: %f"), this->ActualDamage);
+		this->ActualDamage = UGameplayStatics::ApplyDamage(HitActor, this->ActualDamage, nullptr, this, nullptr);
 	}
 }
 
@@ -2835,14 +2853,17 @@ void ABattleMobaCharacter::MulticastEnableMovement_Implementation(ABattleMobaCha
 	}
 }
 
-bool ABattleMobaCharacter::MulticastSetComboInterval_Validate(float val)
+bool ABattleMobaCharacter::MulticastSetAtkSpeed_Validate(ABattleMobaCharacter* player, float val)
 {
 	return true;
 }
 
-void ABattleMobaCharacter::MulticastSetComboInterval_Implementation(float val)
+void ABattleMobaCharacter::MulticastSetAtkSpeed_Implementation(ABattleMobaCharacter* player, float val)
 {
-	this->comboInterval = val;
+	if (IsValid(player))
+	{
+		player->AtkSpeed = val;
+	}
 }
 
 bool ABattleMobaCharacter::ServerToggleStun_Validate(ABattleMobaCharacter * player, bool bStun)
@@ -2897,11 +2918,11 @@ void ABattleMobaCharacter::Activate_Implementation()
 	UE_LOG(LogTemp, Warning, TEXT("Implementation"));
 }
 
-void ABattleMobaCharacter::ActivatePure(float a, float b)
+void ABattleMobaCharacter::ActivatePure(float a, float b, float c, float d, float e, float f, float g)
 {
 	if (this->IsLocallyControlled())
 	{
-		this->ServerSetupBaseStats(a, b);
+		this->ServerSetupBaseStats(a, b, c, d, e, f, g);
 	}
 	if (MainWidget != nullptr && MainWidget->GetClass()->ImplementsInterface(UBattleMobaInterface::StaticClass()))
 	{
