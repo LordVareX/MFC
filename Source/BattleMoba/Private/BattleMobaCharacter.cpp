@@ -1339,7 +1339,7 @@ void ABattleMobaCharacter::GetButtonSkillAction(FKey Currkeys, FString ButtonNam
 														//if the skill is on cooldown, stop playing the animation, else play the skill animation
 														if (row->isOnCD == true)
 														{
-															//GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("Current %s skill is on cooldown!!"), ((*name.ToString()))));
+															GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("Current %s skill is on cooldown!!"), ((*name.ToString()))));
 															cooldown = row->isOnCD;
 															//row->isOnCD = false;
 															break;
@@ -1366,7 +1366,7 @@ void ABattleMobaCharacter::GetButtonSkillAction(FKey Currkeys, FString ButtonNam
 																		UE_LOG(LogTemp, Warning, TEXT("DELAY BEFORE SETTING UP COOLDOWN TO FALSE"));
 																		row->isOnCD = false;
 
-																		//GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Blue, FString::Printf(TEXT("row->isOnCD: %s"), row->isOnCD ? TEXT("true") : TEXT("false")));
+																		GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Magenta, FString::Printf(TEXT("row->isOnCD: %s"), row->isOnCD ? TEXT("true") : TEXT("false")));
 																	});
 
 																	//start cooldown the skill
@@ -1537,7 +1537,11 @@ void ABattleMobaCharacter::MulticastCounterAttack_Implementation(ABattleMobaChar
 
 			FVector dashVector = FVector(hitActor->GetCapsuleComponent()->GetForwardVector().X*1000.0f, hitActor->GetCapsuleComponent()->GetForwardVector().Y*1000.0f, hitActor->GetCapsuleComponent()->GetForwardVector().Z);
 
-			hitActor->LaunchCharacter(dashVector, true, true);
+
+			if (hitActor->IsLocallyControlled())
+			{
+				hitActor->ServerLaunchChar(dashVector, true, true);
+			}
 		});
 		/**		cooldown to execute lines inside TimerDelegate*/
 		hitActor->GetWorldTimerManager().SetTimer(handle, TimerDelegate, 0.5f, false);
@@ -1657,7 +1661,6 @@ void ABattleMobaCharacter::DetectNearestTarget_Implementation(EResult Type, FAct
 				//bool isHit = UKismetSystemLibrary::SphereTraceMultiForObjects(GetWorld(), Start, End, RotateRadius, ObjectTypes, true, IgnoreActors, EDrawDebugTrace::ForDuration, hitResults, true);
 				if (isHit)
 				{
-
 					for (auto& Hit : hitResults)
 					{
 						ABattleMobaCharacter* pc = Cast<ABattleMobaCharacter>(Hit.Actor);
@@ -1791,14 +1794,14 @@ void ABattleMobaCharacter::RotateNearestTarget_Implementation(AActor* Target, ER
 			//Multiply by Radius and divided by distance
 			FromOriginToTarget *= (RotateRadius / 1.5) / this->GetDistanceTo(Target);
 
-			if (Type == EResult::Cooldown && SelectedRow.isOnCD == false)
+			if (Type == EResult::Cooldown)
 			{
 				UBattleMobaAnimInstance* inst = Cast<UBattleMobaAnimInstance>(this->GetMesh()->GetAnimInstance());
 
 				inst->bMoving = true;
 				inst->Speed = FromOriginToTarget.Size();
 
-				GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Green, FString::Printf(TEXT("Hit Speed: %f"), inst->Speed));
+				//GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Green, FString::Printf(TEXT("Hit Speed: %f"), inst->Speed));
 				//rotate and move the component towards target
 				UKismetSystemLibrary::MoveComponentTo(this->GetCapsuleComponent(), Target->GetActorLocation() + FromOriginToTarget, RotateTo, true, true, inst->Speed/ (Target->GetActorLocation() + FromOriginToTarget).Size(), true, EMoveComponentAction::Type::Move, LatentInfo);
 
@@ -1818,14 +1821,14 @@ void ABattleMobaCharacter::RotateNearestTarget_Implementation(AActor* Target, ER
 				/*Start delay to reset speed*/
 				this->GetWorldTimerManager().SetTimer(handle, TimerDelegate, inst->Speed / (Target->GetActorLocation() + FromOriginToTarget).Size(), false);
 			}
-			else if (Type == EResult::Section && this->OnComboDelay == false)
+			else if (Type == EResult::Section)
 			{
 				UBattleMobaAnimInstance* inst = Cast<UBattleMobaAnimInstance>(this->GetMesh()->GetAnimInstance());
 
 				inst->bMoving = true;
 				inst->Speed = FromOriginToTarget.Size();
 
-				GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Green, FString::Printf(TEXT("Hit Speed: %f"), inst->Speed));
+				//GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Green, FString::Printf(TEXT("Hit Speed: %f"), inst->Speed));
 				//rotate and move the component towards target
 				UKismetSystemLibrary::MoveComponentTo(this->GetCapsuleComponent(), Target->GetActorLocation() + FromOriginToTarget, RotateTo, true, true, inst->Speed / (Target->GetActorLocation() + FromOriginToTarget).Size(), true, EMoveComponentAction::Type::Move, LatentInfo);
 
@@ -1871,7 +1874,7 @@ void ABattleMobaCharacter::RotateNearestTarget_Implementation(AActor* Target, ER
 	else
 	{
 		//Execute when closestactor is invalid
-		//GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Green, FString::Printf(TEXT("INVALID")));
+		//GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Magenta, FString::Printf(TEXT("TARGET IS INVALID")));
 
 		//execute action skill
 		if (this->IsLocallyControlled())
@@ -2188,6 +2191,8 @@ void ABattleMobaCharacter::MulticastExecuteAction_Implementation(FActionSkill Se
 
 	if (IsValid(ps))
 	{
+		//GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Magenta, FString::Printf(TEXT("ps exists")));
+
 		//		player is executing Special attacks or Ultimate skill
 		if (bSpecialAttack == true)
 		{
@@ -2220,12 +2225,7 @@ void ABattleMobaCharacter::MulticastExecuteAction_Implementation(FActionSkill Se
 			//		Shao Lin Kungfu
 			else if (ps->CurrentStyle == 2)
 			{
-				if (this->IsLocallyControlled())
-				{
-					ServerPlayMontage(SelectedRow.SkillMoveset, 1.0f, MontageSection);
-				}
-
-				if (SelectedRow.SkillName == "Ultimate")
+				if (SelectedRow.SkillName == "ulti")
 				{
 					FTimerHandle TimerHandle;
 					FTimerDelegate TimerDel;
@@ -2235,9 +2235,8 @@ void ABattleMobaCharacter::MulticastExecuteAction_Implementation(FActionSkill Se
 					//	damage increase, attack speed increase and slow down enemy
 					if (this->IsLocallyControlled())
 					{
+						ServerPlayMontage(SelectedRow.SkillMoveset, 1.0f, MontageSection);
 						ServerToggleImmunity(this, true);
-
-
 					}
 
 					TimerDel.BindLambda([this, SelectedRow]()
@@ -2251,9 +2250,82 @@ void ABattleMobaCharacter::MulticastExecuteAction_Implementation(FActionSkill Se
 					this->GetWorldTimerManager().SetTimer(TimerHandle, TimerDel, 3.0f, false);
 				}
 
-				else if (SelectedRow.SkillName == "SpecialAttack2")
+				else if (SelectedRow.SkillName == "sa01")
 				{
-					//		flying kick
+					if (IsLocallyControlled())
+					{
+						ServerPlayMontage(SelectedRow.SkillMoveset, 1.0f, MontageSection);
+					}
+				}
+				else if (SelectedRow.SkillName == "sa02")
+				{
+					FTimerHandle TimerHandler1;
+					FTimerDelegate TimerDel1;
+
+					FTimerHandle TimerHandler2;
+					FTimerDelegate TimerDel2;
+
+					//		get the vector to stay in air
+					FVector flyingInAir = FVector(this->GetCapsuleComponent()->GetForwardVector().X * 10000.0f, this->GetCapsuleComponent()->GetForwardVector().Y * 10000.0f, this->GetCapsuleComponent()->GetForwardVector().Z * 10000.0f);
+
+					//		player stays in air before kicking
+					if (this->IsLocallyControlled())
+					{
+						//GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Magenta, FString::Printf(TEXT("IN AIR PART OF FLYING KICK")));
+						ServerPlayMontage(SelectedRow.SkillMoveset, 1.0f, MontageSection);
+						//ServerLaunchChar(flyingInAir, false, true);
+					}
+
+					//		if there is enemy targeted, fly kick to it
+					if (IsValid(closestActor))
+					{
+						FVector thisLoc = this->GetActorLocation();
+						FVector closestActorLoc = closestActor->GetActorLocation();
+
+						FVector differenceVector = thisLoc - closestActorLoc;
+						float distanceToKick = closestActor->GetDistanceTo(this);
+
+						//GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Magenta, FString::Printf(TEXT("Distance To Kick: %f"), distanceToKick));
+						//GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Magenta, FString::Printf(TEXT("Distance To Kick: %s"), *differenceVector.ToString()));
+						//FVector leapKick = FVector(this->GetCapsuleComponent()->GetForwardVector().X * UKismetMathLibrary::Abs(differenceVector.X), this->GetCapsuleComponent()->GetForwardVector().Y * UKismetMathLibrary::Abs(differenceVector.Y), this->GetCapsuleComponent()->GetForwardVector().Z);
+						FVector leapKick = FVector(this->GetCapsuleComponent()->GetForwardVector().X * distanceToKick, this->GetCapsuleComponent()->GetForwardVector().Y * distanceToKick, this->GetCapsuleComponent()->GetForwardVector().Z);
+						TimerDel1.BindLambda([this, SelectedRow, leapKick]()
+						{
+							if (this->IsLocallyControlled())
+							{
+								//GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Magenta, FString::Printf(TEXT("FLYING KICK ON TARGET")));
+								ServerPlayMontage(SelectedRow.SkillMoveset, 1.0f, "LeapKicking");
+								ServerLaunchChar(leapKick, true, true);
+							}
+						});
+
+						TimerDel2.BindLambda([this, SelectedRow]()
+						{
+							if (this->IsLocallyControlled())
+							{
+								ServerPlayMontage(SelectedRow.SkillMoveset, 1.0f, "FinishOut");
+							}
+						});
+
+						this->GetWorldTimerManager().SetTimer(TimerHandler1, TimerDel1, 0.3f, false);
+						this->GetWorldTimerManager().SetTimer(TimerHandler2, TimerDel2, 0.6f, false);
+					}
+
+					//		else just jump
+					else
+					{
+						TimerDel1.BindLambda([this, SelectedRow]()
+						{
+							if (this->IsLocallyControlled())
+							{
+								//GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Magenta, FString::Printf(TEXT("FLYING KICK CANCELS OUT AS THERE IS NO TARGET")));
+								ServerPlayMontage(SelectedRow.SkillMoveset, 1.0f, "FinishOut");
+							}
+						});
+						
+						this->GetWorldTimerManager().SetTimer(TimerHandler1, TimerDel1, 0.5f, false);
+					}
+
 				}
 
 			}
@@ -2351,11 +2423,13 @@ void ABattleMobaCharacter::CheckDamage_Implementation(UParticleSystem * ImpactEf
 		ABattleMobaCharacter* damagedChar = Cast<ABattleMobaCharacter>(closestActor);
 		ADestructibleTower* damagedTower = Cast<ADestructibleTower>(closestActor);
 
+		GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Yellow, FString::Printf(TEXT("THERE IS CLOSEST ACTOR")));
+
 		if (IsValid(damagedChar))
 		{
 			float distanceToChar = damagedChar->GetDistanceTo(this);
 
-			GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Yellow, FString::Printf(TEXT("Damage Distance: %f"), distanceToChar));
+			GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Yellow, FString::Printf(TEXT("Damage Distance: %f"), distanceToChar));
 
 			if (distanceToChar < 130.0f)
 			{
@@ -2396,13 +2470,15 @@ void ABattleMobaCharacter::CheckDamage_Implementation(UParticleSystem * ImpactEf
 								else if (ps->CurrentStyle == 2)
 								{
 								}
+
+								DoDamage(damagedChar);
 							}
 						}
 
 						//		apply regular damage to enemy on valid if the attacker is on normal attack
 						else
 						{
-							DoDamage(damagedChar);
+							
 
 							//		display visual effect and produce sound effect on enemy hit
 							PlayEffectsClient(ImpactEffect, AttachTo, HitSound);
@@ -2414,7 +2490,7 @@ void ABattleMobaCharacter::CheckDamage_Implementation(UParticleSystem * ImpactEf
 
 		}
 
-		else if (IsValid(damagedTower))
+		else if (IsValid(damagedTower) && !IsValid(damagedChar))
 		{
 			float distanceToTower = damagedTower->GetDistanceTo(this);
 
@@ -2428,11 +2504,10 @@ void ABattleMobaCharacter::CheckDamage_Implementation(UParticleSystem * ImpactEf
 				PlayEffectsClient(ImpactEffect, AttachTo, HitSound);
 			}
 		}
-
-		//		store current closestActor in a temp and clear the value
+		//		store current closestActor in a temp
 		damagedActor = closestActor;
-		closestActor = nullptr;
 	}
+	closestActor = nullptr;
 }
 
 bool ABattleMobaCharacter::AttackTrace_Validate(bool traceStart, int activeAttack, UParticleSystem* ImpactEffect, FName AttachTo, USoundBase* HitSound)
