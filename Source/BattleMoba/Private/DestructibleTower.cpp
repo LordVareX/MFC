@@ -13,10 +13,12 @@
 #include "Materials/MaterialInterface.h"
 #include "BattleMobaGameState.h"
 #include "BattleMobaGameMode.h"
+#include "BattleMobaCharacter.h"
 #include "TextReaderComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "Json.h"
 #include "JsonUtilities.h"
+#include "InputLibrary.h"
 
 void ADestructibleTower::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
@@ -26,6 +28,8 @@ void ADestructibleTower::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& O
 	DOREPLIFETIME(ADestructibleTower, TeamName);
 	DOREPLIFETIME(ADestructibleTower, IsHit);
 	DOREPLIFETIME(ADestructibleTower, isDestroyed);
+	DOREPLIFETIME(ADestructibleTower, ActorsInVision);
+	DOREPLIFETIME(ADestructibleTower, IsOverlapFog);
 }
 
 // Sets default values
@@ -48,6 +52,15 @@ ADestructibleTower::ADestructibleTower()
 	TowerMesh->SetCollisionProfileName("BlockAll");
 
 	Material1 = CreateDefaultSubobject<UMaterialInterface>("Material1");
+
+	//Fog col init
+	FogCol = CreateDefaultSubobject<USphereComponent>(TEXT("FogCol"));
+	FogCol->SetupAttachment(RootComponent);
+	FogCol->SetRelativeLocation(FVector(0.0f, 0.0f, -200.0f));
+	FogCol->SetCollisionProfileName("Custom");
+
+	FogCol->OnComponentBeginOverlap.AddDynamic(this, &ADestructibleTower::OnComponentOverlapBegin);
+	FogCol->OnComponentEndOverlap.AddDynamic(this, &ADestructibleTower::OnComponentOverlapEnd);
 	
 
 	isDestroyed = false;
@@ -168,12 +181,60 @@ void ADestructibleTower::BeginPlay()
 	DynamicMaterial = UMaterialInstanceDynamic::Create(Material, NULL);
 	TowerMesh->SetMaterial(0, DynamicMaterial);
 	DynamicMaterial->SetVectorParameterValue(TEXT("Colour"), FLinearColor::Red);*/
+
+	/////////////////Get flag names that valid in current Level///////////////////////////////
+	inst_Fog = GetWorld()->GetParameterCollectionInstance(Mat_Fog);
+
+	if (inst_Fog->GetScalarParameterValue("Tower0Location", Rad))
+	{
+		GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("Tower Name is: %s"), (*this->GetName())));
+		FogCol->SetSphereRadius(Rad, true);
+	}
 }
 
 
-float ADestructibleTower::TakeDamage(float value, FDamageEvent const & DamageEvent, AController * EventInstigator, AActor * DamageCauser)
+float ADestructibleTower::TakeDamage(float value, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
 {	
 	return 0.0f;
+}
+
+void ADestructibleTower::OnComponentOverlapBegin(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult & SweepResult)
+{
+	ABattleMobaCharacter* pChar = Cast<ABattleMobaCharacter>(OtherActor);
+	if (pChar != nullptr)
+	{
+		ServerSetVisibility(this, pChar, .0f, true);
+	}
+}
+
+void ADestructibleTower::OnComponentOverlapEnd(UPrimitiveComponent * OverlappedComponent, AActor * OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
+{
+	ABattleMobaCharacter* pChar = Cast<ABattleMobaCharacter>(OtherActor);
+	if (pChar != nullptr)
+	{
+		ServerSetVisibility(this, pChar, Rad, false);
+	}
+}
+
+bool ADestructibleTower::ServerSetVisibility_Validate(ADestructibleTower * owningActor, ABattleMobaCharacter * Actor, float MaxDrawDist, bool Entering)
+{
+	return true;
+}
+
+void ADestructibleTower::ServerSetVisibility_Implementation(ADestructibleTower * owningActor, ABattleMobaCharacter * Actor, float MaxDrawDist, bool Entering)
+{
+	MulticastSetVisibility(owningActor, Actor, MaxDrawDist, Entering);
+}
+
+bool ADestructibleTower::MulticastSetVisibility_Validate(ADestructibleTower * owningActor, ABattleMobaCharacter * Actor, float MaxDrawDist, bool Entering)
+{
+	return true;
+}
+
+void ADestructibleTower::MulticastSetVisibility_Implementation(ADestructibleTower * owningActor, ABattleMobaCharacter * Actor, float MaxDrawDist, bool Entering)
+{
+	ActorsInVision.AddUnique(Actor);
+	UInputLibrary::SetActorVisibility(Actor, ActorsInVision, MaxDrawDist, Entering, owningActor);
 }
 
 
@@ -181,6 +242,15 @@ float ADestructibleTower::TakeDamage(float value, FDamageEvent const & DamageEve
 void ADestructibleTower::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+
+	//Set size of widget on vision
+	UInputLibrary::SetUIVisibility(W_Health, this);
+
+	FogCol->GetOverlappingActors(ActorsInVision, ABattleMobaCharacter::StaticClass());
+	if (!ActorsInVision.IsValidIndex(0))
+	{
+		IsOverlapFog = false;
+	}
 }
 
 

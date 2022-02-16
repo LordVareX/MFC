@@ -32,7 +32,6 @@ void ABattleMobaCTF::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLi
 	DOREPLIFETIME(ABattleMobaCTF, valRadiant);
 	DOREPLIFETIME(ABattleMobaCTF, valDire);
 	DOREPLIFETIME(ABattleMobaCTF, GiveGoldActors);
-	DOREPLIFETIME(ABattleMobaCTF, IsOverlapFog);
 	DOREPLIFETIME(ABattleMobaCTF, ActorsInVision);
 }
 
@@ -84,20 +83,32 @@ void ABattleMobaCTF::BeginPlay()
 {
 	Super::BeginPlay();
 
+	//remove excess character and rename the owning actor in the Level
+	[this](FString temp)
+	{
+		temp = this->GetName();
+		for (int i = temp.Len() - 1; i > 0; i--)
+		{
+			if (i > 9)
+			{
+				if (temp[i] == '_')
+				{
+					temp.RemoveAt(i + 1);
+					temp.RemoveAt(i);
+					UInputLibrary::RenameObject(temp, this);
+					GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("CTFName is: %s"), (*this->GetName())));
+				}
+			}
+		}
+	};
+	
 	/////////////////Get flag names that valid in current Level///////////////////////////////
-	int32 i;
-	TArray<AActor*> FlagList;
-	UGameplayStatics::GetAllActorsOfClass(GetWorld(), ABattleMobaCTF::StaticClass(), FlagList);
-
 	inst_Fog = GetWorld()->GetParameterCollectionInstance(Mat_Fog);
 
-	if (FlagList.Find(this, i))
+	if (inst_Fog->GetScalarParameterValue(FName(*this->GetName()), Rad))
 	{
-		if (inst_Fog->GetScalarParameterValue(FName(*FlagList[i]->GetName()), Rad))
-		{
-			GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("CTFName is: %s"), (*FlagList[i]->GetName())));
-			FogCol->SetSphereRadius(Rad, true);
-		}
+		GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("CTFName is: %s"), (*this->GetName())));
+		FogCol->SetSphereRadius(Rad, true);
 	}
 
 	///////////////////////////////////////////////////////////////////////////////////////////
@@ -121,54 +132,38 @@ void ABattleMobaCTF::Tick(float DeltaTime)
 
 	//Set size of widget on vision
 	UInputLibrary::SetUIVisibility(W_ValControl, this);
-
-	//Check for overlapping actors within fogcol
-	if (IsOverlapFog == true)
-	{
-		FogCol->GetOverlappingActors(this->ActorsInVision, ABattleMobaCharacter::StaticClass());
-		if (!this->ActorsInVision.IsValidIndex(0))
-		{
-			IsOverlapFog = false;
-		}
-	}
 }
 
 void ABattleMobaCTF::OnOverlapBegin(AActor* OverlappedActor, AActor* OtherActor)
 {
-	if (OtherActor && (OtherActor != this))
+	ABattleMobaCharacter* pb = Cast<ABattleMobaCharacter>(OtherActor);
+	if (pb != nullptr)
 	{
-		ABattleMobaCharacter* pb = Cast<ABattleMobaCharacter>(OtherActor);
-		if (pb)
-		{
-			//		set CTFentering to true to add integer of a team in the sphere
-			pb->CTFentering = true;
-		}
+		//		set CTFentering to true to add integer of a team in the sphere
+		pb->CTFentering = true;
 	}
 }
 
 void ABattleMobaCTF::OnOverlapEnd(AActor* OverlappedActor, AActor* OtherActor)
 {
-	if (OtherActor && (OtherActor != this))
+	ABattleMobaCharacter* pe = Cast<ABattleMobaCharacter>(OtherActor);
+	if (pe != nullptr)
 	{
-		ABattleMobaCharacter* pe = Cast<ABattleMobaCharacter>(OtherActor);
-		if (pe)
-		{
-			//		set CTFentering to true to deduct integer of a team in the sphere
-			pe->CTFentering = false;
-		}
+		//		set CTFentering to true to deduct integer of a team in the sphere
+		pe->CTFentering = false;
 	}
 }
 
+//For fog visibility
 void ABattleMobaCTF::OnComponentOverlapBegin(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult & SweepResult)
 {
 	ABattleMobaCharacter* pChar = Cast<ABattleMobaCharacter>(OtherActor);
 	if (pChar != nullptr)
 	{
-		if (IsOverlapFog == false)
+		if (HasAuthority())
 		{
-			IsOverlapFog = true;
+			ServerSetVisibility(this, pChar, .0f, true);
 		}
-		ServerSetVisibility(this, pChar, ActorsInVision, .0f, true);
 	}
 }
 
@@ -177,28 +172,32 @@ void ABattleMobaCTF::OnComponentOverlapEnd(UPrimitiveComponent* OverlappedCompon
 	ABattleMobaCharacter* pChar = Cast<ABattleMobaCharacter>(OtherActor);
 	if (pChar != nullptr)
 	{
-		ServerSetVisibility(this, pChar, ActorsInVision, Rad, false);
+		if (HasAuthority())
+		{
+			ServerSetVisibility(this, pChar, Rad, false);
+		}
 	}
 }
 
-bool ABattleMobaCTF::ServerSetVisibility_Validate(ABattleMobaCTF* owningActor, ABattleMobaCharacter* Actor, const TArray<AActor*>& Actors, float MaxDrawDist, bool Entering)
+bool ABattleMobaCTF::ServerSetVisibility_Validate(ABattleMobaCTF* owningActor, ABattleMobaCharacter* Actor, float MaxDrawDist, bool Entering)
 {
 	return true;
 }
 
-void ABattleMobaCTF::ServerSetVisibility_Implementation(ABattleMobaCTF* owningActor, ABattleMobaCharacter* Actor, const TArray<AActor*>& Actors, float MaxDrawDist, bool Entering)
+void ABattleMobaCTF::ServerSetVisibility_Implementation(ABattleMobaCTF* owningActor, ABattleMobaCharacter* Actor, float MaxDrawDist, bool Entering)
 {
-	MulticastSetVisibility(owningActor, Actor, Actors, MaxDrawDist, Entering);
+	MulticastSetVisibility(owningActor, Actor, MaxDrawDist, Entering);
 }
 
-bool ABattleMobaCTF::MulticastSetVisibility_Validate(ABattleMobaCTF* owningActor, ABattleMobaCharacter * Actor, const TArray<AActor*>& Actors, float MaxDrawDist, bool Entering)
+bool ABattleMobaCTF::MulticastSetVisibility_Validate(ABattleMobaCTF* owningActor, ABattleMobaCharacter * Actor, float MaxDrawDist, bool Entering)
 {
 	return true;
 }
 
-void ABattleMobaCTF::MulticastSetVisibility_Implementation(ABattleMobaCTF* owningActor, ABattleMobaCharacter * Actor, const TArray<AActor*>& Actors, float MaxDrawDist, bool Entering)
+void ABattleMobaCTF::MulticastSetVisibility_Implementation(ABattleMobaCTF* owningActor, ABattleMobaCharacter * Actor, float MaxDrawDist, bool Entering)
 {
-	UInputLibrary::SetActorVisibility(Actor, Actors, MaxDrawDist, Entering, owningActor);
+	ActorsInVision.AddUnique(Actor);
+	UInputLibrary::SetActorVisibility(Actor, ActorsInVision, MaxDrawDist, Entering, owningActor);
 }
 
 void ABattleMobaCTF::OnRep_Val()

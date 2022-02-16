@@ -57,10 +57,10 @@ protected:
 
 	//Call out server to set visibility status of overlapping actor/s
 	UFUNCTION(Reliable, Server, WithValidation, Category = "VisibleOnFog")
-		void ServerSetVisibility(ABattleMobaCTF* owningActor, class ABattleMobaCharacter* Actor, const TArray<AActor*>& Actors, float MaxDrawDist, bool Entering);
+		void ServerSetVisibility(ABattleMobaCTF* owningActor, class ABattleMobaCharacter* Actor, float MaxDrawDist, bool Entering);
 
 	UFUNCTION(Reliable, NetMulticast, WithValidation, Category = "VisibleOnFog")
-		void MulticastSetVisibility(ABattleMobaCTF* owningActor, class ABattleMobaCharacter* Actor, const TArray<AActor*>& Actors, float MaxDrawDist, bool Entering);
+		void MulticastSetVisibility(ABattleMobaCTF* owningActor, class ABattleMobaCharacter* Actor, float MaxDrawDist, bool Entering);
 
 public:
 
@@ -148,10 +148,6 @@ protected:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Perks")
 		float ExpVal = 0.0f;
-
-	//Toggle to collect overlapping actors on OnBeginOverlap FogCol
-	UPROPERTY(Replicated)
-		bool IsOverlapFog = false;
 
 	//Get overlapping actors from within FogCol
 	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadWrite, Category = "FogActors")

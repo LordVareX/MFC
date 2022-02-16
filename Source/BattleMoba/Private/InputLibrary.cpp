@@ -234,20 +234,28 @@ void UInputLibrary::SetActorVisibility(ABattleMobaCharacter* actor, TArray<AActo
 {
 	if (Visible == true)
 	{
-		for (AActor* pChar : Actors)
+		if (actor != nullptr)
 		{
-			if (pChar != nullptr)
+			if (Actors.IsValidIndex(0))
 			{
-				ABattleMobaCharacter* pc = Cast<ABattleMobaCharacter>(pChar);
-				if (pc != nullptr && pc == actor)
+				GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Purple, FString::Printf(TEXT("VALID")));
+			}
+			for (AActor* pChar : Actors)
+			{
+				//GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Purple, FString::Printf(TEXT("ActorName is: %s"), ((*actor->GetName()))));
+				if (pChar != nullptr)
 				{
-					if (pc->GetMesh()->CachedMaxDrawDistance != MaxDrawDist)
+					ABattleMobaCharacter* pc = Cast<ABattleMobaCharacter>(pChar);
+					if (pc != nullptr && pc == actor)
 					{
-						pc->GetMesh()->SetCullDistance(MaxDrawDist);
-						pc->Outline->SetCullDistance(MaxDrawDist);
-						if (Outer->GetClass() != pc->GetClass())
+						if (pc->GetMesh()->CachedMaxDrawDistance != MaxDrawDist)
 						{
-							pc->IsCurrentlyVisible = true;
+							pc->GetMesh()->SetCullDistance(MaxDrawDist);
+							pc->Outline->SetCullDistance(MaxDrawDist);
+							if (Outer->GetClass() != pc->GetClass())
+							{
+								pc->IsCurrentlyVisible = true;
+							}
 						}
 					}
 				}
@@ -260,6 +268,7 @@ void UInputLibrary::SetActorVisibility(ABattleMobaCharacter* actor, TArray<AActo
 		{
 			if (Actors.IsValidIndex(0))
 			{
+				GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Purple, FString::Printf(TEXT(" OUT VALID")));
 				if (Actors.Contains(actor))
 				{
 					Actors.Remove(actor);
