@@ -1,1 +1,1 @@
-https://iehzjrd485.execute-api.ap-southeast-1.amazonaws.com/development/
+https://iehzjrd485.execute-api.ap-southeast-1.amazonaws.com/development

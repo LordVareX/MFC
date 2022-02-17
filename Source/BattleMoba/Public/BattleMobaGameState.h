@@ -86,7 +86,7 @@ public:
 		float CurrentTime = 0.0f;
 
 	UPROPERTY(BlueprintReadWrite, Replicated, Category = "Clock")
-		FString Winner;
+		FString Winner;// = "Radiant";
 
 	UPROPERTY(BlueprintReadWrite, Replicated, Category = "Clock")
 		float RemainingGameTime = 0.0f;

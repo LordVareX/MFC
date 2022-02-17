@@ -2435,7 +2435,7 @@ void ABattleMobaCharacter::CheckDamage_Implementation(UParticleSystem * ImpactEf
 
 			GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Yellow, FString::Printf(TEXT("Damage Distance: %f"), distanceToChar));
 
-			if (distanceToChar < 130.0f)
+			if (distanceToChar < 200.0f)
 			{
 				//		when attacker is damaging enemy who is on Silat counter skill
 				if (damagedChar->GetMesh()->GetAnimInstance()->Montage_IsPlaying(CounterMoveset))
@@ -2482,11 +2482,12 @@ void ABattleMobaCharacter::CheckDamage_Implementation(UParticleSystem * ImpactEf
 						//		apply regular damage to enemy on valid if the attacker is on normal attack
 						else
 						{
+							DoDamage(damagedChar);
 							
-
-							//		display visual effect and produce sound effect on enemy hit
-							PlayEffectsClient(ImpactEffect, AttachTo, HitSound);
 						}
+
+						//		display visual effect and produce sound effect on enemy hit
+						PlayEffectsClient(ImpactEffect, AttachTo, HitSound);
 					}
 
 				}

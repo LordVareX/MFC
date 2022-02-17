@@ -210,7 +210,10 @@ public:
 		void UpdateLobby();
 
 	UFUNCTION(BlueprintImplementableEvent, Category = "Server")
-		void MatchResult();
+		void MatchResult(const FString &Winner);
+
+	UFUNCTION(BlueprintCallable, Category = "Server")
+		void DynamoDBProcessMatchResults(FString AWSGameSessionId, FString Winner, FString PID1, FString PID2, FString PID3, FString PID4, FString PID5, FString PID6, FString PID7, FString PID8, FString N1, FString N2, FString N3, FString N4, FString N5, FString N6, FString N7, FString N8, FString C1, FString C2, FString C3, FString C4, FString C5, FString C6, FString C7, FString C8, FString Kill1, FString Kill2, FString Kill3, FString Kill4, FString Kill5, FString Kill6, FString Kill7, FString Kill8, FString Death1, FString Death2, FString Death3, FString Death4, FString Death5, FString Death6, FString Death7, FString Death8, FString Assist1, FString Assist2, FString Assist3, FString Assist4, FString Assist5, FString Assist6, FString Assist7, FString Assist8, FString Honor1, FString Honor2, FString Honor3, FString Honor4, FString Honor5, FString Honor6, FString Honor7, FString Honor8, FString Level1, FString Level2, FString Level3, FString Level4, FString Level5, FString Level6, FString Level7, FString Level8);
 
 ///////////////////////////////////////////inventory/////////////////////////////////////////////
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Item System")

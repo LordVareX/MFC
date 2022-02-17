@@ -26,6 +26,7 @@ void ABattleMobaPlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty
 	DOREPLIFETIME(ABattleMobaPlayerState, Username);
 	DOREPLIFETIME(ABattleMobaPlayerState, AWSPlayerId);
 	DOREPLIFETIME(ABattleMobaPlayerState, AWSPlayerSessionId);
+	DOREPLIFETIME(ABattleMobaPlayerState, AWSGameSessionId);
 	DOREPLIFETIME(ABattleMobaPlayerState, TeamName);
 	DOREPLIFETIME(ABattleMobaPlayerState, Team);
 	DOREPLIFETIME(ABattleMobaPlayerState, CharMesh);
