@@ -40,7 +40,7 @@ public:
 		FTimerHandle GetResponseTimeHandle;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-		FString GameSessionId;
+		FString GameSessionId;// = "132143124124521421421";
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 		FString PlayerSessionId;
@@ -49,7 +49,7 @@ public:
 		FString PlayerId;// = "b55fb4bb-62ff-449f-a9c9-0aed93722d90";
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-		FString Username;//= "VareX";
+		FString Username;// = "VareX";
 
 	TDoubleLinkedList<float> PlayerLatencies;
 
