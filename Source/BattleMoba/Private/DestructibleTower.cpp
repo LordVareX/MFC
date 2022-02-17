@@ -124,13 +124,14 @@ void ADestructibleTower::OnRep_Destroy()
 		if (this->isDestroyed && this->TeamName == "Radiant")
 		{
 			GameState->Winner = "Dire";
+			GameMode->MatchResult("Dire");
 		}
 
 		else if (this->isDestroyed && this->TeamName == "Dire")
 		{
 			GameState->Winner = "Radiant";
+			GameMode->MatchResult("Radiant");
 		}
-		GameMode->MatchResult();
 	}
 	
 	

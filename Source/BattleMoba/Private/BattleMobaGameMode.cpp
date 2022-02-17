@@ -69,6 +69,8 @@ ABattleMobaGameMode::ABattleMobaGameMode()
 void ABattleMobaGameMode::BeginPlay()
 {
 	Super::BeginPlay();
+	
+	//MatchResult("Radiant");
 
 	//GetWorldTimerManager().SetTimer(LobbyClockTimer, this, &ABattleMobaGameMode::StartLobbyClock, 1.0f, true);
 }
@@ -336,6 +338,130 @@ void ABattleMobaGameMode::StartLobbyClock() {
 	}
 }
 
+void ABattleMobaGameMode::DynamoDBProcessMatchResults(FString AWSGameSessionId, FString Winner, FString PID1, FString PID2, FString PID3, FString PID4, FString PID5, FString PID6, FString PID7, FString PID8, FString N1, FString N2, FString N3, FString N4, FString N5, FString N6, FString N7, FString N8, FString C1, FString C2, FString C3, FString C4, FString C5, FString C6, FString C7, FString C8, FString Kill1, FString Kill2, FString Kill3, FString Kill4, FString Kill5, FString Kill6, FString Kill7, FString Kill8, FString Death1, FString Death2, FString Death3, FString Death4, FString Death5, FString Death6, FString Death7, FString Death8, FString Assist1, FString Assist2, FString Assist3, FString Assist4, FString Assist5, FString Assist6, FString Assist7, FString Assist8, FString Honor1, FString Honor2, FString Honor3, FString Honor4, FString Honor5, FString Honor6, FString Honor7, FString Honor8, FString Level1, FString Level2, FString Level3, FString Level4, FString Level5, FString Level6, FString Level7, FString Level8)
+{
+//#if WITH_GAMELIFT
+	if (GameState != nullptr) {
+		ABattleMobaGameState* BattleMobaGameState = Cast<ABattleMobaGameState>(GameState);
+		if (BattleMobaGameState != nullptr) {
+			
+			TSharedPtr<FJsonObject> RequestObj = MakeShareable(new FJsonObject);
+			RequestObj->SetStringField("gameSessionId", AWSGameSessionId);
+			RequestObj->SetStringField("winningTeam", Winner);
+			RequestObj->SetStringField("P1", N1);
+			RequestObj->SetStringField("C1", C1);
+			RequestObj->SetStringField("PID1", PID1);
+			RequestObj->SetStringField("Kill1", Kill1);
+			RequestObj->SetStringField("Death1", Death1);
+			RequestObj->SetStringField("Assist1", Assist1);
+			RequestObj->SetStringField("Honor1", Honor1);
+			RequestObj->SetStringField("Level1", Level1);
+			RequestObj->SetStringField("P2", N2);
+			RequestObj->SetStringField("C2", C2);
+			RequestObj->SetStringField("PID2", PID2);
+			RequestObj->SetStringField("Kill2", Kill2);
+			RequestObj->SetStringField("Death2", Death2);
+			RequestObj->SetStringField("Assist2", Assist2);
+			RequestObj->SetStringField("Honor2", Honor2);
+			RequestObj->SetStringField("Level2", Level2);
+			RequestObj->SetStringField("P3", N3);
+			RequestObj->SetStringField("C3", C3);
+			RequestObj->SetStringField("PID3", PID3);
+			RequestObj->SetStringField("Kill3", Kill3);
+			RequestObj->SetStringField("Death3", Death3);
+			RequestObj->SetStringField("Assist3", Assist3);
+			RequestObj->SetStringField("Honor3", Honor3);
+			RequestObj->SetStringField("Level3", Level3);
+			RequestObj->SetStringField("P4", N4);
+			RequestObj->SetStringField("C4", C4);
+			RequestObj->SetStringField("PID4", PID4);
+			RequestObj->SetStringField("Kill4", Kill4);
+			RequestObj->SetStringField("Death4", Death4);
+			RequestObj->SetStringField("Assist4", Assist4);
+			RequestObj->SetStringField("Honor4", Honor4);
+			RequestObj->SetStringField("Level4", Level4);
+			RequestObj->SetStringField("P5", N5);
+			RequestObj->SetStringField("C5", C5);
+			RequestObj->SetStringField("PID5", PID5);
+			RequestObj->SetStringField("Kill5", Kill5);
+			RequestObj->SetStringField("Death5", Death5);
+			RequestObj->SetStringField("Assist5", Assist5);
+			RequestObj->SetStringField("Honor5", Honor5);
+			RequestObj->SetStringField("Level5", Level5);
+			RequestObj->SetStringField("P6", N6);
+			RequestObj->SetStringField("C6", C6);
+			RequestObj->SetStringField("PID6", PID6);
+			RequestObj->SetStringField("Kill6", Kill6);
+			RequestObj->SetStringField("Death6", Death6);
+			RequestObj->SetStringField("Assist6", Assist6);
+			RequestObj->SetStringField("Honor6", Honor6);
+			RequestObj->SetStringField("Level6", Level6);
+			RequestObj->SetStringField("P7", N7);
+			RequestObj->SetStringField("C7", C7);
+			RequestObj->SetStringField("PID7", PID7);
+			RequestObj->SetStringField("Kill7", Kill7);
+			RequestObj->SetStringField("Death7", Death7);
+			RequestObj->SetStringField("Assist7", Assist7);
+			RequestObj->SetStringField("Honor7", Honor7);
+			RequestObj->SetStringField("Level7", Level7);
+			RequestObj->SetStringField("P8", N8);
+			RequestObj->SetStringField("C8", C8);
+			RequestObj->SetStringField("PID8", PID8);
+			RequestObj->SetStringField("Kill8", Kill8);
+			RequestObj->SetStringField("Death8", Death8);
+			RequestObj->SetStringField("Assist8", Assist8);
+			RequestObj->SetStringField("Honor8", Honor8);
+			RequestObj->SetStringField("Level8", Level8);
+
+			FString RequestBody;
+			TSharedRef<TJsonWriter<>> Writer = TJsonWriterFactory<>::Create(&RequestBody);
+			if (FJsonSerializer::Serialize(RequestObj.ToSharedRef(), Writer)) {
+				TSharedRef<IHttpRequest> RecordMatchResultRequest = HttpModule->CreateRequest();
+				RecordMatchResultRequest->OnProcessRequestComplete().BindUObject(this, &ABattleMobaGameMode::OnRecordMatchResultResponseReceived);
+				RecordMatchResultRequest->SetURL(ApiUrl + "/recordmatchresult");
+				RecordMatchResultRequest->SetVerb("POST");
+				RecordMatchResultRequest->SetHeader("Authorization", "mfc");
+				RecordMatchResultRequest->SetHeader("Content-Type", "application/json");
+				RecordMatchResultRequest->SetContentAsString(RequestBody);
+				RecordMatchResultRequest->ProcessRequest();
+
+				UE_LOG(LogTemp, Warning, TEXT("Match result updated"));
+			}
+			//auto GetGameSessionIdOutcome = Aws::GameLift::Server::GetGameSessionId();
+			//if (GetGameSessionIdOutcome.IsSuccess()) {
+			//	RequestObj->SetStringField("gameSessionId", GetGameSessionIdOutcome.GetResult());
+			//	BattleMobaGameState->GameSessionID = GetGameSessionIdOutcome.GetResult();
+
+			//	FString RequestBody;
+			//	TSharedRef<TJsonWriter<>> Writer = TJsonWriterFactory<>::Create(&RequestBody);
+			//	if (FJsonSerializer::Serialize(RequestObj.ToSharedRef(), Writer)) {
+			//		TSharedRef<IHttpRequest> RecordMatchResultRequest = HttpModule->CreateRequest();
+			//		RecordMatchResultRequest->OnProcessRequestComplete().BindUObject(this, &ABattleMobaGameMode::OnRecordMatchResultResponseReceived);
+			//		RecordMatchResultRequest->SetURL(ApiUrl + "/recordmatchresult");
+			//		RecordMatchResultRequest->SetVerb("POST");
+			//		//RecordMatchResultRequest->SetHeader("Authorization", ServerPassword);
+			//		RecordMatchResultRequest->SetHeader("Content-Type", "application/json");
+			//		RecordMatchResultRequest->SetContentAsString(RequestBody);
+			//		RecordMatchResultRequest->ProcessRequest();
+			//	}
+			//	else {
+			//		GetWorldTimerManager().SetTimer(EndGameHandle, this, &ABattleMobaGameMode::EndGame, 1.0f, false, 5.0f);
+			//	}
+			//}
+			//else {
+			//	GetWorldTimerManager().SetTimer(EndGameHandle, this, &ABattleMobaGameMode::EndGame, 1.0f, false, 5.0f);
+			//}
+		}
+		else {
+			GetWorldTimerManager().SetTimer(EndGameHandle, this, &ABattleMobaGameMode::EndGame, 1.0f, false, 5.0f);
+		}
+	}
+	else {
+		GetWorldTimerManager().SetTimer(EndGameHandle, this, &ABattleMobaGameMode::EndGame, 1.0f, false, 5.0f);
+	}
+//#endif
+}
+
 void ABattleMobaGameMode::StartClock()
 {
 	if (GState != nullptr)
@@ -363,71 +489,20 @@ void ABattleMobaGameMode::StartClock()
 			if (GState->TeamKillA > GState->TeamKillB)
 			{
 				GState->Winner = "Radiant";
+				MatchResult("Radiant");
 			}
 			else if (GState->TeamKillB > GState->TeamKillA)
 			{
 				GState->Winner = "Dire";
+				MatchResult("Dire");
 			}
-			MatchResult();
-//#if WITH_GAMELIFT
-//			if (GameState != nullptr) {
-//				ABattleMobaGameState* BattleMobaGameState = Cast<ABattleMobaGameState>(GameState);
-//				if (BattleMobaGameState != nullptr) {
-//					BattleMobaGameState->LatestEvent = "GameEnded";
-//					//Stops the timer and check for winners
-//					GetWorldTimerManager().ClearTimer(ClockTimer);
-//					if (GState->TeamKillA > GState->TeamKillB)
-//					{
-//						GState->Winner = "Radiant";
-//					}
-//					else if (GState->TeamKillB > GState->TeamKillA)
-//					{
-//						GState->Winner = "Dire";
-//					}
-//					TSharedPtr<FJsonObject> RequestObj = MakeShareable(new FJsonObject);
-//					RequestObj->SetStringField("winningTeam", BattleMobaGameState->Winner);
-//
-//
-//					auto GetGameSessionIdOutcome = Aws::GameLift::Server::GetGameSessionId();
-//					if (GetGameSessionIdOutcome.IsSuccess()) {
-//						RequestObj->SetStringField("gameSessionId", GetGameSessionIdOutcome.GetResult());
-//						BattleMobaGameState->GameSessionID = GetGameSessionIdOutcome.GetResult();
-//
-//						FString RequestBody;
-//						TSharedRef<TJsonWriter<>> Writer = TJsonWriterFactory<>::Create(&RequestBody);
-//						if (FJsonSerializer::Serialize(RequestObj.ToSharedRef(), Writer)) {
-//							TSharedRef<IHttpRequest> RecordMatchResultRequest = HttpModule->CreateRequest();
-//							RecordMatchResultRequest->OnProcessRequestComplete().BindUObject(this, &ABattleMobaGameMode::OnRecordMatchResultResponseReceived);
-//							RecordMatchResultRequest->SetURL(ApiUrl + "/recordmatchresult");
-//							RecordMatchResultRequest->SetVerb("POST");
-//							RecordMatchResultRequest->SetHeader("Authorization", ServerPassword);
-//							RecordMatchResultRequest->SetHeader("Content-Type", "application/json");
-//							RecordMatchResultRequest->SetContentAsString(RequestBody);
-//							RecordMatchResultRequest->ProcessRequest();
-//						}
-//						else {
-//							GetWorldTimerManager().SetTimer(EndGameHandle, this, &ABattleMobaGameMode::EndGame, 1.0f, false, 5.0f);
-//						}
-//					}
-//					else {
-//						GetWorldTimerManager().SetTimer(EndGameHandle, this, &ABattleMobaGameMode::EndGame, 1.0f, false, 5.0f);
-//					}
-//				}
-//				else {
-//					GetWorldTimerManager().SetTimer(EndGameHandle, this, &ABattleMobaGameMode::EndGame, 1.0f, false, 5.0f);
-//				}
-//			}
-//			else {
-//				GetWorldTimerManager().SetTimer(EndGameHandle, this, &ABattleMobaGameMode::EndGame, 1.0f, false, 5.0f);
-//			}
-//#endif
 		}
 	}
 
 }
 
 void ABattleMobaGameMode::EndRecord() {
-	MatchResult();
+	//MatchResult();
 //#if WITH_GAMELIFT
 //	if (GameState != nullptr) {
 //		ABattleMobaGameState* BattleMobaGameState = Cast<ABattleMobaGameState>(GameState);
