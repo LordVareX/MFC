@@ -100,6 +100,12 @@ private:
 		FString Username;
 
 	UPROPERTY()
+		FString Win;
+
+	UPROPERTY()
+		FString Lose;
+
+	UPROPERTY()
 		int iKill;
 
 	UPROPERTY()
@@ -107,6 +113,12 @@ private:
 
 	UPROPERTY()
 		int iAssist;
+
+	UPROPERTY()
+		int iWin;
+
+	UPROPERTY()
+		int iLose;
 
 	UPROPERTY()
 		TSubclassOf<UUserWidget> GameWidgetClass;

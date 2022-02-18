@@ -179,11 +179,15 @@ void UBattleMobaWidget::OnGetPlayerKDAResponseReceived(FHttpRequestPtr Request, 
 					if (JsonObject->HasField("playerData")) {
 						TSharedPtr<FJsonObject> PlayerData = JsonObject->GetObjectField("playerData");
 						TSharedPtr<FJsonObject> UsernameObject = PlayerData->GetObjectField("Username");
+						TSharedPtr<FJsonObject> WinsObject = PlayerData->GetObjectField("Wins");
+						TSharedPtr<FJsonObject> LossesObject = PlayerData->GetObjectField("Losses");
 						TSharedPtr<FJsonObject> KillsObject = PlayerData->GetObjectField("TotalKills");
 						TSharedPtr<FJsonObject> DeathsObject = PlayerData->GetObjectField("TotalDeaths");
 						TSharedPtr<FJsonObject> AssistsObject = PlayerData->GetObjectField("TotalAssists");
 
 						Username = UsernameObject->GetStringField("S");
+						Win = WinsObject->GetStringField("N");
+						Lose = LossesObject->GetStringField("N");
 						Kill = KillsObject->GetStringField("N");
 						Death = DeathsObject->GetStringField("N");
 						Assist = AssistsObject->GetStringField("N");
@@ -194,9 +198,13 @@ void UBattleMobaWidget::OnGetPlayerKDAResponseReceived(FHttpRequestPtr Request, 
 						GState->UsernameCheck = true;
 
 						BattleMobaPlayerState->Username = Username;
+						GState->CurrentWin = FCString::Atoi(*Win);
+						GState->CurrentLose = FCString::Atoi(*Lose);
 						GState->CurrentKill = FCString::Atoi(*Kill);
 						GState->CurrentDeath = FCString::Atoi(*Death);
 						GState->CurrentAssist = FCString::Atoi(*Assist);
+						iWin = FCString::Atoi(*Win);
+						iLose = FCString::Atoi(*Lose);
 						iKill = FCString::Atoi(*Kill);
 						iDeath = FCString::Atoi(*Death);
 						iAssist = FCString::Atoi(*Assist);
@@ -225,6 +233,7 @@ void UBattleMobaWidget::UpdatePlayerKDA() {
 				ABattleMobaPlayerState* BattleMobaPlayerState = Cast<ABattleMobaPlayerState>(OwningPlayerState);
 				ABattleMobaHUD* BattleMobaHUD = Cast<ABattleMobaHUD>(UGameplayStatics::GetPlayerController(this, 0)->GetHUD());
 				//FString PID = BattleMobaHUD->PlayerId;
+				FString PlayerTeam = BattleMobaPlayerState->TeamName.ToString();
 				int NewKill = BattleMobaPlayerState->Kill;
 				int NewDeath = BattleMobaPlayerState->Death;
 				int NewAssist = BattleMobaPlayerState->Assist;
@@ -234,24 +243,57 @@ void UBattleMobaWidget::UpdatePlayerKDA() {
 				FString SKill = FString::FromInt(TotalKill);
 				FString SDeath = FString::FromInt(TotalDeath);
 				FString SAssist = FString::FromInt(TotalAssist);
+				int NewWin, NewLose;
+				
+				if (PlayerTeam == GState->Winner) {
+					NewWin = iWin + 1;
+					FString SWin = FString::FromInt(NewWin);
+					FString SLose = FString::FromInt(0);
+					TSharedPtr<FJsonObject> RequestObj = MakeShareable(new FJsonObject);
+					RequestObj->SetStringField("PID", PID);
+					RequestObj->SetStringField("Win", SWin);
+					RequestObj->SetStringField("Lose", SLose);
+					RequestObj->SetStringField("Kill", SKill);
+					RequestObj->SetStringField("Death", SDeath);
+					RequestObj->SetStringField("Assist", SAssist);
 
-				TSharedPtr<FJsonObject> RequestObj = MakeShareable(new FJsonObject);
-				RequestObj->SetStringField("PID", PID);
-				RequestObj->SetStringField("Kill", SKill);
-				RequestObj->SetStringField("Death", SDeath);
-				RequestObj->SetStringField("Assist", SAssist);
-
-				FString RequestBody;
-				TSharedRef<TJsonWriter<>> Writer = TJsonWriterFactory<>::Create(&RequestBody);
-				if (FJsonSerializer::Serialize(RequestObj.ToSharedRef(), Writer)) {
-					TSharedRef<IHttpRequest> UpdatePlayerKDARequest = HttpModule->CreateRequest();
-					UpdatePlayerKDARequest->OnProcessRequestComplete().BindUObject(this, &UBattleMobaWidget::OnGetUpdateKDAResponseReceived);
-					UpdatePlayerKDARequest->SetURL(ApiUrl + "/updatekda");
-					UpdatePlayerKDARequest->SetVerb("POST");
-					UpdatePlayerKDARequest->SetHeader("Content-Type", "application/json");
+					FString RequestBody;
+					TSharedRef<TJsonWriter<>> Writer = TJsonWriterFactory<>::Create(&RequestBody);
+					if (FJsonSerializer::Serialize(RequestObj.ToSharedRef(), Writer)) {
+						TSharedRef<IHttpRequest> UpdatePlayerKDARequest = HttpModule->CreateRequest();
+						UpdatePlayerKDARequest->OnProcessRequestComplete().BindUObject(this, &UBattleMobaWidget::OnGetUpdateKDAResponseReceived);
+						UpdatePlayerKDARequest->SetURL(ApiUrl + "/updatekda");
+						UpdatePlayerKDARequest->SetVerb("POST");
+						UpdatePlayerKDARequest->SetHeader("Content-Type", "application/json");
 						//StopMatchmakingRequest->SetHeader("Authorization", AccessToken);
-					UpdatePlayerKDARequest->SetContentAsString(RequestBody);
-					UpdatePlayerKDARequest->ProcessRequest();
+						UpdatePlayerKDARequest->SetContentAsString(RequestBody);
+						UpdatePlayerKDARequest->ProcessRequest();
+					}
+				}
+				else {
+					NewLose = iLose + 1;
+					FString SWin = FString::FromInt(0);
+					FString SLose = FString::FromInt(NewLose);
+					TSharedPtr<FJsonObject> RequestObj = MakeShareable(new FJsonObject);
+					RequestObj->SetStringField("PID", PID);
+					RequestObj->SetStringField("Win", SWin);
+					RequestObj->SetStringField("Lose", SLose);
+					RequestObj->SetStringField("Kill", SKill);
+					RequestObj->SetStringField("Death", SDeath);
+					RequestObj->SetStringField("Assist", SAssist);
+
+					FString RequestBody;
+					TSharedRef<TJsonWriter<>> Writer = TJsonWriterFactory<>::Create(&RequestBody);
+					if (FJsonSerializer::Serialize(RequestObj.ToSharedRef(), Writer)) {
+						TSharedRef<IHttpRequest> UpdatePlayerKDARequest = HttpModule->CreateRequest();
+						UpdatePlayerKDARequest->OnProcessRequestComplete().BindUObject(this, &UBattleMobaWidget::OnGetUpdateKDAResponseReceived);
+						UpdatePlayerKDARequest->SetURL(ApiUrl + "/updatekda");
+						UpdatePlayerKDARequest->SetVerb("POST");
+						UpdatePlayerKDARequest->SetHeader("Content-Type", "application/json");
+						//StopMatchmakingRequest->SetHeader("Authorization", AccessToken);
+						UpdatePlayerKDARequest->SetContentAsString(RequestBody);
+						UpdatePlayerKDARequest->ProcessRequest();
+					}
 				}
 			}
 		}

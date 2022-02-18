@@ -1299,11 +1299,12 @@ void ABattleMobaCharacter::GetButtonSkillAction(FKey Currkeys, FString ButtonNam
 						if (MainWidget != nullptr && MainWidget->GetClass()->ImplementsInterface(UBattleMobaInterface::StaticClass()))
 						{
 							//GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Emerald, FString::Printf(TEXT("Pass through interface!")));
-							Cast<IBattleMobaInterface>(MainWidget)->Execute_LookUp(MainWidget, Currkeys.ToString());
 							if (UGameplayStatics::GetPlatformName() == "IOS" || UGameplayStatics::GetPlatformName() == "Android")
 							{
 								Cast<IBattleMobaInterface>(MainWidget)->Execute_LookUp(MainWidget, ButtonName);
 							}
+							else
+								Cast<IBattleMobaInterface>(MainWidget)->Execute_LookUp(MainWidget, Currkeys.ToString());
 						}
 					}
 					else
