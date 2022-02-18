@@ -69,6 +69,12 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
 		int CurrentAssist = 0;
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
+		int CurrentWin = 0;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
+		int CurrentLose = 0;
+
 	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadWrite)
 		float Timer = 0.0f;
 

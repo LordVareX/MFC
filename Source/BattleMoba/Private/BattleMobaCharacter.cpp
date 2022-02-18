@@ -48,7 +48,6 @@ void ABattleMobaCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>&
 	DOREPLIFETIME(ABattleMobaCharacter, Health);
 	DOREPLIFETIME(ABattleMobaCharacter, Stamina);
 	DOREPLIFETIME(ABattleMobaCharacter, IsHit);
-	DOREPLIFETIME(ABattleMobaCharacter, InRagdoll);
 	DOREPLIFETIME(ABattleMobaCharacter, BoneName);
 	DOREPLIFETIME(ABattleMobaCharacter, HitLocation);
 	DOREPLIFETIME(ABattleMobaCharacter, AttackSection);
@@ -960,183 +959,180 @@ void ABattleMobaCharacter::HitReactionClient_Implementation(AActor* HitActor, fl
 {
 	if (HitActor == this)
 	{
-		if (this->InRagdoll == false)
+		if (this->Health >= 0)
 		{
-			if (this->Health >= 0)
+			float Temp = this->Health - DamageReceived;
+
+			/**		Knockout and respawn*/
+			if (Temp <= 0.0f)
 			{
-				float Temp = this->Health - DamageReceived;
+				//Set Team Kills
+				//ABattleMobaGameState* gs = Cast <ABattleMobaGameState>(UGameplayStatics::GetGameState(this));
+				//if (gs)
+				//{
+				//	if (gs->TeamA.Contains(this->GetPlayerState()->GetPlayerName()))
+				//	{
+				//		gs->TeamKillB += 1;
+				//		//gs->OnRep_TeamKillCountB();
+				//	}
+				//	else if (gs->TeamB.Contains(this->GetPlayerState()->GetPlayerName()))
+				//	{
+				//		gs->TeamKillA += 1;
+				//		//gs->OnRep_TeamKillCountA();
+				//	}
+				//	GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Blue, FString::Printf(TEXT("Team A : %d, Team B : %d"), gs->TeamKillA, gs->TeamKillB));
+				//}
+				Temp = 0.0f;
 
-				/**		Knockout and respawn*/
-				if (Temp <= 0.0f)
+				//disable action
+				this->ActionEnabled = false;
+				this->WithinVicinity = false;
+
+				//ps->Death += 1;
+
+				FTimerHandle handle;
+				FTimerDelegate TimerDelegate;
+
+				ABattleMobaGameMode* gm = Cast<ABattleMobaGameMode>(GetWorld()->GetAuthGameMode());
+
+				//Set player's death count
+				ABattleMobaPlayerState* ps = Cast<ABattleMobaPlayerState>(this->GetPlayerState());
+
+				//set the row boolean to false after finish cooldown timer
+				TimerDelegate.BindLambda([this, gm, ps]()
 				{
-					//Set Team Kills
-					//ABattleMobaGameState* gs = Cast <ABattleMobaGameState>(UGameplayStatics::GetGameState(this));
-					//if (gs)
-					//{
-					//	if (gs->TeamA.Contains(this->GetPlayerState()->GetPlayerName()))
-					//	{
-					//		gs->TeamKillB += 1;
-					//		//gs->OnRep_TeamKillCountB();
-					//	}
-					//	else if (gs->TeamB.Contains(this->GetPlayerState()->GetPlayerName()))
-					//	{
-					//		gs->TeamKillA += 1;
-					//		//gs->OnRep_TeamKillCountA();
-					//	}
-					//	GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Blue, FString::Printf(TEXT("Team A : %d, Team B : %d"), gs->TeamKillA, gs->TeamKillB));
-					//}
-					Temp = 0.0f;
-
-					//disable action
-					this->ActionEnabled = false;
-					this->WithinVicinity = false;
-
-					//ps->Death += 1;
-
-					FTimerHandle handle;
-					FTimerDelegate TimerDelegate;
-
-					ABattleMobaGameMode* gm = Cast<ABattleMobaGameMode>(GetWorld()->GetAuthGameMode());
-
-					//Set player's death count
-					ABattleMobaPlayerState* ps = Cast<ABattleMobaPlayerState>(this->GetPlayerState());
-
-					//set the row boolean to false after finish cooldown timer
-					TimerDelegate.BindLambda([this, gm, ps]()
+					if (gm)
 					{
-						if (gm)
+						gm->PlayerKilled(ps, this->DamageDealers.Last(), DamageDealers); //Set current team scores and kills
+					}
+				});
+
+				//start cooldown the skill
+				this->GetWorldTimerManager().SetTimer(handle, TimerDelegate, 0.02f, false);
+
+				this->GetMesh()->SetCollisionEnabled(ECollisionEnabled::PhysicsOnly);
+				this->GetMesh()->SetCollisionObjectType(ECollisionChannel::ECC_PhysicsBody);
+				this->GetMesh()->SetSimulatePhysics(true);
+				this->GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+				this->GetCharacterMovement()->DisableMovement();
+
+				//ps->StartRespawnTimer(ps);
+
+				if (GetLocalRole() == ROLE_Authority)
+				{
+					//Start Respawn Timer Count
+					ps->StartRespawnTimer(ps);
+
+					/*int tempTimer = ps->RespawnTimeCounter - 3;
+
+					FTimerDelegate ListenerDelegate = FTimerDelegate::CreateUObject(this, &ABattleMobaCharacter::RespawnCharacter, tempTimer);
+					this->GetWorld()->GetTimerManager().SetTimer(this->RespawnTimer, ListenerDelegate, 3.0f, false);*/
+
+					this->GetWorld()->GetTimerManager().SetTimer(this->RespawnTimer, this, &ABattleMobaCharacter::RespawnCharacter, 3.0f, false);
+				}
+			}
+
+			//		Hit reaction for players who have hp > 0
+			else
+			{
+				FTimerHandle delay;
+				FTimerDelegate delayDel;
+
+				//		when attacker is on Special Attack skills
+				if (isKnockback)
+				{
+					//GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Blue, FString::Printf(TEXT("Knock back? %s"), isKnockback ? TEXT("true") : TEXT("false")));
+					//GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Yellow, FString::Printf(TEXT("Stun Time: %f"), StunTime));
+
+					FOnMontageEnded MontageEndedDelegate;
+
+					//		stun enemy, does not allow movement and input skill
+					if (GetMesh()->SkeletalMesh != nullptr)
+					{
+						if (this->AnimInsta)
 						{
-							gm->PlayerKilled(ps, this->DamageDealers.Last(), DamageDealers); //Set current team scores and kills
+							this->AnimInsta->CanMove = false;
 						}
+					}
+					//		play hit reaction of special attack
+					this->GetMesh()->GetAnimInstance()->Montage_Play(HitMoveset, 1.0f, EMontagePlayReturnType::MontageLength, 0.0f, true);
+					this->GetMesh()->GetAnimInstance()->Montage_JumpToSection(MontageSection);
+
+					//		trigger knockback on enemy
+					this->LaunchCharacter(KnockbackImpulse, false, false);
+
+					/*int32 sectionIndex = GetCurrentMontage()->GetSectionIndex(MontageSection);
+					float sectionLength = GetCurrentMontage()->GetSectionLength(sectionIndex);*/
+
+					delayDel.BindLambda([this, HitMoveset]()
+					{
+						this->GetMesh()->GetAnimInstance()->Montage_JumpToSection("GetUp");
+						FName activeSection = this->AnimInsta->Montage_GetCurrentSection(HitMoveset);
+						//GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Magenta, FString::Printf(TEXT("Current section is %s"), *activeSection.ToString()));
 					});
 
-					//start cooldown the skill
-					this->GetWorldTimerManager().SetTimer(handle, TimerDelegate, 0.02f, false);
+					this->GetWorldTimerManager().SetTimer(delay, delayDel, StunTime, false);
 
-					this->GetMesh()->SetCollisionEnabled(ECollisionEnabled::PhysicsOnly);
-					this->GetMesh()->SetCollisionObjectType(ECollisionChannel::ECC_PhysicsBody);
-					this->GetMesh()->SetSimulatePhysics(true);
-					this->GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-					this->GetCharacterMovement()->DisableMovement();
+					//		when montage finished playing, trigger function OnHRMontageEnd - enable movement
+					MontageEndedDelegate.BindUObject(this, &ABattleMobaCharacter::OnHRMontageEnd);
+					this->GetMesh()->GetAnimInstance()->Montage_SetEndDelegate(MontageEndedDelegate, HitMoveset);
 
-					//ps->StartRespawnTimer(ps);
-
-					if (GetLocalRole() == ROLE_Authority)
-					{
-						//Start Respawn Timer Count
-						ps->StartRespawnTimer(ps);
-
-						/*int tempTimer = ps->RespawnTimeCounter - 3;
-
-						FTimerDelegate ListenerDelegate = FTimerDelegate::CreateUObject(this, &ABattleMobaCharacter::RespawnCharacter, tempTimer);
-						this->GetWorld()->GetTimerManager().SetTimer(this->RespawnTimer, ListenerDelegate, 3.0f, false);*/
-
-						this->GetWorld()->GetTimerManager().SetTimer(this->RespawnTimer, this, &ABattleMobaCharacter::RespawnCharacter, 3.0f, false);
-					}
 				}
 
-				//		Hit reaction for players who have hp > 0
+				//		simple directional hit reaction
 				else
 				{
-					FTimerHandle delay;
-					FTimerDelegate delayDel;
-					
-					//		when attacker is on Special Attack skills
-					if (isKnockback)
+					//GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Purple, FString::Printf(TEXT("Directional Hit Reaction")));
+					FOnMontageEnded MontageEndedDelegate;
+
+					//		disable movement and input skill
+					if (GetMesh()->SkeletalMesh != nullptr)
 					{
-						//GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Blue, FString::Printf(TEXT("Knock back? %s"), isKnockback ? TEXT("true") : TEXT("false")));
-						//GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Yellow, FString::Printf(TEXT("Stun Time: %f"), StunTime));
-
-						FOnMontageEnded MontageEndedDelegate;
-
-						//		stun enemy, does not allow movement and input skill
-						if (GetMesh()->SkeletalMesh != nullptr)
+						if (this->AnimInsta)
 						{
-							if (this->AnimInsta)
-							{
-								this->AnimInsta->CanMove = false;
-							}
+							this->AnimInsta->CanMove = false;
 						}
-						//		play hit reaction of special attack
-						this->GetMesh()->GetAnimInstance()->Montage_Play(HitMoveset, 1.0f, EMontagePlayReturnType::MontageLength, 0.0f, true);
-						this->GetMesh()->GetAnimInstance()->Montage_JumpToSection(MontageSection);
-
-						//		trigger knockback on enemy
-						this->LaunchCharacter(KnockbackImpulse, false, false);
-
-						/*int32 sectionIndex = GetCurrentMontage()->GetSectionIndex(MontageSection);
-						float sectionLength = GetCurrentMontage()->GetSectionLength(sectionIndex);*/
-
-						delayDel.BindLambda([this, HitMoveset]()
-						{
-							this->GetMesh()->GetAnimInstance()->Montage_JumpToSection("GetUp");
-							FName activeSection = this->AnimInsta->Montage_GetCurrentSection(HitMoveset);
-							//GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Magenta, FString::Printf(TEXT("Current section is %s"), *activeSection.ToString()));
-						});
-
-						this->GetWorldTimerManager().SetTimer(delay, delayDel, StunTime, false);
-
-						//		when montage finished playing, trigger function OnHRMontageEnd - enable movement
-						MontageEndedDelegate.BindUObject(this, &ABattleMobaCharacter::OnHRMontageEnd);
-						this->GetMesh()->GetAnimInstance()->Montage_SetEndDelegate(MontageEndedDelegate, HitMoveset);
-						
 					}
 
-					//		simple directional hit reaction
-					else
+					//		cancel stun timer, stop montage.. leave nullptr to stop any active montage
+					if (this->GetWorldTimerManager().IsTimerActive(delay) == true)
 					{
-						//GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Purple, FString::Printf(TEXT("Directional Hit Reaction")));
-						FOnMontageEnded MontageEndedDelegate;
-
-						//		disable movement and input skill
-						if (GetMesh()->SkeletalMesh != nullptr)
-						{
-							if (this->AnimInsta)
-							{
-								this->AnimInsta->CanMove = false;
-							}
-						}
-
-						//		cancel stun timer, stop montage.. leave nullptr to stop any active montage
-						if (this->GetWorldTimerManager().IsTimerActive(delay) == true)
-						{
-							this->GetWorldTimerManager().ClearTimer(delay);
-							this->GetMesh()->GetAnimInstance()->Montage_Stop(0.1f, nullptr);
-						}
-
-						//		play hit reaction of directional hit reaction
-						this->GetMesh()->GetAnimInstance()->Montage_Play(HitMoveset, 1.0f, EMontagePlayReturnType::MontageLength, 0.0f, true);
-						this->GetMesh()->GetAnimInstance()->Montage_JumpToSection(MontageSection);
-
-						//		when montage finished playing, trigger function OnHRMontageEnd - enable movement
-						MontageEndedDelegate.BindUObject(this, &ABattleMobaCharacter::OnHRMontageEnd);
-						this->GetMesh()->GetAnimInstance()->Montage_SetEndDelegate(MontageEndedDelegate, HitMoveset);
-
+						this->GetWorldTimerManager().ClearTimer(delay);
+						this->GetMesh()->GetAnimInstance()->Montage_Stop(0.1f, nullptr);
 					}
-					
 
-					/**		Play hit reaction animation on hit*/
-					//UAnimMontage* CurrentMontage = this->GetMesh()->GetAnimInstance()->GetCurrentActiveMontage();
-					//this->GetMesh()->GetAnimInstance()->Montage_Stop(0.001f, CurrentMontage);
-					//PlayAnimMontage(HitMoveset, 1.0f, MontageSection);
-					
-					
-				}
+					//		play hit reaction of directional hit reaction
+					this->GetMesh()->GetAnimInstance()->Montage_Play(HitMoveset, 1.0f, EMontagePlayReturnType::MontageLength, 0.0f, true);
+					this->GetMesh()->GetAnimInstance()->Montage_JumpToSection(MontageSection);
 
-				this->Health = Temp;
-				this->IsHit = false;
-
-				OnRep_Health();
-
-				//run clear damage dealers array
-				if (this->GetWorldTimerManager().IsTimerActive(this->DealerTimer))
-				{
-					this->GetWorldTimerManager().ClearTimer(this->DealerTimer);
+					//		when montage finished playing, trigger function OnHRMontageEnd - enable movement
+					MontageEndedDelegate.BindUObject(this, &ABattleMobaCharacter::OnHRMontageEnd);
+					this->GetMesh()->GetAnimInstance()->Montage_SetEndDelegate(MontageEndedDelegate, HitMoveset);
 
 				}
-				this->GetWorldTimerManager().SetTimer(this->DealerTimer, this, &ABattleMobaCharacter::ClearDamageDealers, 5.0f, true);
-				
+
+
+				/**		Play hit reaction animation on hit*/
+				//UAnimMontage* CurrentMontage = this->GetMesh()->GetAnimInstance()->GetCurrentActiveMontage();
+				//this->GetMesh()->GetAnimInstance()->Montage_Stop(0.001f, CurrentMontage);
+				//PlayAnimMontage(HitMoveset, 1.0f, MontageSection);
+
+
 			}
+
+			this->Health = Temp;
+			this->IsHit = false;
+
+			OnRep_Health();
+
+			//run clear damage dealers array
+			if (this->GetWorldTimerManager().IsTimerActive(this->DealerTimer))
+			{
+				this->GetWorldTimerManager().ClearTimer(this->DealerTimer);
+
+			}
+			this->GetWorldTimerManager().SetTimer(this->DealerTimer, this, &ABattleMobaCharacter::ClearDamageDealers, 5.0f, true);
+
 		}
 	}
 	UpdateHUD();
@@ -1673,7 +1669,7 @@ void ABattleMobaCharacter::DetectNearestTarget_Implementation(EResult Type, FAct
 
 						if (pc != nullptr)
 						{
-							if (pc->InRagdoll == false && pc->TeamName != this->TeamName)
+							if (pc->Health > 0 && pc->TeamName != this->TeamName)
 							{
 
 								//		check current closestActor is still the closest or change to new one
@@ -1699,7 +1695,7 @@ void ABattleMobaCharacter::DetectNearestTarget_Implementation(EResult Type, FAct
 
 						else if (tower != nullptr && pc == nullptr)
 						{
-							if (tower->TeamName != this->TeamName)
+							if (tower->CurrentHealth > 0  && tower->TeamName != this->TeamName)
 							{
 								//		prioritise player, only then set closest actor to tower
 								if (IsValid(closestActor) == false)
@@ -1799,6 +1795,9 @@ void ABattleMobaCharacter::RotateNearestTarget_Implementation(AActor* Target, ER
 			//Multiply by Radius and divided by distance
 			FromOriginToTarget *= (RotateRadius / 1.5) / this->GetDistanceTo(Target);
 
+			//Set enemyChar if the target is a BattleMobaCharacter
+			ABattleMobaCharacter* enemyChar = Cast<ABattleMobaCharacter>(Target);
+
 			if (Type == EResult::Cooldown)
 			{
 				UBattleMobaAnimInstance* inst = Cast<UBattleMobaAnimInstance>(this->GetMesh()->GetAnimInstance());
@@ -1806,9 +1805,19 @@ void ABattleMobaCharacter::RotateNearestTarget_Implementation(AActor* Target, ER
 				inst->bMoving = true;
 				inst->Speed = FromOriginToTarget.Size();
 
+				if (IsValid(enemyChar))
+				{
+					//rotate and move the component towards target if enemyChar
+					UKismetSystemLibrary::MoveComponentTo(this->GetCapsuleComponent(), Target->GetActorLocation() + FromOriginToTarget, RotateTo, true, true, inst->Speed / (Target->GetActorLocation() + FromOriginToTarget).Size(), true, EMoveComponentAction::Type::Move, LatentInfo);
+				}
+
+				else
+				{
+					//rotate the component towards target if not enemyCar
+					UKismetSystemLibrary::MoveComponentTo(this->GetCapsuleComponent(), this->GetCapsuleComponent()->GetComponentLocation(), RotateTo, true, true, 0.1f, true, EMoveComponentAction::Type::Move, LatentInfo);
+				}
 				//GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Green, FString::Printf(TEXT("Hit Speed: %f"), inst->Speed));
-				//rotate and move the component towards target
-				UKismetSystemLibrary::MoveComponentTo(this->GetCapsuleComponent(), Target->GetActorLocation() + FromOriginToTarget, RotateTo, true, true, inst->Speed/ (Target->GetActorLocation() + FromOriginToTarget).Size(), true, EMoveComponentAction::Type::Move, LatentInfo);
+				
 
 				//setting up delay properties
 				FTimerHandle handle;
@@ -1834,8 +1843,17 @@ void ABattleMobaCharacter::RotateNearestTarget_Implementation(AActor* Target, ER
 				inst->Speed = FromOriginToTarget.Size();
 
 				//GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Green, FString::Printf(TEXT("Hit Speed: %f"), inst->Speed));
-				//rotate and move the component towards target
-				UKismetSystemLibrary::MoveComponentTo(this->GetCapsuleComponent(), Target->GetActorLocation() + FromOriginToTarget, RotateTo, true, true, inst->Speed / (Target->GetActorLocation() + FromOriginToTarget).Size(), true, EMoveComponentAction::Type::Move, LatentInfo);
+				if (IsValid(enemyChar))
+				{
+					//rotate and move the component towards target if enemyChar
+					UKismetSystemLibrary::MoveComponentTo(this->GetCapsuleComponent(), Target->GetActorLocation() + FromOriginToTarget, RotateTo, true, true, inst->Speed / (Target->GetActorLocation() + FromOriginToTarget).Size(), true, EMoveComponentAction::Type::Move, LatentInfo);
+				}
+
+				else
+				{
+					//rotate the component towards target if not enemyCar
+					UKismetSystemLibrary::MoveComponentTo(this->GetCapsuleComponent(), this->GetCapsuleComponent()->GetComponentLocation(), RotateTo, true, true, 0.1f, true, EMoveComponentAction::Type::Move, LatentInfo);
+				}
 
 				//setting up delay properties
 				FTimerHandle handle;
@@ -2416,12 +2434,12 @@ void ABattleMobaCharacter::MulticastExecuteAction_Implementation(FActionSkill Se
 	
 }
 
-bool ABattleMobaCharacter::CheckDamage_Validate(UParticleSystem * ImpactEffect, FName AttachTo, USoundBase * HitSound)
+bool ABattleMobaCharacter::CheckDamage_Validate(UParticleSystem * ImpactEffect, FName AttachTo, USoundBase * HitSound, float damageDistance)
 {
 	return true;	
 }
 
-void ABattleMobaCharacter::CheckDamage_Implementation(UParticleSystem * ImpactEffect, FName AttachTo, USoundBase * HitSound)
+void ABattleMobaCharacter::CheckDamage_Implementation(UParticleSystem * ImpactEffect, FName AttachTo, USoundBase * HitSound, float damageDistance)
 {
 	if (IsValid(closestActor))
 	{
@@ -2432,47 +2450,46 @@ void ABattleMobaCharacter::CheckDamage_Implementation(UParticleSystem * ImpactEf
 
 		if (IsValid(damagedChar))
 		{
-			float distanceToChar = damagedChar->GetDistanceTo(this);
-
-			GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Yellow, FString::Printf(TEXT("Damage Distance: %f"), distanceToChar));
-
-			if (distanceToChar < 200.0f)
+			if (damagedChar->IsStunned == false && damagedChar->Health > 0)
 			{
-				//		when attacker is damaging enemy who is on Silat counter skill
-				if (damagedChar->GetMesh()->GetAnimInstance()->Montage_IsPlaying(CounterMoveset))
-				{
-					ServerRotateHitActor(damagedChar, this);
-					ServerCounterAttack(damagedChar);
+				float distanceToChar = damagedChar->GetDistanceTo(this);
+				ABattleMobaPlayerState* attackerPS = Cast<ABattleMobaPlayerState>(this->GetPlayerState());
 
-					/*damagedChar->MulticastRotateHitActor(damagedChar, this);
-					damagedChar->MulticastCounterAttack(damagedChar);
-					*/
-				}
+				GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Yellow, FString::Printf(TEXT("Damage Distance: %f"), distanceToChar));
 
-				else
+				if (distanceToChar < damageDistance)
 				{
-					if (damagedChar->IsImmuned == false)
+					//		when attacker is damaging enemy who is on Silat counter skill
+					if (damagedChar->GetMesh()->GetAnimInstance()->Montage_IsPlaying(CounterMoveset))
+					{
+						ServerRotateHitActor(damagedChar, this);
+						ServerCounterAttack(damagedChar);
+
+						/*damagedChar->MulticastRotateHitActor(damagedChar, this);
+						damagedChar->MulticastCounterAttack(damagedChar);
+						*/
+					}
+
+					else
 					{
 						damagedChar->HitReactionMoveset = this->HitReactionMoveset;
 
 						//		triggers status effect if there is one when attacker is on special attack
 						if (this->OnSpecialAttack == true)
 						{
-							ABattleMobaPlayerState* ps = Cast<ABattleMobaPlayerState>(this->GetPlayerState());
-
-							if (IsValid(ps))
+							if (IsValid(attackerPS))
 							{
-								if (ps->CurrentStyle == 0)
+								if (attackerPS->CurrentStyle == 0)
 								{
 
 								}
 
-								else if (ps->CurrentStyle == 1)
+								else if (attackerPS->CurrentStyle == 1)
 								{
 
 								}
 
-								else if (ps->CurrentStyle == 2)
+								else if (attackerPS->CurrentStyle == 2)
 								{
 								}
 
@@ -2484,16 +2501,15 @@ void ABattleMobaCharacter::CheckDamage_Implementation(UParticleSystem * ImpactEf
 						else
 						{
 							DoDamage(damagedChar);
-							
-						}
 
-						//		display visual effect and produce sound effect on enemy hit
-						PlayEffectsClient(ImpactEffect, AttachTo, HitSound);
+						}
 					}
+
+					//		display visual effect and produce sound effect on enemy hit
+					PlayEffectsClient(ImpactEffect, AttachTo, HitSound);
 
 				}
 			}
-
 		}
 
 		else if (IsValid(damagedTower) && !IsValid(damagedChar))
@@ -2616,7 +2632,7 @@ void ABattleMobaCharacter::HitResult_Implementation(FHitResult hit, UParticleSys
 
 	if (IsValid(DamagedEnemy))
 	{
-		if (DamagedEnemy->TeamName != this->TeamName && (DamagedEnemy == hit.Actor) && !(ArrDamagedEnemy.Contains(DamagedEnemy)) && DamagedEnemy->InRagdoll == false)
+		if (DamagedEnemy->TeamName != this->TeamName && (DamagedEnemy == hit.Actor) && !(ArrDamagedEnemy.Contains(DamagedEnemy)) && DamagedEnemy->Health > 0)
 		{
 			//GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Green, FString::Printf(TEXT("You are hitting: %s"), *UKismetSystemLibrary::GetDisplayName(DamagedEnemy)));
 			if (DamagedEnemy->AnimInsta->Montage_IsPlaying(DamagedEnemy->CounterMoveset))
@@ -2691,7 +2707,7 @@ void ABattleMobaCharacter::SpecialAttackTrace_Implementation(FVector BoxSize, UP
 
 				if (pc != nullptr)
 				{
-					if (pc->InRagdoll == false && pc->TeamName != this->TeamName && !(Victims.Contains(pc)))
+					if (pc->Health > 0 && pc->TeamName != this->TeamName && !(Victims.Contains(pc)))
 					{
 						if (pc->AnimInsta->Montage_IsPlaying(pc->CounterMoveset))
 						{
