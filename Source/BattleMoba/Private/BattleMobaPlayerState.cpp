@@ -49,7 +49,7 @@ void ABattleMobaPlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty
 	DOREPLIFETIME(ABattleMobaPlayerState, ImmunityDur);
 	DOREPLIFETIME(ABattleMobaPlayerState, StunDuration);
 	DOREPLIFETIME(ABattleMobaPlayerState, KnockbackVector);
-
+	DOREPLIFETIME(ABattleMobaPlayerState, CurrentSkillsLeft);
 
 }
 
@@ -121,6 +121,18 @@ void ABattleMobaPlayerState::RespawnTimerCount_Implementation(ABattleMobaPlayerS
 	}
 }
 
+bool ABattleMobaPlayerState::ClientCurrentSkillCount_Validate(const FString& str)
+{
+	return true;
+}
+
+void ABattleMobaPlayerState::ClientCurrentSkillCount_Implementation(const FString& str)
+{
+	CurrentSkillsLeft = FMath::Clamp(CurrentSkillsLeft - 1, 0, LevelTable->GetRowNames().Num());
+	Skills = *UInputLibrary::AddToTMap(&Skills, str);
+	GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Orange, FString::Printf(TEXT("CurrentSkillLeft : %d"), CurrentSkillsLeft));
+}
+
 bool ABattleMobaPlayerState::CheckKeyInMap(FString str, bool checkValCount, int maxVal)
 {
 	return UInputLibrary::CheckKeyInTMap(&Skills, str, checkValCount, maxVal);
@@ -128,7 +140,20 @@ bool ABattleMobaPlayerState::CheckKeyInMap(FString str, bool checkValCount, int 
 
 void ABattleMobaPlayerState::AddToMap(FString str)
 {
-	Skills = *UInputLibrary::AddToTMap(&Skills, str);
+	if (GetPawn()->IsLocallyControlled())
+	{
+		ServerCurrentSkillCount(str);
+	}
+}
+
+bool ABattleMobaPlayerState::ServerCurrentSkillCount_Validate(const FString& str)
+{
+	return true;
+}
+
+void ABattleMobaPlayerState::ServerCurrentSkillCount_Implementation(const FString& str)
+{
+	ClientCurrentSkillCount(str);
 }
 
 void ABattleMobaPlayerState::LookUp_Implementation(const FString& str)
@@ -209,6 +234,9 @@ void ABattleMobaPlayerState::AddExp(int EXPoint, int& OutLevel)
 					MaxHealth = UInputLibrary::ChangeValueByPercentage(MaxHealth, Row->HPIncrementPercent, true);
 					Defense = UInputLibrary::ChangeValueByPercentage(Defense, Row->DefIncrementPercent, true);
 					BaseDamagePercent = Row->DmgIncrementPercent;
+					CurrentSkillsLeft = FMath::Clamp(CurrentSkillsLeft + 1, 0, LevelTable->GetRowNames().Num());
+					GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Orange, FString::Printf(TEXT("CurrentSkillLeft : %d"), CurrentSkillsLeft));
+					
 					if (GetPawn()->IsLocallyControlled())
 					{
 						ServerSetRespawnTime(Row->RespawnTime);

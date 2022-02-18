@@ -32,6 +32,9 @@ protected:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "UnlockedSkill")
 		TMap<FString, int32> Skills;
+
+	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadWrite, Category = "UnlockedSkill")
+		int CurrentSkillsLeft = 0;
 	/////////////////////////////////////////////////////////////////////
 
 public:
@@ -163,6 +166,12 @@ protected:
 	//TMap
 	UFUNCTION(BlueprintCallable)
 		void AddToMap(FString str);
+
+	UFUNCTION(Reliable, Server, WithValidation, Category = "UpgradeSkill")
+		void ServerCurrentSkillCount(const FString& str);
+
+	UFUNCTION(Reliable, NetMulticast, WithValidation, Category = "UpgradeSkill")
+		void ClientCurrentSkillCount(const FString& str);
 
 	UFUNCTION(BlueprintCallable)//checvalcount opt for need to current value from max value needed for a key
 		bool CheckKeyInMap(FString str, bool checkValCount, int maxVal);
