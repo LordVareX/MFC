@@ -170,7 +170,7 @@ protected:
 	UFUNCTION(Reliable, Server, WithValidation, Category = "UpgradeSkill")
 		void ServerCurrentSkillCount(const FString& str);
 
-	UFUNCTION(Reliable, NetMulticast, WithValidation, Category = "UpgradeSkill")
+	UFUNCTION(Reliable, Client , WithValidation, Category = "UpgradeSkill")
 		void ClientCurrentSkillCount(const FString& str);
 
 	UFUNCTION(BlueprintCallable)//checvalcount opt for need to current value from max value needed for a key
@@ -204,11 +204,11 @@ public:
 	UFUNCTION(BlueprintCallable, Reliable, Server, WithValidation, Category = "Exp")
 		void ServerSetExp(int EXPoint);
 
-	UFUNCTION(Reliable, NetMulticast, WithValidation, Category = "Exp")
+	UFUNCTION(Reliable, Client, WithValidation, Category = "Exp")
 		void ClientSetExp(int EXPoint);
 
 	UFUNCTION(BlueprintCallable)
-		void AddExp(int EXPoint, int& OutLevel);
+		bool AddExp(int EXPoint, int& OutLevel);
 
 	UFUNCTION(BlueprintCallable, Reliable, Server, WithValidation, Category = "Exp")
 		void ServerSetRespawnTime(float time);

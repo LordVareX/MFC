@@ -190,10 +190,14 @@ bool ABattleMobaPlayerState::ClientSetExp_Validate(int EXPoint)
 
 void ABattleMobaPlayerState::ClientSetExp_Implementation(int EXPoint)
 {
-	AddExp(EXPoint, this->Level);
+	if (AddExp(EXPoint, this->Level) == true)
+	{
+		CurrentSkillsLeft = FMath::Clamp(CurrentSkillsLeft + 1, 0, LevelTable->GetRowNames().Num());
+		GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Orange, FString::Printf(TEXT("CurrentSkillLeft : %d"), CurrentSkillsLeft));
+	}
 }
 
-void ABattleMobaPlayerState::AddExp(int EXPoint, int& OutLevel)
+bool ABattleMobaPlayerState::AddExp(int EXPoint, int& OutLevel)
 {
 	//Get last row of datatable
 	FName lastRowName = LevelTable->GetRowNames()[LevelTable->GetRowNames().Num()-1];
@@ -234,8 +238,6 @@ void ABattleMobaPlayerState::AddExp(int EXPoint, int& OutLevel)
 					MaxHealth = UInputLibrary::ChangeValueByPercentage(MaxHealth, Row->HPIncrementPercent, true);
 					Defense = UInputLibrary::ChangeValueByPercentage(Defense, Row->DefIncrementPercent, true);
 					BaseDamagePercent = Row->DmgIncrementPercent;
-					CurrentSkillsLeft = FMath::Clamp(CurrentSkillsLeft + 1, 0, LevelTable->GetRowNames().Num());
-					GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Orange, FString::Printf(TEXT("CurrentSkillLeft : %d"), CurrentSkillsLeft));
 					
 					if (GetPawn()->IsLocallyControlled())
 					{
@@ -256,10 +258,11 @@ void ABattleMobaPlayerState::AddExp(int EXPoint, int& OutLevel)
 				}
 			}
 		}
-		
 		//return level
 		OutLevel = Level;
+		return true;
 	}
+	return false;
 }
 
 bool ABattleMobaPlayerState::ClientSetRespawnTime_Validate(float time)
