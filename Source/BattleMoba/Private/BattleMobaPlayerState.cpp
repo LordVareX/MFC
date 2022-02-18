@@ -194,7 +194,28 @@ void ABattleMobaPlayerState::ClientSetExp_Implementation(int EXPoint)
 	{
 		CurrentSkillsLeft = FMath::Clamp(CurrentSkillsLeft + 1, 0, LevelTable->GetRowNames().Num());
 		GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Orange, FString::Printf(TEXT("CurrentSkillLeft : %d"), CurrentSkillsLeft));
+		ServerGetCurrLevel(this->Level);
 	}
+}
+
+bool ABattleMobaPlayerState::ServerGetCurrLevel_Validate(int currLevel)
+{
+	return true;
+}
+
+void ABattleMobaPlayerState::ServerGetCurrLevel_Implementation(int currLevel)
+{
+	ClientGetCurrLevel(currLevel);
+}
+
+bool ABattleMobaPlayerState::ClientGetCurrLevel_Validate(int currLevel)
+{
+	return true;
+}
+
+void ABattleMobaPlayerState::ClientGetCurrLevel_Implementation(int currLevel)
+{
+	this->Level = currLevel;
 }
 
 bool ABattleMobaPlayerState::AddExp(int EXPoint, int& OutLevel)

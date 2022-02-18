@@ -207,6 +207,12 @@ public:
 	UFUNCTION(Reliable, Client, WithValidation, Category = "Exp")
 		void ClientSetExp(int EXPoint);
 
+	UFUNCTION(Reliable, Server, WithValidation, Category = "Exp")
+		void ServerGetCurrLevel(int currLevel);
+
+	UFUNCTION(Reliable, NetMulticast, WithValidation, Category = "Exp")
+		void ClientGetCurrLevel(int currLevel);
+
 	UFUNCTION(BlueprintCallable)
 		bool AddExp(int EXPoint, int& OutLevel);
 

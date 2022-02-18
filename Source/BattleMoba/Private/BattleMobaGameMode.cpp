@@ -1162,70 +1162,74 @@ void ABattleMobaGameMode::PopulateShopItem_Implementation(ABattleMobaPC* pc)
 
 void ABattleMobaGameMode::PlayerKilled(ABattleMobaPlayerState* victim, ABattleMobaPlayerState* killer, TArray<ABattleMobaPlayerState*> assist)
 {
-	FName rowName = RewardTable->GetRowNames()[victim->Level-1];
-	FRewards* row = RewardTable->FindRow<FRewards>(rowName, FString());
-	if (row)
+	GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Orange, FString::Printf(TEXT("Victim: %d"), victim->Level));
+	if (victim->Level > 0)
 	{
-		GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Orange, FString::Printf(TEXT("ROW FOUND")));
-
-		if (assist.IsValidIndex(0))
+		FName rowName = RewardTable->GetRowNames()[victim->Level - 1];
+		FRewards* row = RewardTable->FindRow<FRewards>(rowName, FString());
+		if (row)
 		{
-			for (int32 i = 0; i < assist.Num() - 1; i++)
+			GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Orange, FString::Printf(TEXT("ROW FOUND")));
+
+			if (assist.IsValidIndex(0))
 			{
-				if (assist[i] != assist.Last())
+				for (int32 i = 0; i < assist.Num() - 1; i++)
 				{
-					assist[i]->Assist += 1;
-					GState->Assist = assist[i]->Assist;
-
-					int exp;
-					int honor;
-
-					//Get victim level
-					if (UInputLibrary::CalculateRewards(HonorKill, assist.Num(), row, rowName, honor, exp))
+					if (assist[i] != assist.Last())
 					{
-						//add honor value
-						assist[i]->Honor += honor;
-						if (assist[i]->GetPawn() != nullptr && assist[i]->GetPawn()->GetClass()->ImplementsInterface(UBattleMobaInterface::StaticClass()))
+						assist[i]->Assist += 1;
+						GState->Assist = assist[i]->Assist;
+
+						int exp;
+						int honor;
+
+						//Get victim level
+						if (UInputLibrary::CalculateRewards(HonorKill, assist.Num(), row, rowName, honor, exp))
 						{
-							//Opens level up windows
-							Cast<IBattleMobaInterface>(assist[i]->GetPawn())->Execute_OnActivate(assist[i]->GetPawn(), assist[i]->Username, victim->Username, honor);
+							//add honor value
+							assist[i]->Honor += honor;
+							if (assist[i]->GetPawn() != nullptr && assist[i]->GetPawn()->GetClass()->ImplementsInterface(UBattleMobaInterface::StaticClass()))
+							{
+								//Opens level up windows
+								Cast<IBattleMobaInterface>(assist[i]->GetPawn())->Execute_OnActivate(assist[i]->GetPawn(), assist[i]->Username, victim->Username, honor);
+							}
+							//Set assist experience point
+							assist[i]->ClientSetExp(exp);
 						}
-						//Set assist experience point
-						assist[i]->ClientSetExp(exp);
 					}
 				}
 			}
-		}
-		if (killer != victim)
-		{
-			victim->Death += 1;
-			GState->Death += 1;
-			killer->Kill += 1;
-			GState->Kill += 1;
-
-			int exp;
-			int honor;
-
-			//Get victim level
-			if (UInputLibrary::CalculateRewards(HonorKill, assist.Num(), row, rowName, honor, exp))
+			if (killer != victim)
 			{
-				//add honor value
-				killer->Honor += honor;
-				if (killer->GetPawn() != nullptr && killer->GetPawn()->GetClass()->ImplementsInterface(UBattleMobaInterface::StaticClass()))
+				victim->Death += 1;
+				GState->Death += 1;
+				killer->Kill += 1;
+				GState->Kill += 1;
+
+				int exp;
+				int honor;
+
+				//Get victim level
+				if (UInputLibrary::CalculateRewards(HonorKill, assist.Num(), row, rowName, honor, exp))
 				{
-					//Opens level up windows
-					Cast<IBattleMobaInterface>(killer->GetPawn())->Execute_OnActivate(killer->GetPawn(), killer->Username, victim->Username, honor);
+					//add honor value
+					killer->Honor += honor;
+					if (killer->GetPawn() != nullptr && killer->GetPawn()->GetClass()->ImplementsInterface(UBattleMobaInterface::StaticClass()))
+					{
+						//Opens level up windows
+						Cast<IBattleMobaInterface>(killer->GetPawn())->Execute_OnActivate(killer->GetPawn(), killer->Username, victim->Username, honor);
+					}
+					//Set kill experience point
+					killer->ClientSetExp(row->ExpKills);
 				}
-				//Set kill experience point
-				killer->ClientSetExp(row->ExpKills);
-			}
-			if (killer->TeamName == "Radiant")
-			{
-				GState->TeamKillA += 1;
-			}
-			else if (killer->TeamName == "Dire")
-			{
-				GState->TeamKillB += 1;
+				if (killer->TeamName == "Radiant")
+				{
+					GState->TeamKillA += 1;
+				}
+				else if (killer->TeamName == "Dire")
+				{
+					GState->TeamKillB += 1;
+				}
 			}
 		}
 	}

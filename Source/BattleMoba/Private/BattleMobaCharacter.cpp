@@ -1835,7 +1835,7 @@ void ABattleMobaCharacter::RotateNearestTarget_Implementation(AActor* Target, ER
 				/*Start delay to reset speed*/
 				this->GetWorldTimerManager().SetTimer(handle, TimerDelegate, inst->Speed / (Target->GetActorLocation() + FromOriginToTarget).Size(), false);
 			}
-			else if (Type == EResult::Section)
+			else if (Type == EResult::Section && this->OnComboDelay == false)
 			{
 				UBattleMobaAnimInstance* inst = Cast<UBattleMobaAnimInstance>(this->GetMesh()->GetAnimInstance());
 
