@@ -350,9 +350,6 @@ protected:
 	UPROPERTY(VisibleAnywhere, Replicated, Category = "ActionSkill")
 		FName ActionSkillName = "";
 
-	UPROPERTY(EditAnywhere, Replicated, BlueprintReadWrite, Category = "Anim")
-		bool InRagdoll;
-
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Damage")
 		bool DoOnce = false;
 
@@ -553,7 +550,7 @@ protected:
 		void MulticastExecuteAction(FActionSkill SelectedRow, FName MontageSection, bool bSpecialAttack);
 
 	UFUNCTION(Reliable, Server, WithValidation, BlueprintCallable, Category = "HitReaction")
-		void CheckDamage(UParticleSystem* ImpactEffect, FName AttachTo, USoundBase* HitSound);
+		void CheckDamage(UParticleSystem* ImpactEffect, FName AttachTo, USoundBase* HitSound, float damageDistance);
 
 	UFUNCTION(Reliable, Server, WithValidation, Category = "ActionSkill")
 		void ServerLaunchChar(FVector LaunchVelocity, bool bXYOverride, bool bZOverride);
