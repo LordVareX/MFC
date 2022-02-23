@@ -144,7 +144,7 @@ struct FLevelAttributes :public FTableRowBase
 		float AtkSpeedIncrementPercent = 0.f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Exp")
-		float SlowMoveIncrementPercent = 0.f;
+		float MoveSpeedIncrementPercent = 0.f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Exp")
 		float StunIncrementPercent = 0.f;

@@ -259,7 +259,11 @@ bool ABattleMobaPlayerState::AddExp(int EXPoint, int& OutLevel)
 					MaxHealth = UInputLibrary::ChangeValueByPercentage(MaxHealth, Row->HPIncrementPercent, true);
 					Defense = UInputLibrary::ChangeValueByPercentage(Defense, Row->DefIncrementPercent, true);
 					BaseDamagePercent = Row->DmgIncrementPercent;
-					
+					AtkSpeed = UInputLibrary::ChangeValueByPercentage(AtkSpeed, Row->AtkSpeedIncrementPercent, false);
+					MoveSpeed = UInputLibrary::ChangeValueByPercentage(MoveSpeed, Row->MoveSpeedIncrementPercent, true);
+					ImmunityDur = UInputLibrary::ChangeValueByPercentage(ImmunityDur, Row->ImmIncrementPercent, true);
+					KnockbackVector = UInputLibrary::ChangeValueByPercentage(KnockbackVector, Row->KnockbackIncrementPercent, true);
+
 					if (GetPawn()->IsLocallyControlled())
 					{
 						ServerSetRespawnTime(Row->RespawnTime);

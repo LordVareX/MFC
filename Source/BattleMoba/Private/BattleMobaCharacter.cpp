@@ -1607,6 +1607,10 @@ void ABattleMobaCharacter::SetupBaseStats_Implementation(float HealthMax, float 
 	Health = UInputLibrary::CalculateValueFromPercentage(hpPercent, HealthMax, 100.0f);
 	MaxHealth = HealthMax;
 	Defence = Def;
+	AtkSpeed = AttSpeed;
+	StunDuration = StunDur;
+	KnockbackVector = knockBack;
+	ImmunityDur = ImmDur;
 }
 
 bool ABattleMobaCharacter::ServerSetupStats_Validate()
