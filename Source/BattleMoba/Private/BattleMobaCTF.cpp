@@ -328,10 +328,11 @@ void ABattleMobaCTF::CheckFlagType(ABattleMobaCTF* currFlag, class ABattleMobaPl
 		currPs->Honor += currFlag->HonorVal;
 		if (currFlag->FlagType == EFlagType::Major)
 		{
-			if (currPlayer->IsLocallyControlled())
+			currPs->ServerSetExp(currFlag->ExpVal);
+			/*if (currPlayer->IsLocallyControlled())
 			{
-				currPs->ServerSetExp(currFlag->ExpVal);
-			}
+				
+			}*/
 		}
 	}
 	else if (currFlag->FlagType == EFlagType::Minor)
@@ -342,10 +343,11 @@ void ABattleMobaCTF::CheckFlagType(ABattleMobaCTF* currFlag, class ABattleMobaPl
 		}
 		else if (currFlag->FlagPerks == EPerksType::Experience)
 		{
-			if (currPlayer->IsLocallyControlled())
+			currPs->ServerSetExp(currFlag->ExpVal);
+			/*if (currPlayer->IsLocallyControlled())
 			{
-				currPs->ServerSetExp(currFlag->ExpVal);
-			}
+				
+			}*/
 		}
 	}
 }
